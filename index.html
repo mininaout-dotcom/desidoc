@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>DesiDoc — сметы и договоры</title>
   <meta name="description" content="DesiDoc: сметы, договоры и проектные документы для дизайнеров.">
-  <link rel="stylesheet" href="css/designkit.css?v=36">
+  <link rel="stylesheet" href="css/designkit.css?v=37">
 </head>
 <body data-view="home">
   <div class="app" data-view="home">
@@ -37,8 +37,23 @@
         <div class="deedoc-user">
           <button class="deedoc-user__avatar" type="button" data-route="home" aria-label="На главную" title="На главную">🐱</button>
           <nav class="deedoc-section-nav" aria-label="Разделы" hidden>
-            <button class="deedoc-section-tab" type="button" data-route="calculator">Смета</button>
-            <button class="deedoc-section-tab" type="button" data-route="contract">Документы</button>
+            <button class="deedoc-section-tab" type="button" data-route="calculator" aria-label="Смета">
+              <svg class="tab-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <rect x="2" y="2" width="5" height="4" rx="1" stroke="currentColor" stroke-width="1.3"/>
+                <rect x="9" y="2" width="5" height="4" rx="1" stroke="currentColor" stroke-width="1.3"/>
+                <rect x="2" y="10" width="5" height="4" rx="1" stroke="currentColor" stroke-width="1.3"/>
+                <path d="M9 12h6M12 9v6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+              </svg>
+              <span class="tab-label">Смета</span>
+            </button>
+            <button class="deedoc-section-tab" type="button" data-route="contract" aria-label="Документы">
+              <svg class="tab-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <path d="M3 2.5A1.5 1.5 0 014.5 1h5L13 4.5V13a1.5 1.5 0 01-1.5 1.5h-7A1.5 1.5 0 013 13V2.5z" stroke="currentColor" stroke-width="1.3"/>
+                <path d="M9 1v3.5H13" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M5.5 8h5M5.5 10.5h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+              </svg>
+              <span class="tab-label">Документы</span>
+            </button>
           </nav>
         </div>
         <div class="deedoc-home__tools">
@@ -592,6 +607,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://unpkg.com/html-to-image@1.11.11/dist/html-to-image.js"></script>
-  <script src="js/designkit.js?v=36"></script>
+  <script src="js/designkit.js?v=37"></script>
 </body>
 </html>
