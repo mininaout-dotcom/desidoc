@@ -1246,18 +1246,16 @@ h2 {
   color: var(--bg);
 }
 
+.button--primary {
+  background: var(--text);
+  color: var(--bg);
+}
+
 .button--ghost,
 .button--soft {
-  border: 1px solid var(--line);
+  border: 1px solid transparent;
+  background: color-mix(in srgb, var(--text) 9%, transparent);
   color: var(--text);
-}
-
-.button--ghost {
-  background: transparent;
-}
-
-.button--soft {
-  background: var(--soft);
 }
 
 .button--wide {
@@ -4214,15 +4212,10 @@ body[data-view="calculator"]::after {
   box-shadow: var(--ddoc-shadow-button);
 }
 
-.view--calculator .button--ghost {
-  border-color: var(--cv-line);
-  background: var(--cv-surface);
-  color: var(--cv-text);
-}
-
+.view--calculator .button--ghost,
 .view--calculator .button--soft {
-  border-color: var(--cv-line);
-  background: var(--cv-surface);
+  border-color: transparent;
+  background: color-mix(in srgb, var(--cv-text) 9%, transparent);
   color: var(--cv-text);
 }
 
@@ -5287,8 +5280,8 @@ body[data-view="contract"]::after {
 
 .view--contract .button--ghost,
 .view--contract .button--soft {
-  border-color: var(--cv-line);
-  background: var(--cv-surface);
+  border-color: transparent;
+  background: color-mix(in srgb, var(--cv-text) 9%, transparent);
   color: var(--cv-text);
 }
 
