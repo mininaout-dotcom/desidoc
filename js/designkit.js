@@ -2596,6 +2596,12 @@ function bindEvents() {
     }
     if (action === "generate-estimate") generateEstimate(true);
     if (action === "regenerate-estimate") generateEstimate(true);
+    if (action === "dismiss-hint") {
+      const hint = document.querySelector("[data-estimate-hint]");
+      if (hint) hint.classList.add("is-hidden");
+      try { localStorage.setItem("designkit.stageHintDismissed", "1"); } catch (e) {}
+      return;
+    }
     if (action === "add-stage") addStage();
     if (action === "remove-stage") {
       state.stages.splice(Number(actionTarget.dataset.index), 1);
@@ -2995,6 +3001,11 @@ function init() {
   syncExportInputs();
   renderContractWorkspace();
   bindEvents();
+  // Скрываем подсказку сметы если пользователь уже закрывал её
+  if (localStorage.getItem("designkit.stageHintDismissed") === "1") {
+    const hint = document.querySelector("[data-estimate-hint]");
+    if (hint) hint.classList.add("is-hidden");
+  }
   const initialRoute = location.hash.replace("#", "");
   routeTo(["calculator", "contract"].includes(initialRoute) ? initialRoute : "home");
   syncRouteHash(state.view, true);
