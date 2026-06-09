@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>DesiDoc — сметы и договоры</title>
   <meta name="description" content="DesiDoc: сметы, договоры и проектные документы для дизайнеров.">
-  <link rel="stylesheet" href="css/designkit.css?v=57">
+  <link rel="stylesheet" href="css/designkit.css?v=58">
 </head>
 <body data-view="home">
   <div class="app" data-view="home">
@@ -327,11 +327,6 @@
           <!-- Document type chooser (shown before editor) -->
           <div class="contract-chooser" data-contract-chooser></div>
 
-          <!-- Doc type toggle — above layout -->
-          <div class="contract-top-bar">
-            <div class="contract-template-strip" data-contract-template-strip aria-label="Тип договора"></div>
-          </div>
-
           <div class="contract-layout">
             <aside class="contract-outline" aria-label="Структура договора">
               <div data-addendum-sidebar></div>
@@ -416,6 +411,10 @@
             </aside>
 
             <div class="contract-canvas-area">
+              <!-- Doc type toggle — aligned to canvas left edge -->
+              <div class="contract-top-bar">
+                <div class="contract-template-strip" data-contract-template-strip aria-label="Тип договора"></div>
+              </div>
               <article class="document-canvas" data-contract-canvas aria-label="Договор"></article>
             </div>
           </div>

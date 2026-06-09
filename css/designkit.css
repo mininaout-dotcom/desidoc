@@ -5390,11 +5390,8 @@ body[data-view="contract"]::after {
   gap: 0;
 }
 
-/* Top bar with doc-type toggle — above the layout grid */
+/* Top bar with doc-type toggle — inside canvas column */
 .view--contract .contract-top-bar {
-  display: flex;
-  align-items: center;
-  justify-content: center;
   padding: 0 0 14px;
 }
 
