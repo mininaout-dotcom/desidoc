@@ -1372,7 +1372,7 @@ h2 {
   justify-content: center;
   gap: 0;
   padding: 14px;
-  border-radius: 18px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   text-align: left;
   transition: border-color 180ms ease, background 180ms ease, transform 180ms ease;
@@ -1751,7 +1751,7 @@ h2 {
 }
 
 .stage-title-input {
-  font-size: 17px;
+  font-size: 15px;
   font-weight: 700;
   letter-spacing: -0.045em;
 }
@@ -2151,7 +2151,7 @@ h2 {
 .signature-actions .button,
 .signature-pdf-toggle,
 .signature-mode button {
-  min-height: 34px;
+  min-height: var(--btn-height-sm);
   border-radius: 999px;
   font-size: 11px;
 }
@@ -2229,7 +2229,7 @@ h2 {
 
 .optional-toggle small {
   color: var(--muted);
-  font-size: 10.5px;
+  font-size: 11px;
   line-height: 1.32;
 }
 
@@ -2279,7 +2279,7 @@ h2 {
 }
 
 .vacation-date-field span {
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -2449,7 +2449,7 @@ h2 {
 .document-section p,
 .document-section li {
   color: var(--text);
-  font-size: 14.5px;
+  font-size: 15px;
   line-height: 1.72;
 }
 
@@ -4100,7 +4100,7 @@ body[data-view="calculator"]::after {
 
 .view--calculator .market-grade strong {
   color: var(--cv-text);
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .view--calculator .market-grade:hover {
@@ -4224,7 +4224,7 @@ body[data-view="calculator"]::after {
 
 .estimate-edit-hint {
   margin: 4px 0 0;
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--cv-muted);
   opacity: 0.65;
   line-height: 1.4;
@@ -4621,7 +4621,7 @@ body[data-view="calculator"]::after {
 
 .view--calculator .segmented__item {
   min-height: 32px;
-  font-size: 11.5px;
+  font-size: 12px;
 }
 
 .view--calculator .rate-panel {
@@ -4638,11 +4638,11 @@ body[data-view="calculator"]::after {
 }
 
 .view--calculator .market-grade span {
-  font-size: 10.5px;
+  font-size: 11px;
 }
 
 .view--calculator .market-grade strong {
-  font-size: 12.5px;
+  font-size: 13px;
 }
 
 .view--calculator .rate-summary {
@@ -4652,7 +4652,7 @@ body[data-view="calculator"]::after {
 }
 
 .view--calculator .rate-input {
-  font-size: 17px;
+  font-size: 15px;
 }
 
 .view--calculator .field {
@@ -4700,13 +4700,13 @@ body[data-view="calculator"]::after {
 .view--calculator .tax-rate-line {
   padding: 8px 10px;
   border-radius: 13px;
-  font-size: 11.5px;
+  font-size: 12px;
 }
 
 .view--calculator .cv-cta-btn {
   height: var(--btn-height-md);
   margin-top: 0;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .view--calculator .estimate-card {
@@ -4757,9 +4757,9 @@ body[data-view="calculator"]::after {
 }
 
 .view--calculator .cv-result-actions .button {
-  min-height: 38px;
+  min-height: var(--btn-height-md);
   padding: 0 14px;
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .view--calculator .stage-list {
@@ -4804,8 +4804,8 @@ body[data-view="calculator"]::after {
 }
 
 .view--calculator .stage-title-input {
-  font-size: 12.5px;
-  font-weight: 560;
+  font-size: 13px;
+  font-weight: 600;
   letter-spacing: -0.025em;
 }
 
@@ -4813,7 +4813,7 @@ body[data-view="calculator"]::after {
   min-height: 17px;
   max-height: 48px;
   overflow: hidden;
-  font-size: 10.5px;
+  font-size: 11px;
   line-height: 1.28;
 }
 
@@ -4828,11 +4828,11 @@ body[data-view="calculator"]::after {
 .view--calculator .hours-field input {
   text-align: center;
   font-size: 12px;
-  font-weight: 560;
+  font-weight: 600;
 }
 
 .view--calculator .hours-field span {
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .view--calculator .stage-stat {
@@ -4844,8 +4844,8 @@ body[data-view="calculator"]::after {
 }
 
 .view--calculator .stage-stat strong {
-  font-size: 11.5px;
-  font-weight: 560;
+  font-size: 12px;
+  font-weight: 600;
   white-space: nowrap;
 }
 
@@ -4858,7 +4858,7 @@ body[data-view="calculator"]::after {
 }
 
 .view--calculator .cv-add-stage-btn {
-  min-height: 36px;
+  min-height: var(--btn-height-sm);
   margin-top: 2px;
   font-size: 12px;
 }
@@ -5281,7 +5281,7 @@ body[data-view="contract"]::after {
 /* Lighter weight for sidebar utility buttons */
 .view--contract .contract-outline .button {
   min-height: 38px;
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 500;
   letter-spacing: 0;
 }
@@ -5459,7 +5459,7 @@ body[data-view="contract"]::after {
 }
 
 .doc-type-toggle__btn.is-active {
-  background: #fff;
+  background: var(--surface-strong);
   color: var(--text);
   box-shadow: 0 1px 4px rgba(0,0,0,0.12);
 }
@@ -5474,7 +5474,6 @@ body[data-view="contract"]::after {
   gap: 5px;
   font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.02em;
   color: var(--cv-muted, #999);
   background: none;
   border: 1px solid transparent;
@@ -5486,9 +5485,9 @@ body[data-view="contract"]::after {
   margin-left: 8px;
 }
 .reset-btn:hover {
-  color: #e55;
-  border-color: rgba(220,60,60,0.25);
-  background: rgba(220,60,60,0.06);
+  color: #c84d4d;
+  border-color: rgba(200, 77, 77, 0.25);
+  background: rgba(200, 77, 77, 0.06);
 }
 
 /* Collapsible outline group (details/summary) */
@@ -5775,12 +5774,12 @@ body[data-view="contract"]::after {
 .view--contract .client-reply-status {
   margin: -2px 0 0;
   color: var(--cv-muted);
-  font-size: 10.5px;
+  font-size: 11px;
   line-height: 1.35;
 }
 
 .view--contract .client-reply-status.is-error {
-  color: #d36c5c;
+  color: #c84d4d;
 }
 
 .view--contract .contract-progress,
@@ -5878,14 +5877,14 @@ body[data-view="contract"]::after {
 
 .view--contract .contract-template-card:hover,
 .view--contract .contract-template-card.is-active {
-  background: #ffffff;
-  color: #1f1d18;
+  background: var(--surface-strong);
+  color: var(--text);
   box-shadow: 0 16px 36px rgba(32, 20, 16, 0.18);
   transform: translateY(-1px);
 }
 
 .view--contract .contract-template-card.is-active small {
-  color: rgba(31, 29, 24, 0.52);
+  color: var(--muted);
 }
 
 .view--contract .contract-template-card:hover:not(.is-active) {
@@ -6196,7 +6195,7 @@ body[data-view="contract"]::after {
 .view--contract .document-toolbar__switch span {
   color: var(--cv-text);
   font-size: 12px;
-  font-weight: 560;
+  font-weight: 600;
 }
 
 .view--contract .document-toolbar__switch i {
@@ -6448,8 +6447,8 @@ body[data-view="contract"]::after {
 .contract-chooser-group__intro p {
   max-width: 210px;
   margin: 0;
-  color: #c8c4c4;
-  font-size: 12.5px;
+  color: var(--ddoc-color-body-muted);
+  font-size: 13px;
   line-height: 1.22;
 }
 
@@ -6534,7 +6533,7 @@ body[data-view="contract"]::after {
 .contract-choice-card__desc {
   display: block;
   margin: 0;
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 400;
   color: var(--ddoc-color-body-muted);
   line-height: 1.35;
