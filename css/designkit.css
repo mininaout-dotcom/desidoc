@@ -5435,19 +5435,22 @@ body[data-view="contract"]::after {
   display: inline-flex;
   align-items: center;
   background: rgba(0,0,0,0.07);
-  border-radius: 10px;
+  border-radius: 999px;
   padding: 3px;
   gap: 2px;
+  height: 37px;
+  box-sizing: border-box;
 }
 [data-theme="dark"] .doc-type-toggle {
   background: rgba(255,255,255,0.10);
 }
 
 .doc-type-toggle__btn {
-  padding: 7px 18px;
+  padding: 0 18px;
+  height: 31px;
   border: none;
   background: transparent;
-  border-radius: 7px;
+  border-radius: 999px;
   font-size: 13px;
   font-weight: 500;
   color: var(--muted);
@@ -5458,6 +5461,7 @@ body[data-view="contract"]::after {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  box-sizing: border-box;
 }
 .doc-type-toggle__step {
   font-size: 10px;

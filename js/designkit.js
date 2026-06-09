@@ -3003,7 +3003,25 @@ function bindEvents() {
   });
 }
 
+const AVATAR_ANIMALS = [
+  "🐱","🐶","🐭","🐹","🐰","🦊","🐻","🐼","🐨","🐯",
+  "🦁","🐮","🐷","🐸","🐙","🦝","🦦","🦥","🦔","🐺",
+  "🦉","🦋","🐧","🐦","🐤","🦜","🐊","🦎","🐢","🐠",
+  "🐡","🐟","🦭","🐬","🦈","🐻‍❄️","🐿️","🦔","🦡","🦨"
+];
+
+function randomAvatar() {
+  const btn = document.querySelector(".deedoc-user__avatar");
+  if (!btn) return;
+  const stored = sessionStorage.getItem("designkit.avatarEmoji");
+  if (stored) { btn.textContent = stored; return; }
+  const emoji = AVATAR_ANIMALS[Math.floor(Math.random() * AVATAR_ANIMALS.length)];
+  btn.textContent = emoji;
+  try { sessionStorage.setItem("designkit.avatarEmoji", emoji); } catch(e) {}
+}
+
 function init() {
+  randomAvatar();
   setTheme(state.theme);
   renderProjectOptions();
   renderRate();
