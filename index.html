@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>DesiDoc — сметы и договоры</title>
   <meta name="description" content="DesiDoc: сметы, договоры и проектные документы для дизайнеров.">
-  <link rel="stylesheet" href="css/designkit.css?v=41">
+  <link rel="stylesheet" href="css/designkit.css?v=42">
 </head>
 <body data-view="home">
   <div class="app" data-view="home">
@@ -242,10 +242,17 @@
 
               <!-- Empty state -->
               <div class="estimate-empty cv-estimate-empty" data-estimate-empty>
-                <div class="cv-empty-amount" aria-hidden="true">— ₽</div>
+                <div class="cv-empty-icon" aria-hidden="true">
+                  <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="4" y="4" width="17" height="14" rx="3" stroke="currentColor" stroke-width="2.2"/>
+                    <rect x="27" y="4" width="17" height="14" rx="3" stroke="currentColor" stroke-width="2.2"/>
+                    <rect x="4" y="30" width="17" height="14" rx="3" stroke="currentColor" stroke-width="2.2"/>
+                    <path d="M27 37h14M34 30v14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+                  </svg>
+                </div>
                 <div class="cv-empty-text">
-                  <h2 id="setup-title">Стоимость появится здесь.</h2>
-                  <p>Выберите параметры слева и нажмите «Рассчитать стоимость».</p>
+                  <h2 id="setup-title">Стоимость появится здесь</h2>
+                  <p>Выберите параметры слева и нажмите «Рассчитать стоимость»</p>
                 </div>
               </div>
 

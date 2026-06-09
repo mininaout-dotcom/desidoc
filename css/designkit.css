@@ -4312,20 +4312,16 @@ body[data-view="calculator"]::after {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  align-items: flex-start;
+  align-items: center;
+  text-align: center;
   gap: 0;
   padding: clamp(28px, 3vw, 44px);
   border-radius: calc(var(--cv-radius) - 1px);
 }
 
-/* Giant placeholder amount */
-.cv-empty-amount {
-  font-size: clamp(56px, 8vw, 96px);
-  font-weight: 300;
-  letter-spacing: -0.06em;
+.cv-empty-icon {
   color: var(--cv-empty-fig);
-  line-height: 1;
-  margin-bottom: 32px;
+  margin-bottom: 28px;
   user-select: none;
 }
 
@@ -4346,8 +4342,8 @@ body[data-view="calculator"]::after {
   color: var(--cv-muted);
   font-size: 15px;
   line-height: 1.55;
-  max-width: 340px;
-  margin: 0;
+  max-width: 300px;
+  margin: 0 auto;
 }
 
 /* ── Estimate card: result state ─────────────────────────── */
