@@ -418,7 +418,7 @@ function routeTo(view, pushHistory = true) {
   const sectionNav = document.querySelector(".deedoc-section-nav");
   if (sectionNav) {
     sectionNav.hidden = !isInner;
-    sectionNav.querySelectorAll(".deedoc-pill--section").forEach(btn => {
+    sectionNav.querySelectorAll(".deedoc-section-tab").forEach(btn => {
       btn.classList.toggle("is-current", btn.dataset.route === state.view);
     });
   }

@@ -588,9 +588,7 @@ summary:focus-visible,
 
 
 /* "Главная" visible only on non-home screens */
-.deedoc-pill.deedoc-pill--back { display: none; }
-.app[data-view="calculator"] .deedoc-pill.deedoc-pill--back,
-.app[data-view="contract"] .deedoc-pill.deedoc-pill--back { display: inline-flex; }
+/* back-pill убран — вместо него аватар как home-кнопка */
 
 .deedoc-user,
 .deedoc-home__tools {
@@ -615,20 +613,69 @@ summary:focus-visible,
   font-size: 26px;
   line-height: 1;
   user-select: none;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.deedoc-user__avatar:hover {
+  transform: scale(1.08);
+  box-shadow: 0 10px 28px rgba(32, 20, 16, 0.22);
+}
+
+.deedoc-user__avatar:active {
+  transform: scale(0.95);
 }
 
 .deedoc-section-nav {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.12);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 .deedoc-section-nav[hidden] { display: none; }
 
-.deedoc-pill--section.is-current {
-  background: rgba(255,255,255,0.35);
-  font-weight: 600;
+.deedoc-section-tab {
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: none;
+  background: transparent;
+  color: rgba(255,255,255,0.65);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 400;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s;
+  -webkit-tap-highlight-color: transparent;
+  white-space: nowrap;
+}
+
+.deedoc-section-tab:hover {
+  background: rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.9);
+}
+
+.deedoc-section-tab.is-current {
+  background: rgba(255,255,255,0.28);
+  color: rgba(255,255,255,1);
+  font-weight: 500;
   pointer-events: none;
+}
+
+[data-theme="dark"] .deedoc-section-nav {
+  background: rgba(255,255,255,0.08);
+}
+
+[data-theme="dark"] .deedoc-section-tab.is-current {
+  background: rgba(255,255,255,0.18);
 }
 
 .deedoc-pill,

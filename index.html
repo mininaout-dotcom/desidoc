@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>DesiDoc — сметы и договоры</title>
   <meta name="description" content="DesiDoc: сметы, договоры и проектные документы для дизайнеров.">
-  <link rel="stylesheet" href="css/designkit.css?v=34">
+  <link rel="stylesheet" href="css/designkit.css?v=35">
 </head>
 <body data-view="home">
   <div class="app" data-view="home">
@@ -35,12 +35,10 @@
       <!-- Global nav header — visible on all screens -->
       <header class="deedoc-home__top deedoc-home__top--global">
         <div class="deedoc-user">
-          <span class="deedoc-user__avatar" aria-hidden="true">🐱</span>
-          <!-- shown only on non-home screens -->
-          <button class="deedoc-pill deedoc-pill--back" type="button" data-action="go-back"><span class="pill-clip"><span class="pill-reel" data-text="← Назад">← Назад</span></span></button>
+          <button class="deedoc-user__avatar" type="button" data-route="home" aria-label="На главную" title="На главную">🐱</button>
           <nav class="deedoc-section-nav" aria-label="Разделы" hidden>
-            <button class="deedoc-pill deedoc-pill--section" type="button" data-route="calculator"><span class="pill-clip"><span class="pill-reel" data-text="Смета">Смета</span></span></button>
-            <button class="deedoc-pill deedoc-pill--section" type="button" data-route="contract"><span class="pill-clip"><span class="pill-reel" data-text="Документы">Документы</span></span></button>
+            <button class="deedoc-section-tab" type="button" data-route="calculator">Смета</button>
+            <button class="deedoc-section-tab" type="button" data-route="contract">Документы</button>
           </nav>
         </div>
         <div class="deedoc-home__tools">
@@ -593,6 +591,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://unpkg.com/html-to-image@1.11.11/dist/html-to-image.js"></script>
-  <script src="js/designkit.js?v=34"></script>
+  <script src="js/designkit.js?v=35"></script>
 </body>
 </html>
