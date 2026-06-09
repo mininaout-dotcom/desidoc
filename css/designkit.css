@@ -252,6 +252,11 @@ html:has(body[data-view="home"]) {
     #d8b1a3;
 }
 
+/* ── Mobile tap highlight — убираем синюю вспышку на iOS/Android ── */
+a, button, [role="button"], .deedoc-card, .project-option, .outline-link, .optional-toggle {
+  -webkit-tap-highlight-color: transparent;
+}
+
 body {
   min-width: 320px;
   min-height: 100%;
@@ -3286,6 +3291,60 @@ h2 {
     max-width: calc(100vw - 42px);
   }
 
+  /* ── iOS auto-zoom fix: все инпуты ≥ 16px на мобиле ────────── */
+  --input-fs: 16px;
+
+  .field input,
+  .field textarea,
+  .field select,
+  .contract-control input,
+  .contract-control textarea,
+  .stage-title-input,
+  .stage-description-input,
+  .client-reply-textarea {
+    font-size: 16px;
+  }
+
+  /* ── Touch targets: минимум 44px (Apple HIG) ────────────────── */
+  .modal__close {
+    width: 44px;
+    height: 44px;
+    top: 6px;
+    right: 6px;
+  }
+
+  .drag-handle,
+  .icon-button {
+    width: 44px;
+    height: 44px;
+  }
+
+  .outline-link,
+  .optional-toggle {
+    min-height: 44px;
+  }
+
+  .topbar__link,
+  .topbar__theme {
+    min-height: 44px;
+  }
+
+  /* ── total-pill: снимаем min-width чтобы не ломать layout ───── */
+  .total-pill {
+    min-width: 0;
+  }
+
+  /* ── document-toolbar: 2 кнопки в ряд, не в колонку ────────── */
+  .document-toolbar__actions {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  /* ── sticky-summary: отступ для home indicator iPhone X+ ────── */
+  .sticky-summary {
+    bottom: calc(14px + env(safe-area-inset-bottom));
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
 }
 
 @media print {
@@ -4361,6 +4420,15 @@ body[data-view="calculator"]::after {
   scrollbar-width: thin;
 }
 
+.view--calculator .setup-card::-webkit-scrollbar {
+  width: 4px;
+}
+
+.view--calculator .setup-card::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: var(--cv-line);
+}
+
 .view--calculator .cv-step-block {
   gap: 9px;
   padding: 0 0 12px;
@@ -5070,6 +5138,13 @@ body[data-view="contract"]::after {
   grid-template-columns: minmax(300px, 368px) minmax(0, 1fr);
   gap: 18px;
   align-items: stretch;
+}
+
+/* Схлопываем sidebar договора на планшете/мобиле (перебивает глобальный 1080px из-за специфичности) */
+@media (max-width: 1080px) {
+  .view--contract .contract-layout {
+    grid-template-columns: 1fr;
+  }
 }
 
 .view--contract .contract-outline,

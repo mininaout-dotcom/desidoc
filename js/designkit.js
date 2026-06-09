@@ -483,6 +483,11 @@ function generateEstimate(force = false) {
   state.generated = true;
   renderEstimate();
   routeTo("calculator");
+  // На мобиле прокручиваем к результату
+  if (window.innerWidth <= 760) {
+    const result = document.querySelector("[data-estimate-result]");
+    if (result) setTimeout(() => result.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+  }
 }
 
 function renderEstimate() {
@@ -659,7 +664,7 @@ function renderGreeting() {
   const name = state.profile.designerName?.trim();
   const firstName = name ? name.split(" ")[0] : "";
   el.innerHTML = firstName
-    ? `Привет, <em>${firstName}!</em><br>С чего начнем работу?`
+    ? `Привет, <em>${escapeHtml(firstName)}!</em><br>С чего начнем работу?`
     : `Привет!<br>С чего начнем работу?`;
 }
 
@@ -854,8 +859,10 @@ function refreshContractDynamicDefaults() {
   let changed = false;
   const fields = contractState.fields;
 
-  fields.date = formatContractDate();
-  changed = true;
+  if (!fields.date) {
+    fields.date = formatContractDate();
+    changed = true;
+  }
 
   if (contractState.templateKey === "design") {
     const days = String(fields.days || "").trim();
@@ -1230,7 +1237,7 @@ function loadContractDraft() {
 }
 
 function getContractTemplate() {
-  return CONTRACT_TEMPLATES[contractState.templateKey] || CONTRACT_TEMPLATES.site;
+  return CONTRACT_TEMPLATES[contractState.templateKey] || CONTRACT_TEMPLATES.design;
 }
 
 function saveProfileSignature() {
@@ -1664,7 +1671,7 @@ function renderAddendumDocument() {
   const sig = contractState.signature;
   const hasSignature = sig.dataUrl && sig.includeInPdf;
   const signatureHtml = hasSignature
-    ? `<img class="signature-image" src="${sig.dataUrl}" alt="Подпись исполнителя">`
+    ? `<img class="signature-image" src="${escapeHtml(sig.dataUrl)}" alt="Подпись исполнителя">`
     : "";
 
   const paymentText = f.paymentTerms || "50% аванс и 50% после акта";
@@ -2340,8 +2347,13 @@ function scheduleContractSave() {
   clearTimeout(contractSaveTimer);
   contractSaveTimer = setTimeout(() => {
     if (contractState.signature.mode === "saved") saveProfileSignature();
-    localStorage.setItem("designkit.contractDraft", JSON.stringify(contractState));
-    updateAutosaveStatus("Сохранено");
+    try {
+      localStorage.setItem("designkit.contractDraft", JSON.stringify(contractState));
+      updateAutosaveStatus("Сохранено");
+    } catch (e) {
+      updateAutosaveStatus("⚠ Не удалось сохранить");
+      console.error("localStorage quota exceeded:", e);
+    }
   }, 500);
 }
 
@@ -2382,7 +2394,7 @@ function setupContractScrollSpy() {
   sections.forEach((section) => contractObserver.observe(section));
 }
 
-function printContract() {
+function printContract(onDone) {
   const source = document.querySelector("[data-contract-canvas]");
   if (!source) return;
   const clone = source.cloneNode(true);
@@ -2431,7 +2443,7 @@ function printContract() {
   sheet.setAttribute("aria-hidden", "false");
   sheet.style.cssText = "display:block;position:fixed;left:-9999px;top:0;width:794px;min-height:1123px;z-index:9999;background:#fff;overflow:visible;padding:0;";
   const page = sheet.querySelector(".pdf-clean-body") || sheet.querySelector(".pdf-page");
-  const cleanup = () => { sheet.style.cssText = ""; sheet.setAttribute("aria-hidden", "true"); };
+  const cleanup = () => { sheet.style.cssText = ""; sheet.setAttribute("aria-hidden", "true"); if (onDone) onDone(); };
 
   if (!window.jspdf?.jsPDF || !page) { window.print(); cleanup(); return; }
   const { jsPDF } = window.jspdf;
@@ -2689,7 +2701,17 @@ function bindEvents() {
       localStorage.setItem(`designkit.contractArchive.${Date.now()}`, JSON.stringify(contractState));
       updateAutosaveStatus("В архиве");
     }
-    if (action === "print-contract") printContract();
+    if (action === "print-contract") {
+      const btn = actionTarget;
+      if (btn.disabled) return;
+      btn.disabled = true;
+      btn.dataset.originalText = btn.textContent;
+      btn.textContent = "Готовлю PDF…";
+      printContract(() => {
+        btn.disabled = false;
+        btn.textContent = btn.dataset.originalText || "Скачать PDF";
+      });
+    }
     if (action === "choose-contract-type") {
       const key = actionTarget.dataset.template;
       if (CONTRACT_TEMPLATES[key]) {
@@ -2892,20 +2914,18 @@ function bindEvents() {
     if (input.matches("[data-signature-file]")) {
       const file = input.files?.[0];
       if (!file || !file.type.startsWith("image/")) return;
-      processSignatureFile(file).then((dataUrl) => {
+      const applySignature = (dataUrl) => {
         contractState.signature.dataUrl = dataUrl;
         contractState.signature.includeInPdf = true;
         if (contractState.signature.mode === "saved") saveProfileSignature();
-        renderContractWorkspace();
+        renderSignaturePanel();
+        renderContractDocument();
+        renderAddendumDocument();
         scheduleContractSave();
-      }).catch(() => {
-        readFileAsDataUrl(file).then((dataUrl) => {
-          contractState.signature.dataUrl = dataUrl;
-          contractState.signature.includeInPdf = true;
-          if (contractState.signature.mode === "saved") saveProfileSignature();
-          renderContractWorkspace();
-          scheduleContractSave();
-        });
+      };
+      processSignatureFile(file).then(applySignature).catch((err) => {
+        console.warn("processSignatureFile failed, using raw:", err);
+        readFileAsDataUrl(file).then(applySignature);
       });
       input.value = "";
     }
@@ -3005,7 +3025,12 @@ init();
     });
   }
 
-  document.addEventListener("pointermove", onMove);
+  let rafPending = false;
+  document.addEventListener("pointermove", (e) => {
+    if (rafPending) return;
+    rafPending = true;
+    requestAnimationFrame(() => { onMove(e); rafPending = false; });
+  });
   document.addEventListener("pointerleave", onLeave);
 })();
 

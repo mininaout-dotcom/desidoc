@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>DesiDoc — сметы и договоры</title>
   <meta name="description" content="DesiDoc: сметы, договоры и проектные документы для дизайнеров.">
-  <link rel="stylesheet" href="css/designkit.css?v=26">
+  <link rel="stylesheet" href="css/designkit.css?v=31">
 </head>
 <body data-view="home">
   <div class="app" data-view="home">
@@ -220,7 +220,7 @@
               </div>
 
               <!-- Primary CTA -->
-              <button class="cv-cta-btn" type="button" data-action="generate-estimate">Получить стоимость</button>
+              <button class="cv-cta-btn" type="button" data-action="generate-estimate">Рассчитать стоимость</button>
 
             </section>
 
@@ -232,7 +232,7 @@
                 <div class="cv-empty-amount" aria-hidden="true">— ₽</div>
                 <div class="cv-empty-text">
                   <h2 id="setup-title">Стоимость появится здесь.</h2>
-                  <p>Выберите параметры слева и нажмите «Получить стоимость».</p>
+                  <p>Выберите параметры слева и нажмите «Рассчитать стоимость».</p>
                 </div>
               </div>
 
@@ -255,7 +255,7 @@
 
                 <!-- Actions row -->
                 <div class="estimate-actions cv-result-actions">
-                  <button class="button button--soft" type="button" data-action="regenerate-estimate">Пересобрать</button>
+                  <button class="button button--soft" type="button" data-action="regenerate-estimate">Пересчитать</button>
                   <button class="button button--dark" type="button" data-action="open-export">
                     <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M7 1v8M4 6l3 3 3-3M2 10v1a1 1 0 001 1h8a1 1 0 001-1v-1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     Скачать PDF
@@ -442,7 +442,7 @@
       </label>
 
       <div class="export-options">
-        <p class="export-options__title">Финальная опция PDF</p>
+        <p class="export-options__title">Опции документа</p>
         <button class="export-toggle" type="button" data-action="toggle-export-urgent" aria-pressed="false">
           <span>Срочность</span>
           <strong>+30%</strong>
@@ -570,7 +570,7 @@
   <dialog class="modal" data-soon-modal>
     <form method="dialog" class="modal__panel modal__panel--small">
       <button class="modal__close" value="cancel" aria-label="Закрыть">×</button>
-      <p class="eyebrow">Не в текущем шаге</p>
+      <p class="eyebrow">Скоро появится</p>
       <h2 data-soon-title>Сценарий</h2>
       <p class="modal__lead">Раздел находится в очереди MVP. Сейчас можно работать со сметой и договором.</p>
       <button class="button button--dark button--wide" value="cancel">Понятно</button>
@@ -582,6 +582,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://unpkg.com/html-to-image@1.11.11/dist/html-to-image.js"></script>
-  <script src="js/designkit.js?v=27"></script>
+  <script src="js/designkit.js?v=31"></script>
 </body>
 </html>
