@@ -5397,29 +5397,21 @@ body[data-view="contract"]::after {
   align-items: center;
   justify-content: center;
   padding: 0 0 14px;
-  position: relative;
-}
-.view--contract .contract-top-bar .reset-btn {
-  position: absolute;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  margin-left: 0;
 }
 
-/* Strip inside the top bar is just a toggle holder — reset grid */
+/* Strip: toggle слева по центру, reset справа */
 .view--contract .contract-top-bar .contract-template-strip {
+  width: 100%;
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
-  width: auto;
   background: none;
   border: none;
   padding: 0;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   border-radius: 0;
-  gap: 0;
+  gap: 12px;
 }
 
 /* Doc type toggle (Договор / Допсоглашение) */
@@ -5482,23 +5474,28 @@ body[data-view="contract"]::after {
 .reset-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 5px;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--cv-muted, #999);
-  background: none;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  padding: 5px 10px;
+  height: 37px;
+  padding: 0 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--cv-muted);
+  background: rgba(0,0,0,0.07);
+  border: none;
+  border-radius: 999px;
   cursor: pointer;
-  transition: color 0.15s, border-color 0.15s, background 0.15s;
+  transition: color 0.15s, background 0.15s;
   white-space: nowrap;
-  margin-left: 8px;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+[data-theme="dark"] .reset-btn {
+  background: rgba(255,255,255,0.10);
 }
 .reset-btn:hover {
   color: #c84d4d;
-  border-color: rgba(200, 77, 77, 0.25);
-  background: rgba(200, 77, 77, 0.06);
+  background: rgba(200, 77, 77, 0.10);
 }
 
 /* Collapsible outline group (details/summary) */
