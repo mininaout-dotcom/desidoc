@@ -3847,7 +3847,7 @@ body[data-view="calculator"]::after {
   --cv-step-num-color: rgba(31, 29, 24, 0.28);
   --cv-empty-fig:   rgba(31, 29, 24, 0.08);
   --cv-radius: 40px;
-  padding: 110px clamp(24px, 4vw, 56px) 120px;
+  padding: 118px clamp(24px, 4vw, 56px) 120px;
 }
 
 [data-theme="dark"] .view--calculator {
