@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>DesiDoc — сметы и договоры</title>
   <meta name="description" content="DesiDoc: сметы, договоры и проектные документы для дизайнеров.">
-  <link rel="stylesheet" href="css/designkit.css?v=25">
+  <link rel="stylesheet" href="css/designkit.css?v=26">
 </head>
 <body data-view="home">
   <div class="app" data-view="home">
@@ -359,8 +359,10 @@
                     <button class="button button--ghost button--wide" type="button" data-action="upload-signature">Загрузить подпись</button>
                     <button class="button button--ghost button--wide" type="button" data-action="delete-signature">Удалить</button>
                   </div>
-                  <div class="signature-mode" data-signature-mode aria-label="Как использовать подпись"></div>
-                  <button class="signature-pdf-toggle" type="button" data-action="toggle-signature-pdf" data-signature-pdf-toggle></button>
+                  <label class="contract-control contract-control--checkbox" style="margin-top:10px">
+                    <input type="checkbox" data-signature-pdf-toggle>
+                    <span>Включить подпись в PDF</span>
+                  </label>
                 </div>
               </details>
 
@@ -580,6 +582,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://unpkg.com/html-to-image@1.11.11/dist/html-to-image.js"></script>
-  <script src="js/designkit.js?v=22"></script>
+  <script src="js/designkit.js?v=27"></script>
 </body>
 </html>

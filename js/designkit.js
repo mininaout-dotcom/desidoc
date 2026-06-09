@@ -764,7 +764,7 @@ function printEstimate() {
 
   const sheet = document.querySelector("[data-print-sheet]");
   sheet.setAttribute("aria-hidden", "false");
-  sheet.style.cssText = "display:block;position:fixed;left:0;top:0;width:794px;min-height:1123px;z-index:9999;background:#fff;overflow:visible;padding:0;";
+  sheet.style.cssText = "display:block;position:fixed;left:-9999px;top:0;width:794px;min-height:1123px;z-index:9999;background:#fff;overflow:visible;padding:0;";
   const page = sheet.querySelector(".pdf-page");
 
   const projectLabel = getProject().label;
@@ -1434,31 +1434,18 @@ function renderContractModeControls() {
 }
 
 function renderSignaturePanel() {
-  const preview = document.querySelector("[data-signature-preview]");
-  const mode = document.querySelector("[data-signature-mode]");
-  const pdfToggle = document.querySelector("[data-signature-pdf-toggle]");
   const hasSignature = Boolean(contractState.signature.dataUrl);
 
-  if (preview) {
+  document.querySelectorAll("[data-signature-preview]").forEach(preview => {
     preview.innerHTML = hasSignature
-      ? `<img src="${escapeHtml(contractState.signature.dataUrl)}" alt="Загруженная подпись"><span>Подпись загружена</span>`
+      ? `<img class="signature-image" src="${escapeHtml(contractState.signature.dataUrl)}" alt="Загруженная подпись">`
       : `<span class="signature-empty">Подпись не загружена</span>`;
-  }
+  });
 
-  if (mode) {
-    mode.innerHTML = [
-      ["once", "Один раз"],
-      ["saved", "В моих данных"],
-    ].map(([value, label]) => `
-      <button class="${contractState.signature.mode === value ? "is-active" : ""}" type="button" data-action="set-signature-mode" data-signature-mode-value="${value}">${label}</button>
-    `).join("");
-  }
-
-  if (pdfToggle) {
-    pdfToggle.disabled = !hasSignature;
-    pdfToggle.classList.toggle("is-active", hasSignature && contractState.signature.includeInPdf);
-    pdfToggle.textContent = hasSignature && contractState.signature.includeInPdf ? "✓ Подпись в PDF" : "Убрать из PDF";
-  }
+  document.querySelectorAll("[data-signature-pdf-toggle]").forEach(el => {
+    el.disabled = !hasSignature;
+    el.checked = hasSignature && contractState.signature.includeInPdf;
+  });
 }
 
 function renderContractChooser() {
@@ -1641,15 +1628,16 @@ function renderAddendumSidebar() {
     <details class="outline-group contract-signature-panel outline-group--collapsible" data-signature-panel>
       <summary class="outline-title outline-title--toggle"><span class="step-badge">3</span>Добавь подпись</summary>
       <div class="outline-group-body">
-        <p class="contract-data-hint">Та же подпись что и в договоре.</p>
         <div class="signature-preview" data-signature-preview></div>
         <input class="visually-hidden" type="file" accept="image/*" data-signature-file>
         <div class="signature-actions">
           <button class="button button--ghost button--wide" type="button" data-action="upload-signature">Загрузить подпись</button>
           <button class="button button--ghost button--wide" type="button" data-action="delete-signature">Удалить</button>
         </div>
-        <div class="signature-mode" data-signature-mode aria-label="Как использовать подпись"></div>
-        <button class="signature-pdf-toggle" type="button" data-action="toggle-signature-pdf" data-signature-pdf-toggle></button>
+        <label class="contract-control contract-control--checkbox" style="margin-top:10px" data-signature-pdf-label>
+          <input type="checkbox" data-signature-pdf-toggle>
+          <span>Включить подпись в PDF</span>
+        </label>
       </div>
     </details>
 
@@ -2441,7 +2429,7 @@ function printContract() {
   `;
 
   sheet.setAttribute("aria-hidden", "false");
-  sheet.style.cssText = "display:block;position:fixed;left:0;top:0;width:794px;min-height:1123px;z-index:9999;background:#fff;overflow:visible;padding:0;";
+  sheet.style.cssText = "display:block;position:fixed;left:-9999px;top:0;width:794px;min-height:1123px;z-index:9999;background:#fff;overflow:visible;padding:0;";
   const page = sheet.querySelector(".pdf-clean-body") || sheet.querySelector(".pdf-page");
   const cleanup = () => { sheet.style.cssText = ""; sheet.setAttribute("aria-hidden", "true"); };
 
@@ -2468,11 +2456,31 @@ function printContract() {
     img.src = dataUrl;
   };
 
+  // Pre-resolve base64 signature images → canvas so SVG foreignObject can paint them
+  const sigImgs = page.querySelectorAll(".signature-image, .contract-signature-img");
+  const sigPromises = Array.from(sigImgs).map(img => new Promise(resolve => {
+    if (!img.src || !img.src.startsWith("data:")) { resolve(); return; }
+    const tmp = new Image();
+    tmp.onload = () => {
+      const c = document.createElement("canvas");
+      c.width = tmp.naturalWidth; c.height = tmp.naturalHeight;
+      c.style.maxWidth = "160px"; c.style.maxHeight = "60px";
+      c.style.display = "block";
+      c.getContext("2d").drawImage(tmp, 0, 0);
+      img.replaceWith(c);
+      resolve();
+    };
+    tmp.onerror = resolve;
+    tmp.src = img.src;
+  }));
+
   // Use html-to-image (SVG foreignObject — handles color-mix & P3 natively)
   if (window.htmlToImage) {
-    window.htmlToImage.toPng(page, { pixelRatio: 1.5, backgroundColor: "#ffffff" })
-      .then(renderToPdf)
-      .catch(err => { console.error("html-to-image error:", err); window.print(); cleanup(); });
+    Promise.all(sigPromises).then(() => {
+      window.htmlToImage.toPng(page, { pixelRatio: 1.5, backgroundColor: "#ffffff", cacheBust: true })
+        .then(renderToPdf)
+        .catch(err => { console.error("html-to-image error:", err); window.print(); cleanup(); });
+    });
     return;
   }
 
@@ -2663,20 +2671,7 @@ function bindEvents() {
       renderSignaturePanel();
       scheduleContractSave();
     }
-    if (action === "toggle-signature-pdf") {
-      if (!contractState.signature.dataUrl) {
-        document.querySelector("[data-signature-file]")?.click();
-        return;
-      }
-      const nextValue = !contractState.signature.includeInPdf;
-      if (nextValue) {
-        const accepted = window.confirm("Изображение подписи попадет в PDF и может быть скопировано из файла. Это не КЭП. Используйте только если понимаете риск.");
-        if (!accepted) return;
-      }
-      contractState.signature.includeInPdf = nextValue;
-      renderContractWorkspace();
-      scheduleContractSave();
-    }
+    if (action === "toggle-signature-pdf") { /* handled via change event on checkbox */ }
     if (action === "toggle-contract-option") {
       const key = actionTarget.dataset.option;
       contractState.optional[key] = !contractState.optional[key];
@@ -2852,6 +2847,13 @@ function bindEvents() {
 
   document.addEventListener("change", (event) => {
     const input = event.target;
+    if (input.matches("[data-signature-pdf-toggle]")) {
+      contractState.signature.includeInPdf = input.checked;
+      renderContractDocument();
+      renderAddendumDocument();
+      scheduleContractSave();
+      return;
+    }
     if (input.matches("[data-addendum-control]") && input.type === "checkbox") {
       const key = input.dataset.addendumControl;
       contractState.addendumFields[key] = input.checked;
