@@ -453,7 +453,7 @@ function updateEmptyHint() {
   const label = PROJECTS[state.projectKey]?.label;
   hint.textContent = label
     ? `Выбран «${label}» — нажми Рассчитать стоимость`
-    : "Выбери проект, ставку и налог";
+    : "Выберите тип проекта, ставку и налог\nи нажмите Рассчитать стоимость";
 }
 
 function renderRate() {

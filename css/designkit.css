@@ -3847,7 +3847,7 @@ body[data-view="calculator"]::after {
   --cv-step-num-color: rgba(31, 29, 24, 0.28);
   --cv-empty-fig:   rgba(31, 29, 24, 0.08);
   --cv-radius: 40px;
-  padding: 118px clamp(24px, 4vw, 56px) 120px;
+  padding: 158px clamp(24px, 4vw, 56px) 120px;
 }
 
 [data-theme="dark"] .view--calculator {
@@ -4365,6 +4365,7 @@ body[data-view="calculator"]::after {
   line-height: 1.5;
   margin: 0;
   transition: opacity 0.3s;
+  white-space: pre-line;
 }
 
 /* ── Estimate card: result state ─────────────────────────── */
