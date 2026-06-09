@@ -3792,7 +3792,6 @@ body[data-view="calculator"]::before {
   inset: 0;
   z-index: -1;
   background:
-    linear-gradient(180deg, rgba(34, 28, 25, 0.28), rgba(34, 28, 25, 0.58)),
     url("../assets/deedoc-landscape.png") center / cover no-repeat,
     #d8b1a3;
 }
