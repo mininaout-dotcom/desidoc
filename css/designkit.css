@@ -207,7 +207,7 @@
   --ddoc-color-card-solid: #ffffff;
   --ddoc-color-glass-card: rgba(0, 0, 0, 0.10);
   --ddoc-color-card-border: rgba(255, 255, 255, 0.50);
-  --ddoc-color-glass-pill: rgba(255, 255, 255, 0.18);
+  --ddoc-color-glass-pill: rgba(255, 255, 255, 0.32);
   --ddoc-color-text-on-glass: rgba(255, 255, 255, 0.7);
   --ddoc-color-brand-line: rgba(255, 255, 255, 0.8);
   --ddoc-blur-glass: 22.75px;
@@ -612,7 +612,7 @@ summary:focus-visible,
   height: 61px;
   flex: 0 0 auto;
   border-radius: 50%;
-  background: rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.32);
   backdrop-filter: blur(8px);
   box-shadow: 0 8px 24px rgba(32, 20, 16, 0.14);
   display: flex;
@@ -644,7 +644,7 @@ summary:focus-visible,
   height: 61px;
   box-sizing: border-box;
   border-radius: 999px;
-  background: rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.28);
 }
 
 .deedoc-section-nav[hidden] { display: none; }
@@ -3243,24 +3243,43 @@ h2 {
   }
 
   .deedoc-pill {
-    padding: 16px 20px 15px;
+    height: 44px;
+    padding: 0 18px;
     font-size: 12px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .deedoc-user__avatar {
+    width: 44px;
+    height: 44px;
+    font-size: 20px;
+  }
+
+  .deedoc-section-nav {
+    height: 44px;
+    padding: 3px;
+  }
+
+  .deedoc-section-tab {
+    height: 38px;
+    padding: 0 10px;
   }
 
   .deedoc-home__tools {
-    gap: 11px;
+    gap: 8px;
   }
 
   .deedoc-toggle {
-    width: 60px;
-    height: 42px;
-    border-radius: 21px;
+    width: 68px;
+    height: 44px;
+    border-radius: 22px;
   }
 
   .deedoc-toggle::before {
-    left: 9px;
-    top: 8px;
-    width: 42px;
+    left: 10px;
+    top: 9px;
+    width: 48px;
     height: 26px;
     border-radius: 13px;
   }
@@ -3268,16 +3287,16 @@ h2 {
   .deedoc-toggle__knob {
     width: 20px;
     height: 20px;
-    top: 11px;
-    left: 29px; /* light mode right position: 60 - 11 - 20 = 29 */
+    top: 12px;
+    left: 38px; /* light: 68 - 10 - 20 = 38 */
   }
 
   [data-theme="dark"] .deedoc-toggle__knob {
-    left: 11px;
+    left: 12px;
   }
 
   .deedoc-toggle__moon {
-    left: 12px;
+    left: 15px;
   }
 
   .deedoc-toggle__sun {
