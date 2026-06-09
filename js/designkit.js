@@ -444,6 +444,16 @@ function renderProjectOptions() {
       <strong>${project.label}</strong>
     </button>
   `).join("");
+  updateEmptyHint();
+}
+
+function updateEmptyHint() {
+  const hint = document.querySelector("[data-empty-hint]");
+  if (!hint || state.generated) return;
+  const label = PROJECTS[state.projectKey]?.label;
+  hint.textContent = label
+    ? `Выбран «${label}» — нажми Рассчитать стоимость`
+    : "Выбери проект, ставку и налог";
 }
 
 function renderRate() {
@@ -3001,6 +3011,7 @@ function init() {
   syncExportInputs();
   renderContractWorkspace();
   bindEvents();
+  updateEmptyHint();
   // Скрываем подсказку сметы если пользователь уже закрывал её
   if (localStorage.getItem("designkit.stageHintDismissed") === "1") {
     const hint = document.querySelector("[data-estimate-hint]");
