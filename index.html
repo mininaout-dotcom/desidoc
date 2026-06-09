@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>DesiDoc — сметы и договоры</title>
   <meta name="description" content="DesiDoc: сметы, договоры и проектные документы для дизайнеров.">
-  <link rel="stylesheet" href="css/designkit.css?v=33">
+  <link rel="stylesheet" href="css/designkit.css?v=34">
 </head>
 <body data-view="home">
   <div class="app" data-view="home">
@@ -246,7 +246,6 @@
                       <span class="estimate-inline-caption">Введите название сметы</span>
                       <input class="estimate-inline-input estimate-inline-input--title" type="text" data-estimate-meta="estimateName" placeholder="Название сметы" aria-label="Название сметы">
                     </label>
-                    <p class="estimate-edit-hint">Часы и названия этапов можно редактировать · ✕ удаляет этап · ⋮⋮ меняет порядок</p>
                   </div>
                   <div class="cv-total-block">
                     <span class="cv-total-label">Итого · <span data-estimate-tax-label>налог 4%</span></span>
@@ -261,6 +260,17 @@
                     <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M7 1v8M4 6l3 3 3-3M2 10v1a1 1 0 001 1h8a1 1 0 001-1v-1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     Скачать PDF
                   </button>
+                </div>
+
+                <!-- Stage edit hint -->
+                <div class="estimate-hint">
+                  <div class="estimate-hint__tips">
+                    <span class="estimate-hint__tip">✏️ Названия и описания редактируются</span>
+                    <span class="estimate-hint__tip">🕐 Меняй часы в каждом этапе</span>
+                    <span class="estimate-hint__tip">✕ Удаляй лишние этапы</span>
+                    <span class="estimate-hint__tip">⋮⋮ Перетащи для сортировки</span>
+                    <span class="estimate-hint__tip">+ Добавляй новые этапы</span>
+                  </div>
                 </div>
 
                 <!-- Stage list -->
@@ -583,6 +593,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://unpkg.com/html-to-image@1.11.11/dist/html-to-image.js"></script>
-  <script src="js/designkit.js?v=33"></script>
+  <script src="js/designkit.js?v=34"></script>
 </body>
 </html>
