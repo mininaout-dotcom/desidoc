@@ -502,6 +502,7 @@ function renderEstimate() {
 
   syncEstimateMetaInputs();
   updateTotalsOnly();
+  renderEstimateHint();
 
   const list = document.querySelector("[data-stage-list]");
   list.innerHTML = state.stages.map((stage, index) => {
@@ -536,6 +537,50 @@ function renderEstimate() {
   });
 
   renderExpenses();
+}
+
+function renderEstimateHint() {
+  const container = document.querySelector("[data-estimate-hint]");
+  if (!container) return;
+
+  const isCustom = state.projectKey === "custom";
+  const dismissed = localStorage.getItem("designkit.stageHintDismissed") === "1";
+
+  if (dismissed) {
+    container.classList.add("is-hidden");
+    return;
+  }
+
+  container.classList.remove("is-hidden");
+  container.className = `estimate-hint${isCustom ? " estimate-hint--custom" : ""}`;
+  container.dataset.estimateHint = "";
+
+  if (isCustom) {
+    container.innerHTML = `
+      <div class="estimate-hint__icon" aria-hidden="true">✏️</div>
+      <div class="estimate-hint__body">
+        <strong>Свой проект — настрой под себя</strong>
+        <p>Убери лишние этапы, скорректируй часы под реальные трудозатраты и добавь нужные шаги.</p>
+        <div class="estimate-hint__tips">
+          <span class="estimate-hint__tip">⋮⋮ перетащи для сортировки</span>
+          <span class="estimate-hint__tip">🕐 часы меняются прямо в строке</span>
+          <span class="estimate-hint__tip">✕ удаляет этап</span>
+          <span class="estimate-hint__tip">+ кнопка внизу добавляет новый</span>
+        </div>
+      </div>
+      <button class="estimate-hint__close" type="button" data-action="dismiss-hint" aria-label="Закрыть подсказку">✕</button>
+    `;
+  } else {
+    container.innerHTML = `
+      <div class="estimate-hint__body">
+        <span class="estimate-hint__tip">⋮⋮ сортируй этапы</span>
+        <span class="estimate-hint__tip">🕐 меняй часы</span>
+        <span class="estimate-hint__tip">✕ удаляй лишнее</span>
+        <span class="estimate-hint__tip">+ добавляй новые</span>
+      </div>
+      <button class="estimate-hint__close" type="button" data-action="dismiss-hint" aria-label="Закрыть подсказку">✕</button>
+    `;
+  }
 }
 
 function updateTotalsOnly() {
@@ -2531,6 +2576,10 @@ function bindEvents() {
     if (projectTarget) {
       const previousProjectKey = state.projectKey;
       state.projectKey = projectTarget.dataset.project;
+      // При смене проекта сбрасываем закрытый хинт — пользователь должен увидеть подсказки
+      if (state.projectKey !== previousProjectKey) {
+        localStorage.removeItem("designkit.stageHintDismissed");
+      }
       syncEstimateNameWithProjectChange(previousProjectKey);
       renderProjectOptions();
       if (state.generated) generateEstimate(true);
@@ -2596,6 +2645,12 @@ function bindEvents() {
     }
     if (action === "generate-estimate") generateEstimate(true);
     if (action === "regenerate-estimate") generateEstimate(true);
+    if (action === "dismiss-hint") {
+      localStorage.setItem("designkit.stageHintDismissed", "1");
+      const hint = document.querySelector("[data-estimate-hint]");
+      if (hint) hint.classList.add("is-hidden");
+      return;
+    }
     if (action === "add-stage") addStage();
     if (action === "remove-stage") {
       state.stages.splice(Number(actionTarget.dataset.index), 1);
