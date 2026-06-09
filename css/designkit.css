@@ -207,7 +207,7 @@
   --ddoc-color-card-solid: #ffffff;
   --ddoc-color-glass-card: rgba(0, 0, 0, 0.10);
   --ddoc-color-card-border: rgba(255, 255, 255, 0.50);
-  --ddoc-color-glass-pill: rgba(0, 0, 0, 0.15);
+  --ddoc-color-glass-pill: rgba(255, 255, 255, 0.18);
   --ddoc-color-text-on-glass: rgba(255, 255, 255, 0.7);
   --ddoc-color-brand-line: rgba(255, 255, 255, 0.8);
   --ddoc-blur-glass: 22.75px;
@@ -4000,14 +4000,21 @@ body[data-view="calculator"]::after {
 }
 
 .cv-step-num {
-  font-family: var(--mono);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-family: inherit;
   font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--cv-step-num-color);
-  flex-shrink: 0;
-  margin-top: 2px;
+  letter-spacing: 0;
+  text-transform: none;
+  line-height: 1;
 }
 
 .cv-step-title {
@@ -4345,13 +4352,20 @@ body[data-view="calculator"]::after {
   50%       { transform: translateY(-10px); }
 }
 
+.cv-empty-text {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
 .cv-empty-text h2 {
   color: var(--cv-text);
   font-size: clamp(20px, 2vw, 26px);
   font-weight: 400;
   letter-spacing: -0.03em;
   margin-bottom: 10px;
-  white-space: nowrap;
+  max-width: 280px;
 }
 
 .cv-empty-text p {
@@ -5345,11 +5359,12 @@ body[data-view="contract"]::after {
 .view--contract .outline-title {
   display: flex;
   align-items: center;
-  gap: 7px;
-  color: var(--cv-eyebrow);
-  font-size: 10px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  gap: 8px;
+  color: var(--cv-text);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  text-transform: none;
 }
 
 /* Step number badges */
@@ -5357,13 +5372,13 @@ body[data-view="contract"]::after {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
   flex-shrink: 0;
   border-radius: 50%;
   background: var(--accent);
   color: #fff;
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 700;
   letter-spacing: 0;
   line-height: 1;
