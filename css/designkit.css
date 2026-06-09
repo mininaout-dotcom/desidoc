@@ -782,7 +782,7 @@ summary:focus-visible,
 /* moon icon — left of track, visible in light mode */
 .deedoc-toggle__moon {
   position: absolute;
-  left: 16px;
+  left: 22px;
   top: 50%;
   transform: translateY(-50%);
   z-index: 1;
@@ -795,7 +795,7 @@ summary:focus-visible,
 /* sun icon — right of track, visible in dark mode */
 .deedoc-toggle__sun {
   position: absolute;
-  right: 13px;
+  right: 20px;
   top: 50%;
   transform: translateY(-50%);
   z-index: 1;
