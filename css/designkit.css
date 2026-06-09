@@ -4332,10 +4332,11 @@ body[data-view="calculator"]::after {
 
 .cv-empty-text h2 {
   color: var(--cv-text);
-  font-size: clamp(22px, 2.4vw, 32px);
+  font-size: clamp(20px, 2vw, 26px);
   font-weight: 400;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.03em;
   margin-bottom: 10px;
+  white-space: nowrap;
 }
 
 .cv-empty-text p:not(.eyebrow) {
