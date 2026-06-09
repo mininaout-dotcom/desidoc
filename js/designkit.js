@@ -450,10 +450,7 @@ function renderProjectOptions() {
 function updateEmptyHint() {
   const hint = document.querySelector("[data-empty-hint]");
   if (!hint || state.generated) return;
-  const label = PROJECTS[state.projectKey]?.label;
-  hint.textContent = label
-    ? `Выбран «${label}» — нажми Рассчитать стоимость`
-    : "Выберите тип проекта, ставку и налог\nи нажмите Рассчитать стоимость";
+  hint.textContent = "Выберите тип проекта, ставку и налог\nи нажмите Рассчитать стоимость";
 }
 
 function renderRate() {
