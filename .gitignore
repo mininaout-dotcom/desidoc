@@ -1,5 +1,25 @@
+# System
 .DS_Store
 Thumbs.db
 *.log
-node_modules/
-.env
+
+# Claude / AI session files
+.claude/
+
+# Project documentation (not needed for deploy)
+DesignKit*.md
+DesignKit*.html
+DesignKit*.json
+DesignKit*.png
+
+# Internal folders
+docs_archive/
+inputs/
+tools/
+Агенты/
+Документы/
+Референсы_артдиректор/
+откат/
+
+# Data folder (localStorage-based app, no server data needed)
+data/
