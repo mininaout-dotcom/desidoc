@@ -5504,14 +5504,23 @@ body[data-view="contract"]::after {
 /* Collapsible outline group (details/summary) */
 .view--contract .outline-group--collapsible {
   border: none;
-  padding: 0;
+  padding: 0 0 6px;
+}
+
+.view--contract .outline-group--collapsible + .outline-group--collapsible {
+  padding-top: 6px;
+}
+
+.view--contract .outline-group--collapsible[open] {
+  padding-bottom: 12px;
 }
 
 .view--contract .outline-group-body {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding-top: 12px;
+  gap: 10px;
+  padding-top: 14px;
+  padding-bottom: 4px;
 }
 
 .view--contract .outline-title--toggle {
@@ -5521,7 +5530,7 @@ body[data-view="contract"]::after {
   cursor: pointer;
   list-style: none;
   user-select: none;
-  padding: 4px 0;
+  padding: 6px 0;
 }
 
 /* Only right arrow, no left marker */
@@ -5810,8 +5819,8 @@ body[data-view="contract"]::after {
 }
 
 .view--contract .contract-form__group {
-  gap: 7px;
-  padding-top: 10px;
+  gap: 8px;
+  padding-top: 14px;
   border-top: 1px solid var(--cv-line);
 }
 
