@@ -4308,83 +4308,58 @@ body[data-view="calculator"]::after {
 
 .view--calculator .estimate-card .estimate-empty {
   background: transparent;
+  min-height: 560px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: clamp(20px, 2.5vw, 36px);
-  border-radius: calc(var(--cv-radius) - 1px);
-  pointer-events: none;
-  user-select: none;
-}
-
-/* ── Skeleton shimmer ─────────────────────────────────────── */
-@keyframes skShimmer {
-  0%   { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
-
-.sk-block {
-  border-radius: 8px;
-  background: linear-gradient(
-    90deg,
-    var(--cv-empty-fig) 25%,
-    color-mix(in srgb, var(--cv-empty-fig) 40%, transparent) 50%,
-    var(--cv-empty-fig) 75%
-  );
-  background-size: 200% 100%;
-  animation: skShimmer 2.2s ease-in-out infinite;
-}
-
-/* Header */
-.sk-header {
-  display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
-  margin-bottom: 4px;
-}
-.sk-title  { width: 48%; height: 20px; }
-.sk-total  { width: 28%; height: 28px; border-radius: 10px; }
-
-/* Action buttons */
-.sk-actions {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 6px;
-}
-.sk-btn        { height: 36px; width: 90px; border-radius: 12px; }
-.sk-btn--wide  { width: 130px; }
-
-/* Stage cards */
-.sk-stage {
-  display: grid;
-  grid-template-columns: 28px 1fr 54px;
-  align-items: center;
-  gap: 10px;
-  padding: 14px 0;
-  border-top: 1px solid var(--cv-line);
-}
-.sk-stage--faded { opacity: 0.4; }
-.sk-dot   { width: 28px; height: 28px; border-radius: 50%; }
-.sk-stage__body { display: flex; flex-direction: column; gap: 7px; }
-.sk-line  { height: 12px; border-radius: 6px; }
-.sk-line--45 { width: 45%; }
-.sk-line--50 { width: 50%; }
-.sk-line--55 { width: 55%; }
-.sk-line--60 { width: 60%; }
-.sk-line--70 { width: 70%; }
-.sk-line--75 { width: 75%; }
-.sk-line--80 { width: 80%; }
-.sk-line--90 { width: 90%; }
-.sk-hours { height: 32px; border-radius: 10px; }
-
-/* Caption */
-.sk-caption {
-  margin-top: 6px;
-  font-size: 13px;
-  color: var(--cv-muted);
-  opacity: 0.55;
   text-align: center;
-  pointer-events: auto;
+  gap: 0;
+  padding: clamp(28px, 3vw, 44px);
+  border-radius: calc(var(--cv-radius) - 1px);
+}
+
+.cv-empty-icon {
+  position: relative;
+  font-size: clamp(72px, 10vw, 108px);
+  font-weight: 300;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  color: var(--cv-empty-fig);
+  margin-bottom: 28px;
+  user-select: none;
+  animation: emptyFloat 4s ease-in-out infinite;
+}
+
+.cv-empty-icon::before {
+  content: '';
+  position: absolute;
+  inset: -32px;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 14%, transparent) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+@keyframes emptyFloat {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-10px); }
+}
+
+.cv-empty-text h2 {
+  color: var(--cv-text);
+  font-size: clamp(20px, 2vw, 26px);
+  font-weight: 400;
+  letter-spacing: -0.03em;
+  margin-bottom: 10px;
+  white-space: nowrap;
+}
+
+.cv-empty-text p {
+  color: var(--cv-muted);
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0;
+  transition: opacity 0.3s;
 }
 
 /* ── Estimate card: result state ─────────────────────────── */
