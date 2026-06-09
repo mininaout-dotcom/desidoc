@@ -4536,7 +4536,7 @@ body[data-view="calculator"]::after {
 /* ── Calculator compact working density ───────────────────── */
 
 .view--calculator {
-  padding-top: 104px;
+  padding-top: 118px;
   padding-bottom: 78px;
 }
 
