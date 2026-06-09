@@ -2056,7 +2056,7 @@ function renderContractDocument() {
       <span>${contractField("city", "Город")}</span>
       <span>${contractField("date", "дата")}</span>
     </div>
-    ${contractNote("Серые пояснения помогают быстро проверить смысл пунктов. В PDF для клиента попадёт только текст договора.")}
+    ${contractNote("Серые пояснения помогают быстро проверить смысл пунктов. В PDF для клиента попадёт только текст договора. Отключить можно тумблером «Пояснения» в панели под документом.")}
   `;
 
   function renderSignaturesSection() {
