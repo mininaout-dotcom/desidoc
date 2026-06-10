@@ -3238,7 +3238,7 @@ h2 {
     min-height: 100svh;
     height: auto;
     grid-template-rows: auto 1fr auto;
-    padding: 33px 21px;
+    padding: 33px 0;
     background-position: 48% center;
   }
 
@@ -3332,14 +3332,19 @@ h2 {
 
   .deedoc-hero h1 {
     font-size: 22px;
+    padding: 0 21px;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   /* Mobile card layout: СМЕТА spans both columns, satellites side by side */
   .deedoc-actions {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
+    gap: 10px;
     width: 100%;
+    padding: 0 10px;
+    box-sizing: border-box;
   }
 
   .deedoc-card {
@@ -3360,7 +3365,7 @@ h2 {
   /* Satellite cards */
   .deedoc-card--paper {
     min-height: 250px;
-    padding: 28px 26px 24px;
+    padding: 28px 28px 28px 28px;
   }
 
   .deedoc-card__button {
@@ -3384,6 +3389,7 @@ h2 {
 
   .deedoc-home__footer {
     gap: 2px;
+    padding: 0 21px;
   }
 
   .deedoc-home__footer strong {
