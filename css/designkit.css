@@ -3450,9 +3450,23 @@ h2 {
     min-width: 0;
   }
 
-  /* ── document-toolbar: 2 кнопки в ряд, не в колонку ────────── */
+  /* ── document-toolbar: тумблер сверху, кнопки во всю ширину ── */
   .document-toolbar__actions {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .document-toolbar__actions .expl-toggle {
+    justify-content: flex-start;
+    min-height: 44px;
+  }
+
+  .document-toolbar__actions .button {
+    width: 100%;
+    min-height: 50px;
+    border-radius: 999px;
+    justify-content: center;
+    font-size: 15px;
   }
 
   /* ── sticky-summary: отступ для home indicator iPhone X+ ────── */
@@ -5034,7 +5048,7 @@ body.mobile-calc-sheet-open {
 
 @media (max-width: 760px) {
   .view--calculator {
-    padding: 24px 16px 100px;
+    padding: 88px 16px 100px;
   }
 
   /* Desktop form hidden — mobile chips take over */
@@ -5049,6 +5063,7 @@ body.mobile-calc-sheet-open {
   .view--calculator .estimate-card {
     width: 100%;
     min-height: 60svh;
+    margin-top: 10px;
   }
 
   .mobile-calc-sheet[hidden],
@@ -5058,11 +5073,11 @@ body.mobile-calc-sheet-open {
 
   .mobile-calc-controls {
     position: sticky;
-    top: 72px;
+    top: 80px;
     z-index: 45;
     display: grid;
     gap: 10px;
-    margin-bottom: 14px;
+    margin-bottom: 0;
   }
 
   .mobile-calc-controls__rail {
@@ -5400,6 +5415,11 @@ body.mobile-calc-sheet-open {
   /* ── После расчёта убираем CTA из sticky — кнопка «Пересчитать» уже внизу сметы ── */
   [data-estimate="ready"] .mobile-calc-controls__cta {
     display: none;
+  }
+
+  /* ── После расчёта чипы не sticky — иначе перекрывают контент сметы ── */
+  [data-estimate="ready"] .mobile-calc-controls {
+    position: static;
   }
 }
 
@@ -7061,6 +7081,29 @@ body[data-view="contract"]::after {
 
 .chooser-cta:not(:disabled):hover {
   transform: scale(1.02);
+}
+
+/* Chooser — mobile: карточки в столбик, CTA во всю ширину */
+@media (max-width: 760px) {
+  .contract-chooser__title {
+    font-size: 30px;
+    margin-bottom: 18px;
+  }
+
+  .contract-chooser__cards {
+    flex-direction: column;
+    max-width: none;
+    margin-bottom: 22px;
+  }
+
+  .chooser-card {
+    padding: 24px 22px 20px;
+  }
+
+  .chooser-cta {
+    width: 100%;
+    min-height: 50px;
+  }
 }
 
 /* "← Изменить тип" back button in fill mode */
