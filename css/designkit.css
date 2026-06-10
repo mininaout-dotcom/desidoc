@@ -881,14 +881,12 @@ summary:focus-visible,
   display: flex;
   align-items: stretch;
   gap: var(--home-gutter);
-  width: 100%;
 }
 
 .deedoc-card {
-  flex: 1 1 240px;
-  min-width: 200px;
-  max-width: 420px;
-  min-height: 280px;
+  width: 267px;
+  height: 267px;
+  flex: 0 0 267px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -985,7 +983,7 @@ summary:focus-visible,
 .deedoc-card__button {
   min-height: 48px;
   height: 48px;
-  width: 100%;
+  width: 207px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
