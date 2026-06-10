@@ -3343,8 +3343,6 @@ h2 {
     grid-template-columns: repeat(2, 1fr);
     gap: 10px;
     width: 100%;
-    padding: 0 10px;
-    box-sizing: border-box;
   }
 
   .deedoc-card {
@@ -3365,7 +3363,7 @@ h2 {
   /* Satellite cards */
   .deedoc-card--paper {
     min-height: 250px;
-    padding: 28px 28px 28px 28px;
+    padding: 27px 24px 28px 27px;
   }
 
   .deedoc-card__button {
