@@ -207,7 +207,7 @@
   --ddoc-color-card-solid: #ffffff;
   --ddoc-color-glass-card: rgba(0, 0, 0, 0.10);
   --ddoc-color-card-border: rgba(255, 255, 255, 0.50);
-  --ddoc-color-glass-pill: rgba(255, 255, 255, 0.32);
+  --ddoc-color-glass-pill: rgba(255, 255, 255, 0.72);
   --ddoc-color-text-on-glass: rgba(255, 255, 255, 0.7);
   --ddoc-color-brand-line: rgba(255, 255, 255, 0.8);
   --ddoc-blur-glass: 22.75px;
@@ -220,6 +220,7 @@
 
 :root[data-theme="dark"] {
   color-scheme: dark;
+  --ddoc-color-glass-pill: rgba(40, 30, 24, 0.72);
   --bg: #171612;
   --surface: rgba(38, 36, 30, 0.76);
   --surface-strong: #23211c;
@@ -612,8 +613,9 @@ summary:focus-visible,
   height: 61px;
   flex: 0 0 auto;
   border-radius: 50%;
-  background: rgba(255,255,255,0.32);
-  backdrop-filter: blur(8px);
+  background: rgba(255,255,255,0.72);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
   box-shadow: 0 8px 24px rgba(32, 20, 16, 0.14);
   display: flex;
   align-items: center;
@@ -644,7 +646,9 @@ summary:focus-visible,
   height: 61px;
   box-sizing: border-box;
   border-radius: 999px;
-  background: rgba(255,255,255,0.28);
+  background: rgba(255,255,255,0.72);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
 }
 
 .deedoc-section-nav[hidden] { display: none; }
@@ -705,7 +709,9 @@ summary:focus-visible,
 }
 
 [data-theme="dark"] .deedoc-section-nav {
-  background: rgba(255,255,255,0.08);
+  background: rgba(40,30,24,0.72);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
 }
 
 [data-theme="dark"] .deedoc-section-tab.is-current {
@@ -3242,9 +3248,26 @@ h2 {
     background-position: 48% center;
   }
 
+  /* ── Header compact on mobile ─────────────── */
+  .deedoc-home__top--global {
+    padding-left: 16px;
+    padding-right: 16px;
+    padding-top: 14px;
+    padding-bottom: 14px;
+  }
+
+  .deedoc-home__top--global .deedoc-user,
+  .deedoc-home__top--global .deedoc-home__tools {
+    gap: 8px;
+  }
+
+  .tab-label {
+    display: none;
+  }
+
   .deedoc-pill {
     height: 44px;
-    padding: 0 18px;
+    padding: 0 14px;
     font-size: 12px;
     display: inline-flex;
     align-items: center;
@@ -3263,7 +3286,7 @@ h2 {
 
   .deedoc-section-tab {
     height: 38px;
-    padding: 0 10px;
+    padding: 0 11px;
   }
 
   .deedoc-home__tools {
@@ -5009,6 +5032,20 @@ body.mobile-calc-sheet-open {
     padding: 24px 16px 100px;
   }
 
+  /* Desktop form hidden — mobile chips take over */
+  .view--calculator .setup-card {
+    display: none !important;
+  }
+
+  .view--calculator .builder-grid {
+    display: block;
+  }
+
+  .view--calculator .estimate-card {
+    width: 100%;
+    min-height: 60svh;
+  }
+
   .mobile-calc-sheet[hidden],
   .mobile-calc-sheet__section[hidden] {
     display: none;
@@ -5016,7 +5053,7 @@ body.mobile-calc-sheet-open {
 
   .mobile-calc-controls {
     position: sticky;
-    top: 74px;
+    top: 72px;
     z-index: 45;
     display: grid;
     gap: 10px;
