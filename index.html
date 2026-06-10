@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>DesiDoc — сметы и договоры</title>
   <meta name="description" content="DesiDoc: сметы, договоры и проектные документы для дизайнеров.">
-  <link rel="stylesheet" href="css/designkit.css?v=83">
+  <link rel="stylesheet" href="css/designkit.css?v=88">
 </head>
 <body data-view="home">
   <div class="app" data-view="home">
@@ -158,9 +158,16 @@
               </div>
 
               <div class="mobile-calc-sheet__body">
-                <section class="mobile-calc-sheet__section" data-mobile-sheet-panel="project">
-                  <div class="project-options mobile-calc-sheet__project-grid" role="radiogroup" aria-label="Тип проекта" data-project-options></div>
-                </section>
+	                <section class="mobile-calc-sheet__section" data-mobile-sheet-panel="project">
+	                  <div class="project-options mobile-calc-sheet__project-grid" role="radiogroup" aria-label="Тип проекта" data-project-options></div>
+	                  <div class="brief-ai-card brief-ai-card--mobile" data-brief-ai-entry hidden>
+	                    <button class="brief-ai-button" type="button" data-action="open-brief-ai">
+	                      <span aria-hidden="true">✨</span>
+	                      Собрать из брифа
+	                    </button>
+	                    <p>Вставьте сообщение клиента, бриф или заметки после созвона. DesiDoc автоматически предложит этапы работ, часы и возможные дополнительные расходы.</p>
+	                  </div>
+	                </section>
 
                 <section class="mobile-calc-sheet__section" data-mobile-sheet-panel="rate" hidden>
                   <div class="segmented" role="tablist" aria-label="Режим ставки">
@@ -255,9 +262,16 @@
                 <div class="cv-step-label">
                   <span class="cv-step-num">1</span>
                   <span class="cv-step-title">Тип проекта</span>
-                </div>
-                <div class="project-options" role="radiogroup" aria-label="Тип проекта" data-project-options></div>
-              </div>
+	                </div>
+	                <div class="project-options" role="radiogroup" aria-label="Тип проекта" data-project-options></div>
+	                <div class="brief-ai-card" data-brief-ai-entry hidden>
+	                  <button class="brief-ai-button" type="button" data-action="open-brief-ai">
+	                    <span aria-hidden="true">✨</span>
+	                    Собрать из брифа
+	                  </button>
+	                  <p>Вставьте сообщение клиента, бриф или заметки после созвона. DesiDoc автоматически предложит этапы работ, часы и возможные дополнительные расходы.</p>
+	                </div>
+	              </div>
 
               <div class="cv-divider" aria-hidden="true"></div>
 
@@ -418,10 +432,11 @@
                   <div class="expense-list" data-expense-list></div>
                 </details>
 
-                <!-- Breakdown -->
-                <div class="estimate-breakdown" data-estimate-breakdown></div>
+	                <!-- Breakdown -->
+	                <div class="estimate-breakdown" data-estimate-breakdown></div>
+	                <div class="ai-estimate-insights" data-ai-estimate-insights hidden></div>
 
-                <!-- Actions row — bottom -->
+	                <!-- Actions row — bottom -->
                 <div class="estimate-actions cv-result-actions">
                   <button class="button button--soft" type="button" data-action="regenerate-estimate">Пересчитать</button>
                   <button class="button button--dark" type="button" data-action="open-export">
@@ -443,6 +458,44 @@
 
           <!-- Document type chooser (shown before editor) -->
           <div class="contract-chooser" data-contract-chooser></div>
+
+          <section class="mobile-contract-flow" data-mobile-contract-flow hidden>
+            <div class="mobile-contract-card">
+              <div class="mobile-contract-template-strip" data-contract-template-strip aria-label="Тип документа"></div>
+
+              <div class="mobile-contract-card__head">
+                <h2 class="mobile-contract-card__title" data-mobile-contract-title>Рамочный договор</h2>
+                <div class="mobile-contract-progressline">
+                  <div class="mobile-contract-progressline__track">
+                    <span class="mobile-contract-progressline__fill" data-mobile-contract-progress-fill></span>
+                  </div>
+                  <strong class="mobile-contract-progressline__value" data-mobile-contract-progress-label>0 из 4</strong>
+                </div>
+              </div>
+
+              <div class="mobile-contract-steps" data-mobile-contract-steps></div>
+
+              <button class="mobile-contract-cta" type="button" data-action="show-mobile-contract-doc">Показать договор</button>
+            </div>
+          </section>
+
+          <section class="mobile-contract-sheet" data-mobile-contract-sheet hidden aria-hidden="true">
+            <button class="mobile-contract-sheet__backdrop" type="button" data-action="close-mobile-contract-sheet" aria-label="Закрыть"></button>
+            <div class="mobile-contract-sheet__panel" role="dialog" aria-modal="true" aria-labelledby="mobile-contract-sheet-title">
+              <button class="mobile-contract-sheet__handle" type="button" data-action="toggle-mobile-contract-sheet" aria-label="Свернуть панель параметров"></button>
+              <div class="mobile-contract-sheet__header">
+                <div>
+                  <p class="mobile-contract-sheet__eyebrow">Шаг договора</p>
+                  <h2 class="mobile-contract-sheet__title" id="mobile-contract-sheet-title" data-mobile-contract-sheet-title>Исполнитель</h2>
+                </div>
+                <button class="mobile-contract-sheet__close" type="button" data-action="close-mobile-contract-sheet" aria-label="Закрыть">×</button>
+              </div>
+
+              <div class="mobile-contract-sheet__body" data-mobile-contract-sheet-body></div>
+
+              <button class="mobile-contract-sheet__apply" type="button" data-action="apply-mobile-contract-sheet">Применить</button>
+            </div>
+          </section>
 
           <div class="contract-layout">
             <aside class="contract-outline" aria-label="Структура договора">
@@ -525,14 +578,30 @@
                 <p class="addendum-hint-text">После подписания договора создайте допсоглашение к каждому проекту — там фиксируется ТЗ, сроки и стоимость.</p>
                 <button class="button button--dark button--wide" type="button" data-action="create-addendum">Создать допсоглашение</button>
               </div>
+
             </aside>
 
             <div class="contract-canvas-area">
+              <button class="mobile-contract-back" type="button" data-action="hide-mobile-contract-doc" hidden>← Изменить данные</button>
               <!-- Doc type toggle — aligned to canvas left edge -->
               <div class="contract-top-bar">
                 <div class="contract-template-strip" data-contract-template-strip aria-label="Тип договора"></div>
               </div>
               <article class="document-canvas" data-contract-canvas aria-label="Договор"></article>
+              <div class="mobile-contract-actions" hidden>
+                <div class="mobile-contract-actions__top">
+                  <button class="mobile-contract-undo" type="button" data-action="undo-contract-delete" disabled>Отменить</button>
+                  <label class="expl-toggle mobile-contract-expl-toggle">
+                    <input type="checkbox" data-contract-explanation-toggle>
+                    <span class="expl-toggle__track"><span class="expl-toggle__thumb"></span></span>
+                    <span class="expl-toggle__label">Пояснения</span>
+                  </label>
+                </div>
+                <div class="mobile-contract-actions__main">
+                  <button class="button button--ghost" type="button" data-action="hide-mobile-contract-doc">Редактировать</button>
+                  <button class="button button--dark" type="button" data-action="print-contract">Скачать PDF</button>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -718,11 +787,37 @@
     </form>
   </dialog>
 
+  <dialog class="modal" data-brief-ai-modal>
+    <form method="dialog" class="modal__panel">
+      <button class="modal__close" value="cancel" aria-label="Закрыть">×</button>
+      <p class="eyebrow">AI-смета</p>
+      <h2>Собрать из брифа</h2>
+      <p class="modal__lead">Вставьте сообщение клиента, бриф или заметки после созвона. DesiDoc предложит структуру сметы, а вы сможете всё поправить вручную.</p>
+
+      <label class="field brief-ai-field">
+        <span>Бриф клиента</span>
+        <textarea data-brief-ai-input rows="8" placeholder="Вставьте сюда сообщение клиента, бриф, переписку или заметки после созвона."></textarea>
+      </label>
+
+      <div class="brief-ai-example">
+        <strong>Пример</strong>
+        <p>Нужно разработать фирменный стиль для бренда Drug: логотип, палитра, шрифты и 5 носителей. Срок — 3 недели.</p>
+      </div>
+
+      <p class="client-reply-status" data-brief-ai-status>AI-оценка примерная: часы и стоимость нужно проверить под свою скорость и договорённости с клиентом.</p>
+
+      <div class="modal__actions">
+        <button class="button button--ghost" value="cancel">Отмена</button>
+        <button class="brief-ai-button" type="button" data-action="analyze-brief">✨ Рассчитать</button>
+      </div>
+    </form>
+  </dialog>
+
   <section class="print-sheet" data-print-sheet aria-hidden="true"></section>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://unpkg.com/html-to-image@1.11.11/dist/html-to-image.js"></script>
-  <script src="js/designkit.js?v=51"></script>
+  <script src="js/designkit.js?v=52"></script>
 </body>
 </html>

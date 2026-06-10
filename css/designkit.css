@@ -2416,7 +2416,44 @@ h2 {
 
 .contract-clause {
   position: relative;
-  padding: 0 0 18px;
+  padding: 0 42px 18px 0;
+}
+
+.contract-clause-delete {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 30px;
+  height: 30px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--surface-strong) 92%, transparent);
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 19px;
+  font-weight: 400;
+  line-height: 1;
+  opacity: 0;
+  transition: opacity 160ms ease, color 160ms ease, border-color 160ms ease, background 160ms ease;
+}
+
+.contract-clause:hover .contract-clause-delete,
+.contract-clause:focus-within .contract-clause-delete {
+  opacity: 0.74;
+}
+
+.contract-clause + .contract-clause .contract-clause-delete {
+  top: 18px;
+}
+
+.contract-clause-delete:hover,
+.contract-clause-delete:focus-visible {
+  border-color: color-mix(in srgb, var(--accent) 42%, var(--line));
+  background: var(--accent-soft);
+  color: var(--accent);
+  opacity: 1;
 }
 
 .contract-clause + .contract-clause {
@@ -2484,7 +2521,7 @@ h2 {
 .optional-section__actions {
   position: absolute;
   top: 14px;
-  right: 0;
+  right: 38px;
   display: flex;
   gap: 6px;
   opacity: 0;
@@ -3238,7 +3275,7 @@ h2 {
     min-height: 100svh;
     height: auto;
     grid-template-rows: auto 1fr auto;
-    padding: 33px 0;
+    padding: 33px 10px;
     background-position: 48% center;
   }
 
@@ -3336,7 +3373,7 @@ h2 {
 
   .deedoc-hero h1 {
     font-size: 30px;
-    padding: 0 21px;
+    padding: 0 11px;
     width: 100%;
     box-sizing: border-box;
   }
@@ -3346,7 +3383,7 @@ h2 {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 10px;
-    margin: 0 10px;
+    margin: 0;
   }
 
   .deedoc-card {
@@ -3391,7 +3428,7 @@ h2 {
 
   .deedoc-home__footer {
     gap: 2px;
-    padding: 0 21px;
+    padding: 0 11px;
   }
 
   .deedoc-home__footer strong {
@@ -4603,6 +4640,18 @@ body.mobile-calc-sheet-open {
   overflow: hidden;
 }
 
+.mobile-contract-flow,
+.mobile-contract-sheet,
+.mobile-contract-cta,
+.mobile-contract-back,
+.mobile-contract-actions {
+  display: none !important;
+}
+
+body.mobile-contract-sheet-open {
+  overflow: hidden;
+}
+
 /* ── Calculator compact working density ───────────────────── */
 
 .view--calculator {
@@ -4979,6 +5028,146 @@ body.mobile-calc-sheet-open {
   color: var(--cv-text);
 }
 
+/* ── AI: сборка сметы из брифа ───────────────────────────── */
+
+.brief-ai-card {
+  display: grid;
+  gap: 9px;
+  margin-top: 10px;
+  padding: 14px;
+  border: 1px dashed color-mix(in srgb, var(--accent) 45%, transparent);
+  border-radius: 18px;
+  background: var(--accent-soft);
+}
+
+.brief-ai-card[hidden] {
+  display: none;
+}
+
+.brief-ai-card p {
+  margin: 0;
+  color: var(--cv-muted, var(--muted));
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.brief-ai-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgba(199, 109, 77, 0.32);
+  transition: transform 0.12s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+}
+
+.brief-ai-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px rgba(199, 109, 77, 0.4);
+}
+
+.brief-ai-button:disabled {
+  opacity: 0.6;
+  cursor: default;
+  transform: none;
+}
+
+.ai-estimate-insights {
+  display: grid;
+  gap: 10px;
+}
+
+.ai-estimate-insights[hidden] {
+  display: none;
+}
+
+.ai-insight-card {
+  display: grid;
+  gap: 9px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: var(--surface-muted);
+}
+
+.view--calculator .ai-insight-card {
+  border-color: var(--cv-line);
+  background: var(--cv-surface);
+}
+
+.ai-insight-card h3 {
+  margin: 0;
+  color: var(--cv-text, var(--text));
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.ai-insight-card ul {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  padding-left: 18px;
+}
+
+.ai-insight-card li {
+  color: var(--cv-muted, var(--muted));
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.ai-insight-card p {
+  margin: 0;
+  color: var(--cv-muted, var(--muted));
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.ai-insight-card--note {
+  border-style: dashed;
+  background: transparent;
+}
+
+.view--calculator .ai-insight-card--note {
+  background: transparent;
+}
+
+.brief-ai-field textarea {
+  resize: vertical;
+}
+
+.brief-ai-example {
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface-muted);
+}
+
+.brief-ai-example strong {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--text);
+  font-size: 12px;
+}
+
+.brief-ai-example p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
 /* ── Sticky summary ──────────────────────────────────────── */
 
 .app[data-view="calculator"] .sticky-summary {
@@ -5062,8 +5251,45 @@ body.mobile-calc-sheet-open {
 
   .view--calculator .estimate-card {
     width: 100%;
-    min-height: 60svh;
+    min-height: clamp(430px, calc(100svh - 268px), 560px);
     margin-top: 10px;
+    padding: 16px;
+    border-radius: 30px;
+  }
+
+  .app[data-view="calculator"][data-estimate="empty"] .view--calculator .estimate-card {
+    min-height: clamp(430px, calc(100svh - 268px), 560px);
+  }
+
+  .view--calculator .estimate-card .estimate-empty {
+    min-height: calc(100% - 0px);
+    height: 100%;
+    padding: 42px 20px;
+    border-radius: 26px;
+    gap: 14px;
+  }
+
+  .view--calculator .cv-empty-icon {
+    margin-bottom: 10px;
+    font-size: clamp(82px, 20vw, 112px);
+  }
+
+  .view--calculator .cv-empty-icon::before {
+    inset: -28px;
+  }
+
+  .view--calculator .cv-empty-text h2 {
+    max-width: 310px;
+    margin-bottom: 10px;
+    font-size: 28px;
+    font-weight: 500;
+    line-height: 1.04;
+  }
+
+  .view--calculator .cv-empty-text p:not(.eyebrow) {
+    max-width: 300px;
+    font-size: 16px;
+    line-height: 1.32;
   }
 
   .mobile-calc-sheet[hidden],
@@ -5410,6 +5636,26 @@ body.mobile-calc-sheet-open {
 
   .cv-empty-amount {
     font-size: 64px;
+  }
+
+  /* ── AI-бриф: кнопка во всю ширину, карточки чуть крупнее ── */
+  .brief-ai-button {
+    width: 100%;
+    min-height: 48px;
+    font-size: 15px;
+  }
+
+  .brief-ai-card p {
+    font-size: 13px;
+  }
+
+  .ai-insight-card h3 {
+    font-size: 15px;
+  }
+
+  .ai-insight-card li,
+  .ai-insight-card p {
+    font-size: 13px;
   }
 
   /* ── После расчёта убираем CTA из sticky — кнопка «Пересчитать» уже внизу сметы ── */
@@ -6550,6 +6796,465 @@ body[data-view="contract"]::after {
     padding: 94px 14px 44px;
   }
 
+  .view--contract .contract-hero,
+  .view--contract .contract-outline,
+  .view--contract .document-toolbar {
+    display: none;
+  }
+
+  .contract-workspace[data-mode="fill"][data-mobile-doc="steps"] .mobile-contract-flow {
+    display: block !important;
+  }
+
+  .contract-workspace[data-mode="fill"][data-mobile-doc="doc"] .mobile-contract-back,
+  .contract-workspace[data-mode="fill"][data-mobile-doc="steps"] .mobile-contract-cta {
+    display: flex !important;
+  }
+
+  .contract-workspace[data-mode="fill"][data-mobile-doc="doc"] .mobile-contract-actions {
+    display: grid !important;
+  }
+
+  .contract-workspace[data-mode="fill"][data-mobile-doc="steps"] .contract-canvas-area {
+    display: none;
+  }
+
+  .contract-workspace[data-mode="fill"][data-mobile-doc="doc"] .contract-canvas-area {
+    display: flex;
+  }
+
+  .mobile-contract-flow {
+    margin-top: 8px;
+  }
+
+  .mobile-contract-card {
+    padding: 18px;
+    border: 1px solid color-mix(in srgb, var(--cv-line) 78%, white);
+    border-radius: 32px;
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: 0 18px 40px rgba(47, 29, 22, 0.12);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+
+  .mobile-contract-template-strip {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 14px;
+  }
+
+  .mobile-contract-template-strip .doc-type-toggle {
+    width: 100%;
+  }
+
+  .mobile-contract-template-strip .doc-type-toggle__btn {
+    flex: 1;
+    justify-content: center;
+    padding: 0 10px;
+  }
+
+  .mobile-contract-template-strip .reset-btn {
+    display: none;
+  }
+
+  .mobile-contract-card__head {
+    display: grid;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+
+  .mobile-contract-card__title {
+    margin: 0;
+    color: var(--cv-text);
+    font-size: 28px;
+    line-height: 1.04;
+    letter-spacing: 0;
+  }
+
+  .mobile-contract-progressline {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .mobile-contract-progressline__track {
+    height: 8px;
+    border-radius: 999px;
+    background: rgba(31, 29, 24, 0.1);
+    overflow: hidden;
+  }
+
+  .mobile-contract-progressline__fill {
+    display: block;
+    width: 0;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--accent);
+    transition: width 180ms ease;
+  }
+
+  .mobile-contract-progressline__value {
+    color: var(--cv-text);
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .mobile-contract-steps {
+    display: grid;
+    gap: 10px;
+  }
+
+  .mobile-contract-step {
+    display: grid;
+    grid-template-columns: 26px minmax(0, 1fr) 12px;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 14px 16px;
+    border: 1px solid color-mix(in srgb, var(--cv-line) 82%, white);
+    border-radius: 22px;
+    background: rgba(255, 255, 255, 0.92);
+    color: var(--cv-text);
+    text-align: left;
+  }
+
+  .mobile-contract-step.is-active {
+    border-color: color-mix(in srgb, var(--accent) 62%, transparent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent);
+  }
+
+  .mobile-contract-step.is-complete .mobile-contract-step__icon {
+    color: var(--positive);
+  }
+
+  .mobile-contract-step__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    color: var(--accent);
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  .mobile-contract-step__copy {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .mobile-contract-step__copy strong {
+    color: var(--cv-text);
+    font-size: 15px;
+    line-height: 1.2;
+  }
+
+  .mobile-contract-step__copy small {
+    color: var(--cv-muted);
+    font-size: 13px;
+    line-height: 1.2;
+  }
+
+  .mobile-contract-step__arrow {
+    color: var(--cv-muted);
+    font-size: 22px;
+    line-height: 1;
+  }
+
+  .mobile-contract-cta {
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 52px;
+    margin-top: 18px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--ddoc-color-button-bg);
+    color: var(--ddoc-color-button-label);
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 0;
+    box-shadow: var(--ddoc-shadow-button);
+  }
+
+  .mobile-contract-cta:disabled {
+    background: rgba(31, 29, 24, 0.08);
+    color: rgba(31, 29, 24, 0.42);
+    box-shadow: none;
+  }
+
+  .mobile-contract-sheet[hidden] {
+    display: none !important;
+  }
+
+  .mobile-contract-sheet {
+    position: fixed;
+    inset: 0;
+    z-index: 130;
+    display: block !important;
+  }
+
+  .mobile-contract-sheet__backdrop {
+    position: absolute;
+    inset: 0;
+    border: 0;
+    background: rgba(18, 14, 12, 0.42);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+
+  .mobile-contract-sheet__panel {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    max-height: min(78svh, 760px);
+    padding: 12px 16px calc(16px + env(safe-area-inset-bottom));
+    border: 1px solid color-mix(in srgb, var(--cv-line) 76%, white);
+    border-radius: 28px 28px 0 0;
+    background: rgba(255, 255, 255, 0.97);
+    box-shadow: 0 -22px 44px rgba(37, 23, 18, 0.18);
+    backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px);
+  }
+
+  .mobile-contract-sheet__handle {
+    width: 56px;
+    height: 18px;
+    margin: 0 auto;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+  }
+
+  .mobile-contract-sheet__handle::after {
+    content: "";
+    display: block;
+    width: 42px;
+    height: 4px;
+    margin: 7px auto 0;
+    border-radius: 999px;
+    background: rgba(31, 29, 24, 0.16);
+  }
+
+  .mobile-contract-sheet__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .mobile-contract-sheet__eyebrow {
+    margin: 0 0 4px;
+    color: var(--cv-muted);
+    font-size: 11px;
+    line-height: 1.1;
+  }
+
+  .mobile-contract-sheet__title {
+    margin: 0;
+    color: var(--cv-text);
+    font-size: 24px;
+    line-height: 1.02;
+    letter-spacing: 0;
+  }
+
+  .mobile-contract-sheet__close {
+    width: 38px;
+    height: 38px;
+    flex: 0 0 auto;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(31, 29, 24, 0.06);
+    color: var(--cv-text);
+    font-size: 22px;
+    line-height: 1;
+  }
+
+  .mobile-contract-sheet__body {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: 12px;
+    overflow: auto;
+    padding-right: 2px;
+  }
+
+  .mobile-contract-sheet__section {
+    display: grid;
+    gap: 12px;
+  }
+
+  .mobile-contract-sheet__hint {
+    margin: 0;
+    color: var(--cv-muted);
+    font-size: 13px;
+    line-height: 1.35;
+  }
+
+  .mobile-contract-sheet__field {
+    display: grid;
+    gap: 6px;
+  }
+
+  .mobile-contract-sheet__field span {
+    color: var(--cv-text);
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .mobile-contract-sheet__field input,
+  .mobile-contract-sheet__field textarea {
+    width: 100%;
+    min-height: 48px;
+    padding: 12px 14px;
+    border: 1px solid var(--cv-line);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--cv-text);
+    font-size: 15px;
+    font-family: inherit;
+    box-sizing: border-box;
+  }
+
+  .mobile-contract-sheet__field textarea {
+    min-height: 132px;
+    resize: vertical;
+  }
+
+  .mobile-contract-sheet__import-toggle,
+  .mobile-contract-sheet__toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 48px;
+    padding: 0 14px;
+    border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
+    border-radius: 16px;
+    background: color-mix(in srgb, var(--accent) 13%, white);
+    color: var(--accent);
+    font-size: 15px;
+    font-weight: 500;
+    box-sizing: border-box;
+  }
+
+  .mobile-contract-sheet__toggle {
+    border-color: var(--cv-line);
+    background: rgba(31, 29, 24, 0.04);
+    color: var(--cv-text);
+  }
+
+  .mobile-contract-sheet__toggle input {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+  }
+
+  .mobile-contract-sheet__import-box {
+    display: grid;
+    gap: 10px;
+  }
+
+  .mobile-contract-sheet__dates {
+    display: grid;
+    gap: 10px;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .mobile-contract-sheet .client-request-preview,
+  .mobile-contract-sheet .client-reply-textarea,
+  .mobile-contract-sheet .signature-preview {
+    border-radius: 18px;
+  }
+
+  .mobile-contract-sheet__apply {
+    min-height: 52px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--ddoc-color-button-bg);
+    color: var(--ddoc-color-button-label);
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 0;
+    box-shadow: var(--ddoc-shadow-button);
+  }
+
+  .mobile-contract-back {
+    align-items: center;
+    gap: 8px;
+    border: 0;
+    background: transparent;
+    color: var(--cv-text);
+    font-size: 15px;
+    font-weight: 500;
+  }
+
+  .mobile-contract-actions {
+    display: grid;
+    gap: 10px;
+    position: fixed;
+    right: 14px;
+    bottom: calc(10px + env(safe-area-inset-bottom));
+    left: 14px;
+    z-index: 80;
+    margin-top: 0;
+    padding: 10px;
+    border: 1px solid color-mix(in srgb, var(--cv-line) 76%, white);
+    border-radius: 28px;
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: 0 -18px 44px rgba(37, 23, 18, 0.16);
+    backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px);
+  }
+
+  .mobile-contract-actions__top,
+  .mobile-contract-actions__main {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: center;
+    gap: 8px;
+  }
+
+  .mobile-contract-undo,
+  .mobile-contract-expl-toggle {
+    min-height: 42px;
+    border: 1px solid var(--cv-line);
+    border-radius: 999px;
+    background: rgba(31, 29, 24, 0.04);
+    color: var(--cv-text);
+    justify-content: center;
+  }
+
+  .mobile-contract-undo {
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .mobile-contract-undo:disabled {
+    cursor: default;
+    color: rgba(31, 29, 24, 0.34);
+    opacity: 0.66;
+  }
+
+  .mobile-contract-expl-toggle {
+    padding: 0 12px;
+    font-size: 13px;
+  }
+
+  .mobile-contract-actions .button {
+    width: 100%;
+    min-height: 50px;
+    border-radius: 999px;
+  }
+
   .view--contract .contract-hero__actions,
   .view--contract .document-toolbar,
   .view--contract .document-toolbar__actions {
@@ -6563,11 +7268,9 @@ body[data-view="contract"]::after {
   }
 
   .view--contract .contract-template-strip {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
     width: 100%;
   }
 
-  .view--contract .contract-outline,
   .view--contract .document-canvas {
     border-radius: 30px;
   }
@@ -6583,9 +7286,30 @@ body[data-view="contract"]::after {
     grid-template-columns: 1fr;
   }
 
-  .view--contract .document-toolbar {
-    position: static;
-    margin: 14px 0 0;
+  .view--contract .contract-canvas-area {
+    gap: 10px;
+  }
+
+  .contract-workspace[data-mode="fill"][data-mobile-doc="doc"] .contract-canvas-area {
+    padding-bottom: 150px;
+  }
+
+  .view--contract .contract-top-bar {
+    padding-bottom: 10px;
+  }
+
+  .view--contract .document-canvas {
+    padding: 20px 16px 22px;
+  }
+
+  .view--contract .contract-clause {
+    padding-right: 38px;
+  }
+
+  .view--contract .contract-clause-delete {
+    width: 30px;
+    height: 30px;
+    opacity: 1;
   }
 }
 
@@ -7219,3 +7943,69 @@ body[data-view="contract"]::after {
 .button:active               { transform: scale(0.97); }
 .contract-type-card:hover    { transform: translateY(-3px) scale(1.015); }
 .contract-type-card:active   { transform: scale(0.97); }
+
+/* ============================================================
+   DARK THEME — мобильные шторки, чипы и панели
+   ============================================================ */
+
+@media (max-width: 760px) {
+  [data-theme="dark"] .mobile-calc-chip,
+  [data-theme="dark"] .mobile-calc-sheet__panel,
+  [data-theme="dark"] .mobile-contract-card,
+  [data-theme="dark"] .mobile-contract-step,
+  [data-theme="dark"] .mobile-contract-sheet__panel,
+  [data-theme="dark"] .mobile-contract-actions {
+    border-color: var(--line);
+    background: var(--surface-strong);
+  }
+
+  [data-theme="dark"] .mobile-calc-chip,
+  [data-theme="dark"] .mobile-contract-step {
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.4);
+  }
+
+  [data-theme="dark"] .mobile-calc-sheet__panel,
+  [data-theme="dark"] .mobile-contract-sheet__panel {
+    box-shadow: 0 -22px 44px rgba(0, 0, 0, 0.5);
+  }
+
+  [data-theme="dark"] .mobile-contract-actions {
+    box-shadow: 0 -18px 44px rgba(0, 0, 0, 0.45);
+  }
+
+  [data-theme="dark"] .mobile-calc-sheet__handle::after,
+  [data-theme="dark"] .mobile-contract-sheet__handle::after {
+    background: rgba(255, 255, 255, 0.24);
+  }
+
+  [data-theme="dark"] .mobile-calc-sheet__close,
+  [data-theme="dark"] .mobile-contract-sheet__close {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  [data-theme="dark"] .mobile-contract-progressline__track {
+    background: rgba(255, 255, 255, 0.14);
+  }
+
+  [data-theme="dark"] .mobile-contract-sheet__field input,
+  [data-theme="dark"] .mobile-contract-sheet__field textarea {
+    border-color: var(--line);
+    background: rgba(255, 255, 255, 0.07);
+  }
+
+  [data-theme="dark"] .mobile-contract-sheet__toggle,
+  [data-theme="dark"] .mobile-contract-undo,
+  [data-theme="dark"] .mobile-contract-expl-toggle {
+    border-color: var(--line);
+    background: rgba(255, 255, 255, 0.07);
+  }
+
+  [data-theme="dark"] .mobile-contract-undo:disabled {
+    color: rgba(255, 255, 255, 0.32);
+  }
+
+  [data-theme="dark"] .mobile-contract-cta:disabled {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.38);
+  }
+}

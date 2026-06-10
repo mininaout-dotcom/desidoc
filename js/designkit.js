@@ -118,6 +118,11 @@ const state = {
   mods: new Set(),
   profile: savedProfile,
   estimateMeta: loadEstimateMeta(savedProfile, DEFAULT_PROJECT_KEY),
+  briefAi: {
+    sourceText: "",
+    analysis: null,
+    isLoading: false,
+  },
 };
 
 let draggedStageIndex = null;
@@ -125,6 +130,13 @@ let contractSaveTimer = null;
 let contractObserver = null;
 let clientReplyParseTimer = null;
 let mobileCalcSheetKey = "";
+let mobileContractSheetKey = "";
+let mobileContractDocVisible = false;
+let mobileContractClientImportOpen = false;
+let mobileContractSheetSignature = "";
+let mobileContractClientReplyDraft = "";
+let isRenderingMobileContractUI = false;
+let lastDeletedContractClause = null;
 
 const CONTRACT_SECTIONS = [
   ["parties", "Стороны"],
@@ -386,6 +398,368 @@ function createStages(project, level) {
   }));
 }
 
+const BRIEF_PROJECT_META = {
+  logo: {
+    titleBase: "Разработка логотипа",
+    projectTypeLabel: "логотипа",
+    entity: "бренда",
+    patterns: [/логотип/i, /\bлого\b/i, /знак/i],
+  },
+  brand_identity: {
+    titleBase: "Разработка фирменного стиля",
+    projectTypeLabel: "фирменного стиля",
+    entity: "бренда",
+    patterns: [/фирменн/i, /айдентик/i, /брендинг/i, /брендбук/i, /палитр/i],
+  },
+  packaging: {
+    titleBase: "Дизайн упаковки",
+    projectTypeLabel: "упаковки",
+    entity: "бренда",
+    patterns: [/упаков/i, /этикет/i, /\bsku\b/i, /скю/i, /пачк/i, /короб/i],
+  },
+  website: {
+    titleBase: "Разработка сайта",
+    projectTypeLabel: "сайта",
+    entity: "компании",
+    patterns: [/сайт/i, /лендинг/i, /tilda/i, /тильд/i, /экран/i, /страниц/i, /интернет-магазин/i],
+  },
+  presentation: {
+    titleBase: "Разработка презентации",
+    projectTypeLabel: "презентации",
+    entity: "проекта",
+    patterns: [/презентац/i, /слайд/i, /pitch/i, /питч/i, /deck/i],
+  },
+  smm: {
+    titleBase: "Разработка SMM-дизайна",
+    projectTypeLabel: "SMM-дизайна",
+    entity: "бренда",
+    patterns: [/smm/i, /соцсет/i, /пост/i, /сторис/i, /instagram/i, /инстаграм/i, /контент/i],
+  },
+  marketplaces: {
+    titleBase: "Дизайн карточек маркетплейса",
+    projectTypeLabel: "карточек маркетплейса",
+    entity: "бренда",
+    patterns: [/маркетплейс/i, /wildberries/i, /\bwb\b/i, /ozon/i, /карточ/i, /инфографик/i],
+  },
+  outdoor: {
+    titleBase: "Дизайн наружной рекламы",
+    projectTypeLabel: "наружной рекламы",
+    entity: "бренда",
+    patterns: [/наружн/i, /баннер/i, /билборд/i, /вывеск/i, /ситиборд/i, /афиш/i],
+  },
+  print: {
+    titleBase: "Дизайн полиграфии",
+    projectTypeLabel: "полиграфии",
+    entity: "бренда",
+    patterns: [/полиграф/i, /буклет/i, /листовк/i, /визитк/i, /каталог/i, /плакат/i, /меню/i],
+  },
+  custom: {
+    titleBase: "Разработка проекта",
+    projectTypeLabel: "проекта",
+    entity: "проекта",
+    patterns: [],
+  },
+};
+
+function includesAny(text, patterns) {
+  return patterns.some((pattern) => pattern.test(text));
+}
+
+function detectBriefProjectType(text) {
+  const source = String(text || "");
+  const order = ["brand_identity", "packaging", "website", "presentation", "marketplaces", "smm", "outdoor", "print", "logo"];
+  return order.find((type) => includesAny(source, BRIEF_PROJECT_META[type].patterns)) || "custom";
+}
+
+function cleanBriefName(value) {
+  return String(value || "")
+    .replace(/^["«“„]+|["»”]+$/g, "")
+    .replace(/\s+(?:нужно|надо|хотим|логотип|сайт|упаковк[ауи]|презентац(?:ия|ию)|фирменн(?:ый|ого)|палитр[ауи]|шрифт[ыа]?|и\s+.+)$/i, "")
+    .replace(/[,:;.].*$/g, "")
+    .trim();
+}
+
+function extractBriefBrandName(text) {
+  const source = String(text || "");
+  const labeled = getLabelValueFromText(source, [
+    "название бренда",
+    "бренд",
+    "название компании",
+    "компания",
+    "название проекта",
+    "проект",
+  ]);
+  if (labeled) return cleanBriefName(labeled);
+
+  const pattern = /(?:для\s+)?(?:бренд[а]?|компани[ия]|проект[а]?)\s+["«“]?([A-ZА-ЯЁ0-9][A-ZА-ЯЁA-Za-zА-Яа-яЁё0-9&._ -]{1,48})/i;
+  const match = source.match(pattern);
+  if (match?.[1]) return cleanBriefName(match[1]);
+  return "";
+}
+
+function getBriefQuantity(text, patterns) {
+  const source = String(text || "");
+  for (const pattern of patterns) {
+    const match = source.match(pattern);
+    if (match?.[1]) return Math.max(Number(match[1]), 0);
+  }
+  return 0;
+}
+
+function getBriefQuantities(text) {
+  return {
+    concepts: getBriefQuantity(text, [
+      /(\d+)\s*(?:концепц|вариант[а-я]*\s+логотип|направлен)/i,
+      /(?:концепц|вариант[а-я]*\s+логотип|направлен)[^\d]{0,16}(\d+)/i,
+    ]),
+    revisions: getBriefQuantity(text, [
+      /(\d+)\s*(?:раунд[а-я]*\s+прав|итераци[а-я]*\s+прав|правк[иок]?)/i,
+      /(?:правк[иок]?|раунд[а-я]*\s+прав)[^\d]{0,16}(\d+)/i,
+    ]),
+    sku: getBriefQuantity(text, [
+      /(\d+)\s*(?:sku|скю|артикул[а-я]*|товар[а-я]*)/i,
+      /(?:sku|скю|артикул[а-я]*|товар[а-я]*)[^\d]{0,16}(\d+)/i,
+    ]),
+    carriers: getBriefQuantity(text, [
+      /(\d+)\s*(?:носител[а-я]*|мерч[а-я]*|предмет[а-я]*|мокап[а-я]*)/i,
+      /(?:носител[а-я]*|мерч[а-я]*|предмет[а-я]*)[^\d]{0,16}(\d+)/i,
+    ]),
+    pages: getBriefQuantity(text, [
+      /(\d+)\s*(?:страниц[а-я]*|page[s]?)/i,
+      /(?:страниц[а-я]*|page[s]?)[^\d]{0,16}(\d+)/i,
+    ]),
+    screens: getBriefQuantity(text, [
+      /(\d+)\s*(?:экран[а-я]*|screen[s]?)/i,
+      /(?:экран[а-я]*|screen[s]?)[^\d]{0,16}(\d+)/i,
+    ]),
+    layouts: getBriefQuantity(text, [
+      /(\d+)\s*(?:макет[а-я]*|layout[s]?)/i,
+      /(?:макет[а-я]*|layout[s]?)[^\d]{0,16}(\d+)/i,
+    ]),
+    formats: getBriefQuantity(text, [
+      /(\d+)\s*(?:формат[а-я]*|размер[а-я]*)/i,
+      /(?:формат[а-я]*|размер[а-я]*)[^\d]{0,16}(\d+)/i,
+    ]),
+    slides: getBriefQuantity(text, [
+      /(\d+)\s*(?:слайд[а-я]*|slide[s]?)/i,
+      /(?:слайд[а-я]*|slide[s]?)[^\d]{0,16}(\d+)/i,
+    ]),
+    posts: getBriefQuantity(text, [
+      /(\d+)\s*(?:пост[а-я]*|сторис|сториз|stories|публикац[а-я]*)/i,
+      /(?:пост[а-я]*|сторис|сториз|stories|публикац[а-я]*)[^\d]{0,16}(\d+)/i,
+    ]),
+  };
+}
+
+function makeBriefStage(title, description, hours) {
+  return {
+    name: title,
+    description,
+    hours: Math.max(1, Math.round(hours)),
+  };
+}
+
+function buildBriefStages(projectType, q) {
+  const concepts = Math.max(q.concepts || 1, 1);
+  const revisions = Math.max(q.revisions || 1, 1);
+  const revisionHours = Math.min(10, 3 + revisions * 2);
+
+  if (projectType === "logo") {
+    return [
+      makeBriefStage("Анализ проекта", "Изучение задачи, аудитории, конкурентов и визуального контекста", 5),
+      makeBriefStage("Поиск визуального направления", "Референсы, мудборд и формулировка критериев для логотипа", 6),
+      makeBriefStage("Разработка логотипа", "Создание и проработка концепций логотипа", 12 + concepts * 4),
+      makeBriefStage("Доработка выбранной концепции", "Финализация знака, шрифтовой части и базовых цветовых вариантов", 6),
+      makeBriefStage("Подготовка файлов", "Экспорт логотипа в нужных форматах и подготовка к передаче", 3),
+      makeBriefStage("Согласование и правки", "Коммуникация с клиентом и внесение согласованных корректировок", revisionHours),
+    ];
+  }
+
+  if (projectType === "brand_identity") {
+    const carriers = q.carriers || q.formats || 5;
+    return [
+      makeBriefStage("Анализ проекта", "Изучение брифа, аудитории, конкурентов и визуального контекста", 4),
+      makeBriefStage("Визуальная концепция", "Мудборд, референсы и выбор направления фирменного стиля", 8 + concepts * 2),
+      makeBriefStage("Разработка логотипа", "Создание и доработка концепции логотипа", 16 + concepts * 3),
+      makeBriefStage("Разработка фирменной системы", "Цветовая палитра, типографика и графические элементы", 12),
+      makeBriefStage("Адаптация на носители", "Применение фирменного стиля на выбранных носителях", Math.max(8, carriers * 2)),
+      makeBriefStage("Подготовка файлов", "Экспорт и подготовка материалов к передаче заказчику", 4),
+      makeBriefStage("Согласование и правки", "Работа с обратной связью и финальные корректировки", revisionHours),
+    ];
+  }
+
+  if (projectType === "packaging") {
+    const sku = q.sku || 1;
+    return [
+      makeBriefStage("Анализ продукта и полки", "Изучение товара, конкурентов, референсов и ограничений формата", 5),
+      makeBriefStage("Концепция упаковки", "Поиск визуального направления и подготовка первых вариантов", 10 + concepts * 3),
+      makeBriefStage("Дизайн основной упаковки", "Разработка макета ключевого SKU с композицией, графикой и текстами", 12),
+      makeBriefStage("Адаптация на SKU", "Перенос дизайн-системы на дополнительные вкусы, объёмы или артикулы", Math.max(4, (sku - 1) * 3)),
+      makeBriefStage("Подготовка к печати", "Проверка размеров, вылетов, цветового профиля и экспорт файлов", 5),
+      makeBriefStage("Согласование и правки", "Внесение правок после проверки макетов", revisionHours),
+    ];
+  }
+
+  if (projectType === "website") {
+    const pages = q.pages || q.screens || 5;
+    return [
+      makeBriefStage("Анализ задачи", "Изучение цели сайта, аудитории, конкурентов и вводных материалов", 4),
+      makeBriefStage("Структура и прототип", "Карта страниц, логика блоков и пользовательские сценарии", Math.max(6, pages * 1.5)),
+      makeBriefStage("Визуальная концепция", "Moodboard, цвет, типографика и направление интерфейса", 8),
+      makeBriefStage("UI-дизайн страниц", "Отрисовка макетов ключевых страниц и состояний", Math.max(12, pages * 3)),
+      makeBriefStage("Адаптив", "Подготовка мобильных и планшетных версий", Math.max(6, pages * 1.4)),
+      makeBriefStage("Подготовка к передаче", "UI-kit, экспорт ассетов и комментарии для разработки", 4),
+      makeBriefStage("Согласование и правки", "Финальные корректировки по обратной связи", revisionHours),
+    ];
+  }
+
+  if (projectType === "presentation") {
+    const slides = q.slides || 10;
+    return [
+      makeBriefStage("Разбор материалов", "Изучение цели презентации, аудитории и исходного контента", 3),
+      makeBriefStage("Структура презентации", "Логика подачи, сценарий и группировка смысловых блоков", 4),
+      makeBriefStage("Дизайн-концепция", "Визуальное направление на ключевых слайдах", 6),
+      makeBriefStage("Дизайн слайдов", "Оформление всех слайдов, графиков и визуальных акцентов", Math.max(8, slides * 0.9)),
+      makeBriefStage("Финальная верстка", "Выравнивание, проверка текста и подготовка PDF/PPTX", Math.max(3, slides * 0.25)),
+      makeBriefStage("Согласование и правки", "Внесение корректировок после просмотра", revisionHours),
+    ];
+  }
+
+  if (projectType === "smm") {
+    const posts = q.posts || q.formats || 8;
+    return [
+      makeBriefStage("Анализ контента", "Изучение бренда, рубрик, референсов и задач коммуникации", 3),
+      makeBriefStage("Визуальная концепция", "Настройка стиля, сетки, типографики и графических приёмов", 6),
+      makeBriefStage("Шаблоны постов и сторис", "Разработка набора шаблонов для публикаций", Math.max(8, posts * 1.5)),
+      makeBriefStage("Адаптация форматов", "Подготовка вариантов под разные размеры и сценарии публикации", Math.max(4, (q.formats || 3) * 1.5)),
+      makeBriefStage("Подготовка файлов", "Экспорт шаблонов и организация материалов для передачи", 3),
+      makeBriefStage("Согласование и правки", "Корректировки по обратной связи", revisionHours),
+    ];
+  }
+
+  if (projectType === "marketplaces") {
+    const sku = q.sku || q.layouts || 5;
+    return [
+      makeBriefStage("Анализ карточек", "Изучение товара, конкурентов и требований площадки", 4),
+      makeBriefStage("Структура инфографики", "Сценарий слайдов карточки и ключевые преимущества продукта", 5),
+      makeBriefStage("Дизайн основной карточки", "Визуальная система, обложка и инфографика для первого товара", 10),
+      makeBriefStage("Адаптация на товары", "Перенос решения на дополнительные SKU или карточки", Math.max(6, sku * 2)),
+      makeBriefStage("Экспорт и проверка", "Подготовка файлов под требования маркетплейса", 3),
+      makeBriefStage("Согласование и правки", "Корректировки после проверки", revisionHours),
+    ];
+  }
+
+  if (projectType === "outdoor") {
+    const formats = q.formats || q.layouts || 2;
+    return [
+      makeBriefStage("Анализ задачи", "Изучение места размещения, аудитории и ограничений носителя", 3),
+      makeBriefStage("Идея и композиция", "Поиск ключевого сообщения и визуального решения", 6),
+      makeBriefStage("Дизайн основного макета", "Разработка макета наружной рекламы", 8),
+      makeBriefStage("Адаптация форматов", "Подготовка вариантов под разные размеры и носители", Math.max(4, formats * 2)),
+      makeBriefStage("Подготовка к производству", "Проверка размеров, вылетов, разрешения и экспорт", 3),
+      makeBriefStage("Согласование и правки", "Финальные корректировки", revisionHours),
+    ];
+  }
+
+  if (projectType === "print") {
+    const layouts = q.layouts || q.formats || 2;
+    return [
+      makeBriefStage("Разбор материалов", "Изучение задачи, текстов, форматов и требований к печати", 3),
+      makeBriefStage("Концепция макета", "Композиция, сетка, стиль и визуальная логика", 5),
+      makeBriefStage("Дизайн макетов", "Верстка и оформление основных страниц или носителей", Math.max(8, layouts * 3)),
+      makeBriefStage("Подготовка к печати", "Проверка вылетов, цветов, разрешения и экспорт файлов", 4),
+      makeBriefStage("Согласование и правки", "Внесение корректировок перед передачей", revisionHours),
+    ];
+  }
+
+  return [
+    makeBriefStage("Брифинг и сбор данных", "Уточнение задачи, целей, ограничений и ожидаемого результата", 3),
+    makeBriefStage("Анализ и референсы", "Изучение контекста проекта и подбор визуальных ориентиров", 5),
+    makeBriefStage("Концепция", "Разработка основного визуального направления", 8),
+    makeBriefStage("Дизайн-макеты", "Создание основных материалов проекта", Math.max(8, q.layouts * 3 || q.formats * 2 || 10)),
+    makeBriefStage("Подготовка файлов", "Экспорт, проверка и подготовка материалов к передаче", 3),
+    makeBriefStage("Согласование и правки", "Коммуникация с клиентом и финальные корректировки", revisionHours),
+  ];
+}
+
+function buildBriefPricingRisks(projectType, text, q) {
+  const risks = [];
+  const source = String(text || "");
+  const hasDeadline = /(срок|дедлайн|до\s+\d|недел|месяц|дня|дней|сроч)/i.test(source);
+  const addIf = (condition, label) => {
+    if (condition && !risks.includes(label)) risks.push(label);
+  };
+
+  addIf(!q.concepts && ["logo", "brand_identity", "packaging", "outdoor"].includes(projectType), "Не указано количество концепций.");
+  addIf(!q.revisions, "Не указано количество раундов правок.");
+  addIf(!q.sku && ["packaging", "marketplaces"].includes(projectType), "Не указано количество SKU.");
+  addIf(!q.carriers && projectType === "brand_identity", "Не указано количество носителей.");
+  addIf(!q.pages && projectType === "website", "Не указано количество страниц сайта.");
+  addIf(!q.screens && projectType === "website", "Не указано количество экранов.");
+  addIf(!q.layouts && ["marketplaces", "print", "outdoor", "custom"].includes(projectType), "Не указано количество макетов.");
+  addIf(!hasDeadline, "Не указана срочность проекта.");
+  addIf(!q.formats && ["smm", "outdoor", "print", "marketplaces"].includes(projectType), "Не указано количество форматов.");
+  addIf(!q.slides && projectType === "presentation", "Не указано количество слайдов.");
+  addIf(!q.posts && projectType === "smm", "Не указано количество постов или сторис.");
+
+  return risks.slice(0, 6);
+}
+
+function buildBriefAdditionalCosts(projectType, text) {
+  const source = String(text || "");
+  const costs = [];
+  const add = (label) => {
+    if (!costs.includes(label)) costs.push(label);
+  };
+
+  if (/ai|нейросет|midjourney|gpt|генерац/i.test(source)) {
+    add("Добавьте стоимость токенов нейросетей, если используете AI-инструменты в работе.");
+  } else {
+    add("Добавьте стоимость токенов нейросетей, если используете AI-инструменты в работе.");
+  }
+
+  if (["website", "presentation", "smm", "brand_identity", "marketplaces"].includes(projectType)) {
+    add("Добавьте стоимость фотостоков, если планируется использование стоковых изображений.");
+  }
+  if (["logo", "brand_identity", "website", "presentation", "packaging", "print"].includes(projectType)) {
+    add("Добавьте стоимость лицензий на шрифты, если используются платные шрифты.");
+  }
+  if (["packaging", "print", "outdoor"].includes(projectType)) {
+    add("Добавьте расходы на печать или тестовые образцы, если это предусмотрено проектом.");
+  }
+  if (["website", "smm", "marketplaces", "presentation", "custom"].includes(projectType)) {
+    add("Добавьте стоимость подрядчиков, если часть работ передаётся на аутсорс.");
+  }
+
+  return costs.slice(0, 4);
+}
+
+function buildBriefEstimateTitle(projectType, brandName) {
+  const meta = BRIEF_PROJECT_META[projectType] || BRIEF_PROJECT_META.custom;
+  if (!brandName) return meta.titleBase;
+  return `${meta.titleBase} для ${meta.entity} ${brandName}`;
+}
+
+async function analyzeBrief(text) {
+  const source = String(text || "").trim();
+  if (!source) {
+    throw new Error("Добавьте бриф или сообщение клиента.");
+  }
+
+  const projectType = detectBriefProjectType(source);
+  const brandName = extractBriefBrandName(source);
+  const quantities = getBriefQuantities(source);
+
+  return {
+    estimate_title: buildBriefEstimateTitle(projectType, brandName),
+    project_type: projectType,
+    brand_name: brandName || undefined,
+    stages: buildBriefStages(projectType, quantities),
+    pricing_risks: buildBriefPricingRisks(projectType, source, quantities),
+    additional_costs: buildBriefAdditionalCosts(projectType, source),
+  };
+}
+
 function refreshStageHours(level) {
   state.stages.forEach((stage) => {
     if (!stage.manuallyEditedHours && stage.defaults) {
@@ -428,7 +802,16 @@ function routeTo(view, pushHistory = true) {
     mobileCalcSheetKey = "";
   }
 
+  if (state.view !== "contract") {
+    mobileContractSheetKey = "";
+    mobileContractDocVisible = false;
+    mobileContractClientImportOpen = false;
+    mobileContractSheetSignature = "";
+    mobileContractClientReplyDraft = "";
+  }
+
   renderMobileCalculatorUI();
+  renderMobileContractUI();
   if (state.view === "contract") renderContractWorkspace();
 }
 
@@ -537,6 +920,7 @@ function renderProjectOptions() {
       </button>
     `).join("");
   });
+  renderBriefAiEntry();
   updateEmptyHint();
   renderMobileCalculatorUI();
 }
@@ -545,6 +929,131 @@ function updateEmptyHint() {
   const hint = document.querySelector("[data-empty-hint]");
   if (!hint || state.generated) return;
   hint.textContent = "Выберите тип проекта, ставку и налог\nи нажмите Рассчитать стоимость";
+}
+
+function renderBriefAiEntry() {
+  document.querySelectorAll("[data-brief-ai-entry]").forEach((entry) => {
+    entry.hidden = state.projectKey !== "custom";
+  });
+}
+
+function clearBriefAnalysis() {
+  state.briefAi.analysis = null;
+  renderBriefAiInsights();
+}
+
+function openBriefAiModal() {
+  closeMobileCalcSheet();
+  const modal = document.querySelector("[data-brief-ai-modal]");
+  const input = document.querySelector("[data-brief-ai-input]");
+  if (!modal || !input) return;
+  input.value = state.briefAi.sourceText || "";
+  setBriefAiStatus("AI-оценка примерная: часы и стоимость нужно проверить под свою скорость и договорённости с клиентом.");
+  modal.showModal();
+  requestAnimationFrame(() => input.focus());
+}
+
+function setBriefAiStatus(message, isError = false) {
+  const status = document.querySelector("[data-brief-ai-status]");
+  if (!status) return;
+  status.textContent = message;
+  status.classList.toggle("is-error", isError);
+}
+
+function setBriefAiLoading(isLoading) {
+  state.briefAi.isLoading = isLoading;
+  document.querySelectorAll("[data-action='analyze-brief']").forEach((button) => {
+    button.disabled = isLoading;
+    button.textContent = isLoading ? "✨ Считаю..." : "✨ Рассчитать";
+  });
+}
+
+async function runBriefAnalysis() {
+  const input = document.querySelector("[data-brief-ai-input]");
+  const text = input?.value.trim() || "";
+  if (!text) {
+    setBriefAiStatus("Вставьте бриф, сообщение клиента или заметки после созвона.", true);
+    input?.focus();
+    return;
+  }
+
+  setBriefAiLoading(true);
+  setBriefAiStatus("Анализирую задачу и собираю структуру сметы...");
+  try {
+    const analysis = await analyzeBrief(text);
+    applyBriefAnalysis(analysis, text);
+    document.querySelector("[data-brief-ai-modal]")?.close();
+  } catch (error) {
+    setBriefAiStatus(error?.message || "Не получилось разобрать бриф. Попробуйте добавить больше деталей.", true);
+  } finally {
+    setBriefAiLoading(false);
+  }
+}
+
+function applyBriefAnalysis(analysis, sourceText) {
+  state.projectKey = "custom";
+  state.rate = getActiveRate();
+  state.stages = (analysis.stages || []).map((stage) => ({
+    title: stage.name || stage.title || "Этап работ",
+    description: stage.description || "",
+    note: "",
+    hours: Math.max(Number(stage.hours || 0), 1),
+    defaults: null,
+    manuallyEditedHours: true,
+  }));
+  state.expenses = [];
+  state.generated = true;
+  state.briefAi.sourceText = sourceText;
+  state.briefAi.analysis = analysis;
+  state.estimateMeta.estimateName = normalizeEstimateName(analysis.estimate_title || "", state.projectKey);
+  persistEstimateMeta();
+  renderProjectOptions();
+  renderEstimate();
+  routeTo("calculator");
+
+  if (window.innerWidth <= 760) {
+    const result = document.querySelector("[data-estimate-result]");
+    if (result) setTimeout(() => result.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+  }
+}
+
+function renderInfoList(items) {
+  if (!items?.length) return "";
+  return `<ul>${items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`;
+}
+
+function renderBriefAiInsights() {
+  const node = document.querySelector("[data-ai-estimate-insights]");
+  if (!node) return;
+  const analysis = state.briefAi.analysis;
+  node.hidden = !analysis || !state.generated;
+  if (!analysis || !state.generated) {
+    node.innerHTML = "";
+    return;
+  }
+
+  const risks = analysis.pricing_risks || [];
+  const costs = analysis.additional_costs || [];
+  node.innerHTML = `
+    ${risks.length ? `
+      <section class="ai-insight-card">
+        <h3>Что может повлиять на стоимость проекта</h3>
+        ${renderInfoList(risks)}
+        <p>Некоторые данные отсутствуют и могут повлиять на точность расчёта. Добавьте недостающую информацию в описание проекта и нажмите «Рассчитать» повторно.</p>
+      </section>
+    ` : ""}
+    ${costs.length ? `
+      <section class="ai-insight-card">
+        <h3>Возможны дополнительные расходы</h3>
+        ${renderInfoList(costs)}
+      </section>
+    ` : ""}
+    <section class="ai-insight-card ai-insight-card--note">
+      <h3>Оценка примерная</h3>
+      <p>Измените часы под свою скорость работы, сложность проекта и договорённости с клиентом.</p>
+      <p>DesiDoc использует AI для предварительной оценки трудозатрат на основе описания проекта. Итоговые часы и стоимость определяются пользователем самостоятельно.</p>
+    </section>
+  `;
 }
 
 function renderRate() {
@@ -583,9 +1092,10 @@ function renderRate() {
   renderMobileCalculatorUI();
 }
 
-function generateEstimate(force = false) {
+function generateEstimate(force = false, { preserveBrief = false } = {}) {
   const project = getProject();
   state.rate = getActiveRate();
+  if (!preserveBrief) state.briefAi.analysis = null;
   if (force || !state.generated) {
     state.stages = createStages(project, getHoursLevel());
     state.expenses = [];
@@ -607,9 +1117,13 @@ function renderEstimate() {
   document.querySelector("[data-estimate-empty]").classList.toggle("is-hidden", state.generated);
   document.querySelector("[data-estimate-result]").classList.toggle("is-hidden", !state.generated);
   document.querySelector("[data-sticky-summary]").classList.toggle("is-hidden", !(state.view === "calculator" && state.generated));
+  renderBriefAiEntry();
   renderMobileCalculatorUI();
 
-  if (!state.generated) return;
+  if (!state.generated) {
+    renderBriefAiInsights();
+    return;
+  }
 
   syncEstimateMetaInputs();
   updateTotalsOnly();
@@ -647,6 +1161,7 @@ function renderEstimate() {
   });
 
   renderExpenses();
+  renderBriefAiInsights();
 }
 
 function updateTotalsOnly() {
@@ -1111,10 +1626,10 @@ function parseClientReply(text) {
 }
 
 function setClientReplyStatus(message, isError = false) {
-  const status = document.querySelector("[data-client-reply-status]");
-  if (!status) return;
-  status.textContent = message;
-  status.classList.toggle("is-error", isError);
+  document.querySelectorAll("[data-client-reply-status]").forEach((status) => {
+    status.textContent = message;
+    status.classList.toggle("is-error", isError);
+  });
 }
 
 function applyClientReplyText(text, { silent = false } = {}) {
@@ -1145,6 +1660,9 @@ function applyClientReplyText(text, { silent = false } = {}) {
   renderContractProgress();
   validateContractFields();
   scheduleContractSave();
+  mobileContractClientImportOpen = false;
+  mobileContractSheetSignature = "";
+  renderMobileContractUI({ forceSheet: true });
   setClientReplyStatus(`Заполнила: ${labels.join(", ")}.`);
   return true;
 }
@@ -1289,6 +1807,7 @@ function createDefaultContractDraft() {
       ads: false,
     },
     textOverrides: {},
+    hiddenClauses: {},
     signature: {
       dataUrl: savedSignature,
       mode: savedSignature ? "saved" : "once",
@@ -1331,6 +1850,7 @@ function normalizeContractDraft(saved) {
     fields: { ...defaults.fields, ...(draft.fields || {}) },
     optional: { ...defaults.optional, ...(draft.optional || {}) },
     textOverrides: { ...defaults.textOverrides, ...(draft.textOverrides || {}) },
+    hiddenClauses: { ...defaults.hiddenClauses, ...(draft.hiddenClauses || {}) },
     signature: { ...defaults.signature, ...(draft.signature || {}) },
     addendumFields: { ...defaults.addendumFields, ...(draft.addendumFields || {}) },
     addendumShowExplanations: draft.addendumShowExplanations ?? defaults.addendumShowExplanations,
@@ -1394,6 +1914,9 @@ function renderContractProgress() {
   if (panel) panel.open = missing.length > 0;
   if (!missing.length) {
     summary.innerHTML = `<p class="contract-required-summary__ok">Все обязательные поля заполнены. Можно скачивать PDF.</p>`;
+    if (!isRenderingMobileContractUI && !(document.activeElement && document.activeElement.closest?.("[data-mobile-contract-sheet]"))) {
+      renderMobileContractUI();
+    }
     return;
   }
   summary.innerHTML = `
@@ -1406,19 +1929,25 @@ function renderContractProgress() {
       `).join("")}
     </div>
   `;
+  if (!isRenderingMobileContractUI && !(document.activeElement && document.activeElement.closest?.("[data-mobile-contract-sheet]"))) {
+    renderMobileContractUI();
+  }
 }
 
 function renderContractTemplateStrip() {
-  const strip = document.querySelector("[data-contract-template-strip]");
-  if (!strip) return;
+  const strips = document.querySelectorAll("[data-contract-template-strip]");
+  if (!strips.length) return;
   const isAddendum = contractState.docType === "addendum";
-  strip.innerHTML = `
+  const markup = `
     <div class="doc-type-toggle">
       <button class="doc-type-toggle__btn ${!isAddendum ? "is-active" : ""}" type="button" data-action="show-contract-doc"><span class="doc-type-toggle__step">01</span>Договор</button>
       <button class="doc-type-toggle__btn ${isAddendum ? "is-active" : ""}" type="button" data-action="show-addendum-doc"><span class="doc-type-toggle__step">02</span>Допсоглашение</button>
     </div>
     <button class="reset-btn" type="button" data-action="reset-all-data" title="Сбросить все данные">↺ Сбросить</button>
   `;
+  strips.forEach((strip) => {
+    strip.innerHTML = markup;
+  });
 }
 
 function renderContractControls() {
@@ -1469,12 +1998,26 @@ function getContractClauseKey(sectionId, clause) {
   return `clause-${Math.abs(hash)}`;
 }
 
+function isContractClauseHidden(key) {
+  return Boolean(contractState.hiddenClauses?.[key]);
+}
+
+function renderClauseDeleteButton(key) {
+  return `
+    <button class="contract-clause-delete" type="button" data-action="delete-contract-clause" data-clause-key="${escapeHtml(key)}" aria-label="Удалить пункт">
+      ×
+    </button>
+  `;
+}
+
 function renderContractClause(sectionId, sectionNumber, clauseIndex, clause) {
   if (clause.optionalKey && !contractState.optional[clause.optionalKey]) return "";
   const clauseKey = getContractClauseKey(sectionId, clause);
+  if (isContractClauseHidden(clauseKey)) return "";
   const body = contractState.textOverrides?.[clauseKey] || clause.body;
   return `
-    <div class="contract-clause ${clause.optionalKey ? "contract-clause--optional" : ""}" data-contract-clause="${clause.optionalKey || "fixed"}">
+    <div class="contract-clause ${clause.optionalKey ? "contract-clause--optional" : ""}" data-contract-clause="${clause.optionalKey || "fixed"}" data-clause-key="${escapeHtml(clauseKey)}">
+      ${renderClauseDeleteButton(clauseKey)}
       ${clause.optionalKey ? `
         <div class="optional-section__actions">
           <button type="button" data-action="toggle-contract-option" data-option="${clause.optionalKey}">Убрать пункт</button>
@@ -1493,6 +2036,7 @@ function renderDocumentSection(id, title, clauses) {
   let clauseIndex = 0;
   const body = clauses.map((clause) => {
     if (clause.optionalKey && !contractState.optional[clause.optionalKey]) return "";
+    if (isContractClauseHidden(getContractClauseKey(id, clause))) return "";
     clauseIndex += 1;
     return renderContractClause(id, sectionNumber, clauseIndex, clause);
   }).join("");
@@ -1546,9 +2090,9 @@ function renderContractOptions() {
 }
 
 function renderContractModeControls() {
-  const toggle = document.querySelector("[data-contract-explanation-toggle]");
-  if (!toggle) return;
-  toggle.checked = Boolean(contractState.showExplanations);
+  document.querySelectorAll("[data-contract-explanation-toggle]").forEach((toggle) => {
+    toggle.checked = Boolean(contractState.showExplanations);
+  });
 }
 
 function renderSignaturePanel() {
@@ -1564,6 +2108,582 @@ function renderSignaturePanel() {
     el.disabled = !hasSignature;
     el.checked = hasSignature && contractState.signature.includeInPdf;
   });
+  if (!isRenderingMobileContractUI && !(document.activeElement && document.activeElement.closest?.("[data-mobile-contract-sheet]"))) {
+    renderMobileContractUI();
+  }
+}
+
+function isMobileContractUI() {
+  return window.innerWidth <= 760;
+}
+
+function isAddendumFieldFilled(key) {
+  const value = String(contractState.addendumFields[key] ?? "").trim();
+  return Boolean(value && !/^_+$/.test(value));
+}
+
+function shouldAutoFillAddendumField(value) {
+  const normalized = String(value ?? "").trim();
+  return !normalized || /^_+$/.test(normalized) || normalized === "Заказчик" || normalized === "Исполнитель";
+}
+
+function syncAddendumFromContract({ force = false } = {}) {
+  const fields = contractState.fields;
+  const addendum = contractState.addendumFields;
+  const pairs = [
+    ["clientName", fields.clientName],
+    ["contractorName", fields.contractorName],
+    ["city", fields.city],
+    ["contractNumber", fields.number],
+    ["contractDate", fields.date],
+  ];
+
+  pairs.forEach(([key, value]) => {
+    if ((force || shouldAutoFillAddendumField(addendum[key])) && value) {
+      addendum[key] = value;
+    }
+  });
+
+  if (force || shouldAutoFillAddendumField(addendum.date)) {
+    addendum.date = formatContractDate();
+  }
+}
+
+function getMobileContractFieldWord(count) {
+  const mod10 = count % 10;
+  const mod100 = count % 100;
+  if (mod10 === 1 && mod100 !== 11) return "поле";
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return "поля";
+  return "полей";
+}
+
+function getMobileContractTitle() {
+  if (contractState.docType === "addendum") return "Допсоглашение";
+  return contractState.templateKey === "design" ? "Рамочный договор" : getContractTemplate().title;
+}
+
+function getMobileContractSteps() {
+  if (contractState.docType === "addendum") {
+    return [
+      {
+        key: "document",
+        title: "Документ",
+        required: true,
+        allKeys: ["number", "contractNumber", "contractDate"],
+        requiredKeys: ["number", "contractNumber", "contractDate"],
+        filled: isAddendumFieldFilled,
+      },
+      {
+        key: "parties",
+        title: "Стороны",
+        required: true,
+        allKeys: ["clientName", "contractorName"],
+        requiredKeys: ["clientName", "contractorName"],
+        filled: isAddendumFieldFilled,
+      },
+      {
+        key: "task",
+        title: "Задача",
+        required: true,
+        allKeys: ["taskDescription", "deadline", "price", "paymentTerms"],
+        requiredKeys: ["taskDescription", "deadline", "price", "paymentTerms"],
+        filled: isAddendumFieldFilled,
+      },
+      {
+        key: "requirements",
+        title: "ТЗ и условия",
+        required: true,
+        allKeys: ["taskRequirements"],
+        requiredKeys: ["taskRequirements"],
+        filled: isAddendumFieldFilled,
+      },
+      {
+        key: "signature",
+        title: "Подпись",
+        required: false,
+        allKeys: ["signature"],
+        requiredKeys: [],
+        filled: (fieldKey) => fieldKey === "signature" ? Boolean(contractState.signature.dataUrl) : false,
+      },
+    ];
+  }
+
+  return [
+    {
+      key: "contractor",
+      title: "Исполнитель",
+      required: true,
+      allKeys: ["contractorName", "contractorInn", "bank", "hourly"],
+      requiredKeys: ["contractorName", "contractorInn", "bank"],
+      filled: isContractFieldFilled,
+    },
+    {
+      key: "document",
+      title: "Документ",
+      required: true,
+      allKeys: ["number", "city", "date"],
+      requiredKeys: ["number", "city", "date"],
+      filled: isContractFieldFilled,
+    },
+    {
+      key: "client",
+      title: "Клиент",
+      required: true,
+      allKeys: ["clientName", "clientInn", "clientAddress", "responsible", "responsibleContact"],
+      requiredKeys: ["clientName", "clientInn"],
+      filled: isContractFieldFilled,
+    },
+    {
+      key: "terms",
+      title: "Условия",
+      required: true,
+      allKeys: ["days"],
+      requiredKeys: ["days"],
+      filled: isContractFieldFilled,
+    },
+    {
+      key: "signature",
+      title: "Подпись",
+      required: false,
+      allKeys: ["signature"],
+      requiredKeys: [],
+      filled: (fieldKey) => fieldKey === "signature" ? Boolean(contractState.signature.dataUrl) : false,
+    },
+  ];
+}
+
+function getMobileContractStepState(step) {
+  const filledFn = step.filled || (() => false);
+  const allKeys = step.allKeys || [];
+  const requiredKeys = step.requiredKeys || [];
+  const allFilled = allKeys.filter((key) => filledFn(key)).length;
+  const requiredFilled = requiredKeys.filter((key) => filledFn(key)).length;
+
+  return {
+    allCount: allKeys.length,
+    allFilled,
+    requiredCount: requiredKeys.length,
+    requiredFilled,
+    remaining: Math.max(0, allKeys.length - allFilled),
+    requiredRemaining: Math.max(0, requiredKeys.length - requiredFilled),
+    requiredComplete: requiredKeys.length === 0 ? true : requiredFilled === requiredKeys.length,
+    allComplete: allKeys.length === 0 ? false : allFilled === allKeys.length,
+  };
+}
+
+function getMobileContractStepSubtitle(step, stepState) {
+  if (contractState.docType === "addendum") {
+    if (step.key === "document") {
+      if (!stepState.requiredComplete) return `осталось ${stepState.requiredRemaining} ${getMobileContractFieldWord(stepState.requiredRemaining)}`;
+      return `№ ${contractState.addendumFields.number || "___"} · договор ${contractState.addendumFields.contractNumber || "___"}`;
+    }
+    if (step.key === "parties") {
+      if (stepState.requiredComplete) return contractState.addendumFields.clientName || "Стороны заполнены";
+      return stepState.requiredRemaining ? `осталось ${stepState.requiredRemaining} ${getMobileContractFieldWord(stepState.requiredRemaining)}` : "проверь стороны";
+    }
+    if (step.key === "task") {
+      if (stepState.requiredComplete) return contractState.addendumFields.taskDescription || "Задача заполнена";
+      return `осталось ${stepState.requiredRemaining} ${getMobileContractFieldWord(stepState.requiredRemaining)}`;
+    }
+    if (step.key === "requirements") {
+      return stepState.requiredComplete ? "конкретизация задачи готова" : "добавьте техническое задание";
+    }
+    if (step.key === "signature") {
+      return contractState.signature.dataUrl ? "подпись загружена" : "не обязательно";
+    }
+  }
+
+  if (step.key === "contractor") {
+    if (stepState.requiredComplete) return "из профиля";
+    return stepState.requiredRemaining ? `осталось ${stepState.requiredRemaining} ${getMobileContractFieldWord(stepState.requiredRemaining)}` : "проверьте данные";
+  }
+  if (step.key === "document") {
+    if (!stepState.requiredComplete) return `осталось ${stepState.requiredRemaining} ${getMobileContractFieldWord(stepState.requiredRemaining)}`;
+    return `№ ${contractState.fields.number || "___"} · ${contractState.fields.city || "Город"}`;
+  }
+  if (step.key === "client") {
+    if (stepState.requiredComplete) return contractState.fields.clientName || "Клиент заполнен";
+    return stepState.requiredRemaining ? `осталось ${stepState.requiredRemaining} ${getMobileContractFieldWord(stepState.requiredRemaining)}` : "проверьте клиента";
+  }
+  if (step.key === "terms") {
+    return stepState.requiredComplete
+      ? `${contractState.templateKey === "design" ? "до" : "срок"} ${contractState.fields.days || "___"}`
+      : "укажите срок";
+  }
+  if (step.key === "signature") {
+    return contractState.signature.dataUrl ? "подпись загружена" : "не обязательно";
+  }
+
+  return "";
+}
+
+function renderMobileContractControl(label, key, placeholder, options = {}) {
+  const {
+    value = contractState.fields[key] || "",
+    kind = "contract",
+    type = "text",
+    multiline = false,
+    rows = 4,
+  } = options;
+  const attr = kind === "addendum" ? "data-addendum-control" : "data-contract-control";
+  const safeValue = escapeHtml(String(value || ""));
+
+  if (multiline) {
+    return `
+      <label class="mobile-contract-sheet__field">
+        <span>${escapeHtml(label)}</span>
+        <textarea ${attr}="${key}" rows="${rows}" placeholder="${escapeHtml(placeholder)}">${safeValue}</textarea>
+      </label>
+    `;
+  }
+
+  return `
+    <label class="mobile-contract-sheet__field">
+      <span>${escapeHtml(label)}</span>
+      <input type="${type}" ${attr}="${key}" value="${safeValue}" placeholder="${escapeHtml(placeholder)}">
+    </label>
+  `;
+}
+
+function renderMobileContractSheetContent() {
+  const body = document.querySelector("[data-mobile-contract-sheet-body]");
+  if (!body) return;
+  const signature = `${contractState.docType}:${mobileContractSheetKey}:${mobileContractClientImportOpen}`;
+  if (signature === mobileContractSheetSignature) return;
+  mobileContractSheetSignature = signature;
+
+  const vacationOn = Boolean(contractState.optional.vacation);
+  const toDateInputValue = (ddmmyyyy) => {
+    if (!ddmmyyyy) return "";
+    const [d, m, y] = String(ddmmyyyy).split(".");
+    if (!d || !m || !y) return "";
+    return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
+  };
+
+  if (contractState.docType === "addendum") {
+    if (mobileContractSheetKey === "document") {
+      body.innerHTML = `
+        <div class="mobile-contract-sheet__section">
+          <p class="mobile-contract-sheet__hint">Проверьте номер документа и привязку к рамочному договору.</p>
+          ${renderMobileContractControl("Номер допсоглашения", "number", "1", { kind: "addendum", value: contractState.addendumFields.number })}
+          ${renderMobileContractControl("Номер договора", "contractNumber", "___", { kind: "addendum", value: contractState.addendumFields.contractNumber })}
+          ${renderMobileContractControl("Дата договора", "contractDate", formatContractDate(), { kind: "addendum", value: contractState.addendumFields.contractDate })}
+        </div>
+      `;
+      return;
+    }
+
+    if (mobileContractSheetKey === "parties") {
+      body.innerHTML = `
+        <div class="mobile-contract-sheet__section">
+          <p class="mobile-contract-sheet__hint">Эти данные можно подтянуть из рамочного договора и поправить вручную.</p>
+          ${renderMobileContractControl("Заказчик", "clientName", "ФИО или ООО «... »", { kind: "addendum", value: contractState.addendumFields.clientName })}
+          ${renderMobileContractControl("Исполнитель", "contractorName", "ИП Фамилия И.О.", { kind: "addendum", value: contractState.addendumFields.contractorName })}
+        </div>
+      `;
+      return;
+    }
+
+    if (mobileContractSheetKey === "task") {
+      body.innerHTML = `
+        <div class="mobile-contract-sheet__section">
+          <p class="mobile-contract-sheet__hint">Здесь фиксируем саму задачу, сроки и деньги — это потом попадёт в документ.</p>
+          ${renderMobileContractControl("Предмет задания", "taskDescription", "Разработка логотипа", { kind: "addendum", value: contractState.addendumFields.taskDescription })}
+          ${renderMobileContractControl("Срок выполнения", "deadline", "до 30.06.2026 или 14 дней", { kind: "addendum", value: contractState.addendumFields.deadline })}
+          ${renderMobileContractControl("Стоимость", "price", "50 000 ₽", { kind: "addendum", value: contractState.addendumFields.price })}
+          ${renderMobileContractControl("Порядок оплаты", "paymentTerms", "50% аванс и 50% после акта", { kind: "addendum", value: contractState.addendumFields.paymentTerms })}
+        </div>
+      `;
+      return;
+    }
+
+    if (mobileContractSheetKey === "requirements") {
+      body.innerHTML = `
+        <div class="mobile-contract-sheet__section">
+          <p class="mobile-contract-sheet__hint">Это и есть конкретизация задачи: формат, объём, материалы и важные ограничения.</p>
+          ${renderMobileContractControl("Техническое задание", "taskRequirements", "Формат, размеры, стиль, конкретные элементы...", {
+            kind: "addendum",
+            value: contractState.addendumFields.taskRequirements,
+            multiline: true,
+            rows: 9,
+          })}
+        </div>
+      `;
+      return;
+    }
+  } else {
+    if (mobileContractSheetKey === "contractor") {
+      body.innerHTML = `
+        <div class="mobile-contract-sheet__section">
+          <p class="mobile-contract-sheet__hint">Данные подставляются из профиля, но здесь их можно быстро поправить перед выгрузкой.</p>
+          ${renderMobileContractControl("ФИО / название", "contractorName", "Исполнитель")}
+          ${renderMobileContractControl("ИНН", "contractorInn", "771234567890")}
+          ${renderMobileContractControl("Реквизиты оплаты", "bank", "банк / карта / счёт")}
+          ${renderMobileContractControl("Час доп. работы", "hourly", "2 500")}
+        </div>
+      `;
+      return;
+    }
+
+    if (mobileContractSheetKey === "document") {
+      body.innerHTML = `
+        <div class="mobile-contract-sheet__section">
+          <p class="mobile-contract-sheet__hint">Номер, город и дата автоматически подставятся в шапку договора.</p>
+          ${renderMobileContractControl("Номер", "number", "1")}
+          ${renderMobileContractControl("Город", "city", "Москва")}
+          ${renderMobileContractControl("Дата", "date", "«__» ________ 2026 г.")}
+        </div>
+      `;
+      return;
+    }
+
+    if (mobileContractSheetKey === "client") {
+      body.innerHTML = `
+        <div class="mobile-contract-sheet__section">
+          <button class="mobile-contract-sheet__import-toggle" type="button" data-action="toggle-mobile-client-import">
+            Вставить ответ клиента
+          </button>
+          ${mobileContractClientImportOpen ? `
+            <div class="mobile-contract-sheet__import-box">
+              <pre class="client-request-preview" data-client-request-text>Привет! Для подготовки договора пришлите, пожалуйста, одним сообщением:
+
+ФИО / название компании:
+ИНН:
+Ответственное лицо:
+Телефон / Telegram:
+Юридический или почтовый адрес:
+
+Для выставления счёта также нужны:
+Расчётный счёт:
+БИК банка:
+Название банка:
+
+Если вы самозанятый или физлицо — реквизиты счёта всё равно нужны для оплаты.</pre>
+              <button class="button button--ghost button--wide" type="button" data-action="copy-client-request">Скопировать запрос</button>
+              <textarea class="client-reply-textarea" data-client-reply-input rows="5" placeholder="Вставьте ответ клиента — разложу данные по полям автоматически.">${escapeHtml(mobileContractClientReplyDraft)}</textarea>
+              <button class="button button--primary button--wide" type="button" data-action="parse-client-reply">Заполнить из ответа</button>
+              <p class="client-reply-status" data-client-reply-status>Принимаю свободный текст: ФИО, ИНН, телефон, email, Telegram, адрес.</p>
+            </div>
+          ` : ""}
+          ${renderMobileContractControl("ФИО / название", "clientName", "ООО «Ромашка»")}
+          ${renderMobileContractControl("ИНН", "clientInn", "10 или 12 цифр")}
+          ${renderMobileContractControl("Адрес", "clientAddress", "юридический / почтовый адрес")}
+          ${renderMobileContractControl("Ответственное лицо", "responsible", "ФИО, должность")}
+          ${renderMobileContractControl("Контакты", "responsibleContact", "телефон / telegram")}
+        </div>
+      `;
+      return;
+    }
+
+    if (mobileContractSheetKey === "terms") {
+      body.innerHTML = `
+        <div class="mobile-contract-sheet__section">
+          <p class="mobile-contract-sheet__hint">Здесь настраиваются срок и базовые условия. Текст пунктов можно потом править уже в самом документе.</p>
+          ${renderMobileContractControl(contractState.templateKey === "design" ? "Действует до" : "Срок работы, дней", "days", contractState.templateKey === "design" ? "31.12.2026" : "30")}
+          <label class="mobile-contract-sheet__toggle">
+            <input type="checkbox" data-action="toggle-contract-option" data-option="vacation" ${vacationOn ? "checked" : ""}>
+            <span>Добавить плановый перерыв</span>
+          </label>
+          ${vacationOn ? `
+            <div class="mobile-contract-sheet__dates">
+              <label class="mobile-contract-sheet__field">
+                <span>С</span>
+                <input type="date" data-vacation-field="vacationFrom" value="${toDateInputValue(contractState.fields.vacationFrom)}">
+              </label>
+              <label class="mobile-contract-sheet__field">
+                <span>По</span>
+                <input type="date" data-vacation-field="vacationTo" value="${toDateInputValue(contractState.fields.vacationTo)}">
+              </label>
+            </div>
+          ` : ""}
+        </div>
+      `;
+      return;
+    }
+  }
+
+  body.innerHTML = `
+    <div class="mobile-contract-sheet__section">
+      <p class="mobile-contract-sheet__hint">Подпись опциональна. Если загрузите её один раз, можно вставлять в PDF автоматически.</p>
+      <div class="signature-preview" data-signature-preview></div>
+      <div class="signature-actions">
+        <button class="button button--ghost button--wide" type="button" data-action="upload-signature">Загрузить подпись</button>
+        <button class="button button--ghost button--wide" type="button" data-action="delete-signature">Удалить</button>
+      </div>
+      <label class="mobile-contract-sheet__toggle">
+        <input type="checkbox" data-signature-pdf-toggle>
+        <span>Включить подпись в PDF</span>
+      </label>
+    </div>
+  `;
+}
+
+function renderMobileContractUI({ forceSheet = false } = {}) {
+  if (isRenderingMobileContractUI) return;
+  isRenderingMobileContractUI = true;
+
+  const workspace = document.querySelector(".contract-workspace");
+  const flow = document.querySelector("[data-mobile-contract-flow]");
+  const stepsNode = document.querySelector("[data-mobile-contract-steps]");
+  const sheet = document.querySelector("[data-mobile-contract-sheet]");
+  const backButton = document.querySelector(".mobile-contract-back");
+  const actionBar = document.querySelector(".mobile-contract-actions");
+  const undoButton = document.querySelector("[data-action='undo-contract-delete']");
+  const titleNode = document.querySelector("[data-mobile-contract-title]");
+  const progressFill = document.querySelector("[data-mobile-contract-progress-fill]");
+  const progressLabel = document.querySelector("[data-mobile-contract-progress-label]");
+  const cta = document.querySelector(".mobile-contract-cta");
+  const canUseMobileFlow = Boolean(
+    workspace &&
+    state.view === "contract" &&
+    contractState.mode === "fill" &&
+    isMobileContractUI()
+  );
+
+  if (workspace) {
+    workspace.dataset.mobileDoc = mobileContractDocVisible ? "doc" : "steps";
+  }
+
+  if (!canUseMobileFlow) {
+    if (flow) flow.hidden = true;
+    if (sheet) {
+      sheet.hidden = true;
+      sheet.setAttribute("aria-hidden", "true");
+    }
+    if (backButton) backButton.hidden = true;
+    if (actionBar) actionBar.hidden = true;
+    document.body.classList.remove("mobile-contract-sheet-open");
+    isRenderingMobileContractUI = false;
+    return;
+  }
+
+  if (flow) flow.hidden = mobileContractDocVisible;
+  if (backButton) backButton.hidden = !mobileContractDocVisible;
+  if (actionBar) actionBar.hidden = !mobileContractDocVisible;
+
+  const steps = getMobileContractSteps();
+  const requiredSteps = steps.filter((step) => step.required);
+  const completedRequiredSteps = requiredSteps.filter((step) => getMobileContractStepState(step).requiredComplete).length;
+  const progressRatio = requiredSteps.length ? completedRequiredSteps / requiredSteps.length : 0;
+
+  if (titleNode) titleNode.textContent = getMobileContractTitle();
+  if (progressFill) progressFill.style.width = `${Math.round(progressRatio * 100)}%`;
+  if (progressLabel) progressLabel.textContent = `${completedRequiredSteps} из ${requiredSteps.length}`;
+
+  if (stepsNode) {
+    stepsNode.innerHTML = steps.map((step) => {
+      const stepState = getMobileContractStepState(step);
+      const isActive = step.key === mobileContractSheetKey && !mobileContractDocVisible;
+      const isOptional = !step.required;
+      const isDone = isOptional ? Boolean(contractState.signature.dataUrl) : stepState.requiredComplete;
+      const icon = isDone ? "✓" : (isOptional ? "∿" : "✎");
+      const subtitle = getMobileContractStepSubtitle(step, stepState);
+      return `
+        <button class="mobile-contract-step ${isActive ? "is-active" : ""} ${isDone ? "is-complete" : ""}" type="button" data-action="open-mobile-contract-sheet" data-mobile-contract-step="${step.key}">
+          <span class="mobile-contract-step__icon" aria-hidden="true">${icon}</span>
+          <span class="mobile-contract-step__copy">
+            <strong>${escapeHtml(step.title)}</strong>
+            <small>${escapeHtml(subtitle)}</small>
+          </span>
+          <span class="mobile-contract-step__arrow" aria-hidden="true">›</span>
+        </button>
+      `;
+    }).join("");
+  }
+
+  if (cta) {
+    cta.disabled = completedRequiredSteps !== requiredSteps.length;
+    cta.textContent = contractState.docType === "addendum" ? "Показать допсоглашение" : "Показать договор";
+  }
+
+  if (undoButton) {
+    undoButton.disabled = !lastDeletedContractClause;
+  }
+
+  const isSheetOpen = Boolean(mobileContractSheetKey && !mobileContractDocVisible);
+  if (sheet) {
+    sheet.hidden = !isSheetOpen;
+    sheet.setAttribute("aria-hidden", String(!isSheetOpen));
+  }
+  document.body.classList.toggle("mobile-contract-sheet-open", isSheetOpen);
+
+  if (!isSheetOpen) {
+    isRenderingMobileContractUI = false;
+    return;
+  }
+
+  const currentStep = steps.find((step) => step.key === mobileContractSheetKey);
+  const sheetTitleNode = document.querySelector("[data-mobile-contract-sheet-title]");
+  if (sheetTitleNode) sheetTitleNode.textContent = currentStep?.title || "Шаг договора";
+
+  document.querySelectorAll(".mobile-contract-sheet__handle").forEach((button) => {
+    button.setAttribute("aria-label", isSheetOpen ? "Свернуть панель договора" : "Развернуть панель договора");
+  });
+
+  if (forceSheet) mobileContractSheetSignature = "";
+  renderMobileContractSheetContent();
+  renderSignaturePanel();
+  isRenderingMobileContractUI = false;
+}
+
+function openMobileContractSheet(key) {
+  if (mobileContractSheetKey === key && !mobileContractDocVisible && isMobileContractUI()) {
+    closeMobileContractSheet();
+    return;
+  }
+  mobileContractSheetKey = key;
+  mobileContractSheetSignature = "";
+  renderMobileContractUI({ forceSheet: true });
+}
+
+function closeMobileContractSheet() {
+  mobileContractSheetKey = "";
+  mobileContractSheetSignature = "";
+  mobileContractClientImportOpen = false;
+  renderMobileContractUI({ forceSheet: true });
+}
+
+function showMobileContractDoc() {
+  const requiredSteps = getMobileContractSteps().filter((step) => step.required);
+  const ready = requiredSteps.every((step) => getMobileContractStepState(step).requiredComplete);
+  if (!ready) return;
+  mobileContractDocVisible = true;
+  closeMobileContractSheet();
+  renderMobileContractUI({ forceSheet: true });
+}
+
+function hideMobileContractDoc() {
+  mobileContractDocVisible = false;
+  closeMobileContractSheet();
+  renderMobileContractUI({ forceSheet: true });
+}
+
+function renderActiveContractDocument() {
+  if (contractState.docType === "addendum") {
+    renderAddendumDocument();
+  } else {
+    renderContractDocument();
+  }
+  renderMobileContractUI();
+}
+
+function deleteContractClause(key) {
+  if (!key) return;
+  contractState.hiddenClauses = contractState.hiddenClauses || {};
+  if (contractState.hiddenClauses[key]) return;
+  contractState.hiddenClauses[key] = true;
+  lastDeletedContractClause = key;
+  renderActiveContractDocument();
+  scheduleContractSave();
+}
+
+function undoLastContractClauseDelete() {
+  if (!lastDeletedContractClause) return;
+  contractState.hiddenClauses = contractState.hiddenClauses || {};
+  delete contractState.hiddenClauses[lastDeletedContractClause];
+  lastDeletedContractClause = null;
+  renderActiveContractDocument();
+  scheduleContractSave();
 }
 
 function renderContractChooser() {
@@ -1712,12 +2832,30 @@ function renderAddendumControls() {
       </label>
     </details>
   `;
+  if (!isRenderingMobileContractUI && !(document.activeElement && document.activeElement.closest?.("[data-mobile-contract-sheet]"))) {
+    renderMobileContractUI();
+  }
 }
 
 function renderAddendumModeControls() {
   document.querySelectorAll("[data-contract-explanation-toggle]").forEach((t) => {
     t.checked = Boolean(contractState.addendumShowExplanations);
   });
+}
+
+function getAddendumClauseKey(key) {
+  return `addendum-${key}`;
+}
+
+function renderAddendumClause(key, body) {
+  const clauseKey = getAddendumClauseKey(key);
+  if (isContractClauseHidden(clauseKey)) return "";
+  return `
+    <div class="contract-clause" data-clause-key="${escapeHtml(clauseKey)}">
+      ${renderClauseDeleteButton(clauseKey)}
+      ${body}
+    </div>
+  `;
 }
 
 function renderAddendumSidebar() {
@@ -1808,70 +2946,70 @@ function renderAddendumDocument() {
     <div class="contract-doc addendum-doc" data-section="addendum-task">
       <section class="document-section">
         <h2><span class="section-num">1.</span> Предмет задания</h2>
-        <div class="contract-clause">
+        ${renderAddendumClause("task-description", `
           <p>Исполнитель обязуется выполнить по заданию Заказчика следующие работы:</p>
           <div class="addendum-tz-block">${addendumField("taskDescription", "Опишите задачу...", "div")}</div>
-        </div>
+        `)}
       </section>
 
       <section class="document-section">
         <h2><span class="section-num">2.</span> Требования к результату работ</h2>
-        <div class="contract-clause">
+        ${renderAddendumClause("task-requirements", `
           <p>Результат работ должен соответствовать следующим требованиям:</p>
           <div class="addendum-tz-block">${addendumField("taskRequirements", "Форматы, размеры, стиль, конкретные элементы...", "div")}</div>
-        </div>
+        `)}
       </section>
 
       <section class="document-section">
         <h2><span class="section-num">3.</span> Срок выполнения работ</h2>
-        <div class="contract-clause">
+        ${renderAddendumClause("deadline", `
           <p>Срок выполнения работ составляет: ${addendumField("deadline", "укажите дату или количество дней")}.</p>
-        </div>
+        `)}
       </section>
 
       <section class="document-section">
         <h2><span class="section-num">4.</span> Стоимость работ и порядок оплаты</h2>
-        <div class="contract-clause">
+        ${renderAddendumClause("payment", `
           <p>Стоимость работ составляет: ${addendumField("price", "сумма в рублях")}.</p>
           <p>Порядок оплаты: ${addendumField("paymentTerms", "50% аванс и 50% после акта")}.</p>
-        </div>
+        `)}
       </section>
 
       <section class="document-section">
         <h2><span class="section-num">5.</span> Контактное лицо Заказчика</h2>
-        <div class="contract-clause">
+        ${renderAddendumClause("client-contact", `
           <p>Для согласования результатов работ Заказчик определяет контактное лицо:</p>
           <p>ФИО: ${addendumField("contactName", "__________________________")}</p>
           <p>Контакты: ${addendumField("contactInfo", "______________________")}</p>
-        </div>
+        `)}
       </section>
 
       <section class="document-section">
         <h2><span class="section-num">6.</span> Дополнительные условия</h2>
-        <div class="contract-clause">
+        ${renderAddendumClause("extra-conditions", `
           ${f.revisionsPerStage ? `<p>Включено до ${addendumField("revisionsPerStage", "2")} итераций бесплатных правок на этап.</p>` : ""}
           ${f.revisionRate ? `<p>В случае дополнительных правок стоимость услуг рассчитывается по тарифу: ${addendumField("revisionRate", "___")} ₽/ч</p>` : ""}
           ${f.includeRightsTransfer !== false ? `<p>Передача прав: все материалы передаются с полными правами использования Заказчику.</p>` : ""}
           ${f.otherConditions ? `<div class="addendum-tz-block">${addendumField("otherConditions", "", "div")}</div>` : ""}
-        </div>
+        `)}
       </section>
     </div>
 
     <div class="contract-doc addendum-doc" data-section="addendum-final">
       <section class="document-section">
         <h2><span class="section-num">7.</span> Заключительные положения</h2>
-        <div class="contract-clause">
+        ${renderAddendumClause("final", `
           <p>Настоящее Дополнительное соглашение является неотъемлемой частью Договора.</p>
           <p>Во всём, что не урегулировано настоящим Дополнительным соглашением, Стороны руководствуются условиями Договора.</p>
           <p>Настоящее Дополнительное соглашение вступает в силу с момента его подписания Сторонами.</p>
-        </div>
+        `)}
       </section>
     </div>
 
     <div class="contract-doc addendum-doc" data-section="addendum-signatures">
       <section class="document-section">
         <h2><span class="section-num">8.</span> Реквизиты и подписи сторон</h2>
-        <div class="contract-clause">
+        ${renderAddendumClause("signatures", `
           <div class="requisites-grid">
             <div class="requisite-card">
               <p><strong>Заказчик</strong></p>
@@ -1892,7 +3030,7 @@ function renderAddendumDocument() {
               </div>
             </div>
           </div>
-        </div>
+        `)}
       </section>
     </div>
   `;
@@ -1906,14 +3044,18 @@ function renderContractWorkspace() {
   if (workspace) {
     workspace.dataset.mode = contractState.mode;
     workspace.dataset.docType = contractState.docType || "contract";
+    workspace.dataset.mobileDoc = mobileContractDocVisible ? "doc" : "steps";
   }
   applyContractAutoDefaults();
+  mobileContractSheetSignature = "";
 
   renderContractTemplateStrip();
 
   if (contractState.docType === "addendum") {
+    syncAddendumFromContract();
     renderAddendumSidebar();
     renderAddendumDocument();
+    renderMobileContractUI({ forceSheet: true });
     updateAutosaveStatus("Сохранено");
     return;
   }
@@ -1925,6 +3067,7 @@ function renderContractWorkspace() {
   renderContractOptions();
   renderContractDocument();
   renderContractProgress();
+  renderMobileContractUI({ forceSheet: true });
   updateAutosaveStatus("Сохранено");
   requestAnimationFrame(setupContractScrollSpy);
 }
@@ -2509,7 +3652,7 @@ function printContract(onDone) {
   const source = document.querySelector("[data-contract-canvas]");
   if (!source) return;
   const clone = source.cloneNode(true);
-  clone.querySelectorAll(".optional-section__actions, .document-note, .document-coverline").forEach((node) => node.remove());
+  clone.querySelectorAll(".optional-section__actions, .contract-clause-delete, .document-note, .document-coverline").forEach((node) => node.remove());
   clone.querySelectorAll("[contenteditable]").forEach((node) => node.removeAttribute("contenteditable"));
 
   const isAddendum = contractState.docType === "addendum";
@@ -2544,7 +3687,7 @@ function printContract(onDone) {
       .pdf-clean-body { padding: 60px 72px; background: #fff; font-family: "Onest", Arial, sans-serif; color: #111; min-height: 1123px; box-sizing: border-box; }
       .pdf-clean-body .inline-field, .pdf-clean-body .inline-field--block { border: none !important; background: none !important; padding: 0 !important; border-radius: 0 !important; }
       .pdf-clean-body .document-note { display: none !important; }
-      .pdf-clean-body .optional-section__actions { display: none !important; }
+      .pdf-clean-body .optional-section__actions, .pdf-clean-body .contract-clause-delete { display: none !important; }
       .pdf-clean-body [contenteditable] { outline: none !important; }
       .pdf-clean-body .contract-signature-img, .pdf-clean-body .signature-image { max-width: 160px; max-height: 60px; }
     </style>
@@ -2725,6 +3868,56 @@ function bindEvents() {
       closeMobileCalcSheet();
       return;
     }
+    if (action === "open-brief-ai") {
+      openBriefAiModal();
+      return;
+    }
+    if (action === "analyze-brief") {
+      runBriefAnalysis();
+      return;
+    }
+    if (action === "open-mobile-contract-sheet") {
+      openMobileContractSheet(actionTarget.dataset.mobileContractStep || "document");
+      return;
+    }
+    if (action === "toggle-mobile-contract-sheet") {
+      if (mobileContractSheetKey) {
+        closeMobileContractSheet();
+      } else {
+        openMobileContractSheet("document");
+      }
+      return;
+    }
+    if (action === "close-mobile-contract-sheet") {
+      closeMobileContractSheet();
+      return;
+    }
+    if (action === "apply-mobile-contract-sheet") {
+      closeMobileContractSheet();
+      return;
+    }
+    if (action === "toggle-mobile-client-import") {
+      mobileContractClientImportOpen = !mobileContractClientImportOpen;
+      mobileContractSheetSignature = "";
+      renderMobileContractUI({ forceSheet: true });
+      return;
+    }
+    if (action === "show-mobile-contract-doc") {
+      showMobileContractDoc();
+      return;
+    }
+    if (action === "hide-mobile-contract-doc") {
+      hideMobileContractDoc();
+      return;
+    }
+    if (action === "delete-contract-clause") {
+      deleteContractClause(actionTarget.dataset.clauseKey);
+      return;
+    }
+    if (action === "undo-contract-delete") {
+      undoLastContractClauseDelete();
+      return;
+    }
     if (action === "generate-estimate") {
       closeMobileCalcSheet();
       generateEstimate(true);
@@ -2781,30 +3974,25 @@ function bindEvents() {
       if (!confirm("Сбросить все данные договора и допсоглашения? Это действие нельзя отменить.")) return;
       const fresh = createDefaultContractDraft();
       Object.assign(contractState, fresh);
+      mobileContractDocVisible = false;
+      mobileContractSheetKey = "";
+      mobileContractClientImportOpen = false;
       scheduleContractSave();
       renderContractWorkspace();
       return;
     }
     if (action === "show-contract-doc") {
       contractState.docType = "contract";
+      mobileContractDocVisible = false;
+      mobileContractSheetKey = "";
       scheduleContractSave();
       renderContractWorkspace();
     }
     if (action === "show-addendum-doc") {
-      // Auto-fill addendum parties from contract fields if empty
-      if (!contractState.addendumFields.clientName) {
-        contractState.addendumFields.clientName = contractState.fields.clientName || "";
-      }
-      if (!contractState.addendumFields.contractorName) {
-        contractState.addendumFields.contractorName = contractState.fields.contractorName || "";
-      }
-      if (!contractState.addendumFields.city) {
-        contractState.addendumFields.city = contractState.fields.city || "";
-      }
-      if (!contractState.addendumFields.date) {
-        contractState.addendumFields.date = formatContractDate();
-      }
+      syncAddendumFromContract();
       contractState.docType = "addendum";
+      mobileContractDocVisible = false;
+      mobileContractSheetKey = "";
       scheduleContractSave();
       renderContractWorkspace();
     }
@@ -2858,6 +4046,8 @@ function bindEvents() {
       if (CONTRACT_TEMPLATES[key]) {
         contractState.templateKey = key;
         contractState.mode = "fill";
+        mobileContractDocVisible = false;
+        mobileContractSheetKey = "";
         scheduleContractSave();
         renderContractWorkspace();
       }
@@ -2869,12 +4059,16 @@ function bindEvents() {
       } else if (cardType === "design") {
         contractState.templateKey = "design";
         contractState.mode = "fill";
+        mobileContractDocVisible = false;
+        mobileContractSheetKey = "";
         scheduleContractSave();
         renderContractWorkspace();
       }
     }
     if (action === "back-to-chooser") {
       contractState.mode = "pick";
+      mobileContractDocVisible = false;
+      mobileContractSheetKey = "";
       scheduleContractSave();
       renderContractWorkspace();
     }
@@ -2888,7 +4082,11 @@ function bindEvents() {
       });
     }
     if (action === "parse-client-reply") {
-      const value = document.querySelector("[data-client-reply-input]")?.value || "";
+      const container = actionTarget.closest(".client-reply-import, .mobile-contract-sheet__import-box");
+      const value = container?.querySelector("[data-client-reply-input]")?.value
+        || document.querySelector("[data-client-reply-input]")?.value
+        || mobileContractClientReplyDraft
+        || "";
       applyClientReplyText(value);
     }
     if (action === "focus-contract-field") {
@@ -2908,6 +4106,7 @@ function bindEvents() {
       const key = input.dataset.addendumControl;
       contractState.addendumFields[key] = input.value;
       renderAddendumDocument();
+      if (!input.closest("[data-mobile-contract-sheet]")) renderMobileContractUI();
       scheduleContractSave();
       return;
     }
@@ -2915,6 +4114,7 @@ function bindEvents() {
     if (input.matches("[data-addendum-field]")) {
       const key = input.dataset.addendumField;
       contractState.addendumFields[key] = input.textContent.trim();
+      renderMobileContractUI();
       scheduleContractSave();
       return;
     }
@@ -2948,10 +4148,16 @@ function bindEvents() {
     }
 
     if (input.matches("[data-client-reply-input]")) {
+      mobileContractClientReplyDraft = input.value;
       clearTimeout(clientReplyParseTimer);
       clientReplyParseTimer = setTimeout(() => {
         applyClientReplyText(input.value, { silent: true });
       }, 450);
+      return;
+    }
+
+    if (input.matches("[data-brief-ai-input]")) {
+      state.briefAi.sourceText = input.value;
       return;
     }
 
@@ -3014,6 +4220,7 @@ function bindEvents() {
       contractState.signature.includeInPdf = input.checked;
       renderContractDocument();
       renderAddendumDocument();
+      renderMobileContractUI();
       scheduleContractSave();
       return;
     }
@@ -3021,6 +4228,7 @@ function bindEvents() {
       const key = input.dataset.addendumControl;
       contractState.addendumFields[key] = input.checked;
       renderAddendumDocument();
+      renderMobileContractUI();
       scheduleContractSave();
       return;
     }
@@ -3037,6 +4245,7 @@ function bindEvents() {
       contractState.fields[fieldKey] = (y && m && d) ? `${d}.${m}.${y}` : "";
       syncContractControls(fieldKey);
       renderContractDocument();
+      renderMobileContractUI();
       scheduleContractSave();
       return;
     }
@@ -3048,6 +4257,9 @@ function bindEvents() {
         contractState.showExplanations = input.checked;
         renderContractDocument();
       }
+      renderContractModeControls();
+      renderAddendumModeControls();
+      renderMobileContractUI();
       scheduleContractSave();
       return;
     }
