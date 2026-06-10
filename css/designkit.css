@@ -953,7 +953,7 @@ summary:focus-visible,
 }
 
 .deedoc-card--paper {
-  padding: 36px 32px 32px;
+  padding: 36px 40px 36px;
   background-color: var(--ddoc-color-card-solid);
   color: var(--ddoc-color-title);
 }
