@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>DesiDoc — сметы и договоры</title>
   <meta name="description" content="DesiDoc: сметы, договоры и проектные документы для дизайнеров.">
-  <link rel="stylesheet" href="css/designkit.css?v=78">
+  <link rel="stylesheet" href="css/designkit.css?v=79">
 </head>
 <body data-view="home">
   <div class="app" data-view="home">
@@ -121,18 +121,24 @@
           <section class="mobile-calc-controls" aria-label="Параметры сметы">
             <div class="mobile-calc-controls__rail">
               <button class="mobile-calc-chip" type="button" data-action="open-mobile-calc-sheet" data-mobile-sheet="project">
-                <span>Проект</span>
-                <strong data-mobile-chip-value="project">Дизайн сайта</strong>
+                <div class="mobile-calc-chip__text">
+                  <span>Проект</span>
+                  <strong data-mobile-chip-value="project">Дизайн сайта</strong>
+                </div>
                 <svg class="mobile-calc-chip__chevron" width="10" height="6" viewBox="0 0 10 6" fill="none" aria-hidden="true"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </button>
               <button class="mobile-calc-chip" type="button" data-action="open-mobile-calc-sheet" data-mobile-sheet="rate">
-                <span>Ставка</span>
-                <strong data-mobile-chip-value="rate">1 500 ₽/ч</strong>
+                <div class="mobile-calc-chip__text">
+                  <span>Ставка</span>
+                  <strong data-mobile-chip-value="rate">1 500 ₽/ч</strong>
+                </div>
                 <svg class="mobile-calc-chip__chevron" width="10" height="6" viewBox="0 0 10 6" fill="none" aria-hidden="true"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </button>
               <button class="mobile-calc-chip" type="button" data-action="open-mobile-calc-sheet" data-mobile-sheet="tax">
-                <span>Налог</span>
-                <strong data-mobile-chip-value="tax">СЗ · 4%</strong>
+                <div class="mobile-calc-chip__text">
+                  <span>Налог</span>
+                  <strong data-mobile-chip-value="tax">СЗ · 4%</strong>
+                </div>
                 <svg class="mobile-calc-chip__chevron" width="10" height="6" viewBox="0 0 10 6" fill="none" aria-hidden="true"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </button>
             </div>

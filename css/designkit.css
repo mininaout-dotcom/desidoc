@@ -5074,10 +5074,10 @@ body.mobile-calc-sheet-open {
   .mobile-calc-chip {
     min-height: 56px;
     display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    justify-content: center;
-    gap: 4px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
     padding: 10px 12px;
     border: 1px solid color-mix(in srgb, var(--cv-line) 88%, white);
     border-radius: 19px;
@@ -5087,6 +5087,14 @@ body.mobile-calc-sheet-open {
     backdrop-filter: blur(18px);
     -webkit-backdrop-filter: blur(18px);
     text-align: left;
+  }
+
+  .mobile-calc-chip__text {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+    flex: 1;
   }
 
   .mobile-calc-chip span {
@@ -5109,7 +5117,7 @@ body.mobile-calc-sheet-open {
 
   .mobile-calc-chip__chevron {
     display: block;
-    margin-top: auto;
+    margin-top: 0;
     color: var(--cv-muted);
     flex-shrink: 0;
   }
@@ -5387,6 +5395,11 @@ body.mobile-calc-sheet-open {
 
   .cv-empty-amount {
     font-size: 64px;
+  }
+
+  /* ── После расчёта убираем CTA из sticky — кнопка «Пересчитать» уже внизу сметы ── */
+  [data-estimate="ready"] .mobile-calc-controls__cta {
+    display: none;
   }
 }
 
