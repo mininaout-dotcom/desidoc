@@ -3330,6 +3330,10 @@ h2 {
     gap: 20px;
   }
 
+  .deedoc-hero__inner {
+    width: 100%;
+  }
+
   .deedoc-hero h1 {
     font-size: 22px;
     padding: 0 21px;
