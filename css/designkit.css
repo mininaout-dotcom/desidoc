@@ -3344,7 +3344,7 @@ h2 {
 
   .deedoc-card {
     width: auto;
-    min-height: 200px;
+    min-height: 220px;
     max-width: none;
     flex: unset;
     border-radius: var(--ddoc-radius-card);
@@ -3359,25 +3359,27 @@ h2 {
 
   /* Satellite cards */
   .deedoc-card--paper {
-    min-height: 220px;
-    padding: 24px 28px 24px;
+    min-height: 250px;
+    padding: 28px 26px 24px;
   }
 
   .deedoc-card__button {
     width: 100%;
-    min-height: 42px;
-    height: 42px;
+    min-height: 44px;
+    height: 44px;
     border-radius: var(--ddoc-radius-button-mobile);
     font-size: 13px;
   }
 
   .deedoc-card h2 {
-    font-size: 18px;
-    margin-bottom: 8px;
+    font-size: 20px;
+    margin-bottom: 10px;
   }
 
   .deedoc-card p {
     font-size: 13px;
+    line-height: 1.4;
+    margin-bottom: 16px;
   }
 
   .deedoc-home__footer {
