@@ -118,6 +118,119 @@
 
       <section class="view view--calculator" data-screen="calculator" aria-labelledby="calculator-title">
         <div class="calculator-shell">
+          <section class="mobile-calc-controls" aria-label="Параметры сметы">
+            <div class="mobile-calc-controls__rail">
+              <button class="mobile-calc-chip" type="button" data-action="open-mobile-calc-sheet" data-mobile-sheet="project">
+                <span>Проект</span>
+                <strong data-mobile-chip-value="project">Дизайн сайта</strong>
+              </button>
+              <button class="mobile-calc-chip" type="button" data-action="open-mobile-calc-sheet" data-mobile-sheet="rate">
+                <span>Ставка</span>
+                <strong data-mobile-chip-value="rate">1 500 ₽/ч</strong>
+              </button>
+              <button class="mobile-calc-chip" type="button" data-action="open-mobile-calc-sheet" data-mobile-sheet="tax">
+                <span>Налог</span>
+                <strong data-mobile-chip-value="tax">СЗ · 4%</strong>
+              </button>
+            </div>
+            <button class="mobile-calc-controls__cta" type="button" data-action="generate-estimate">Рассчитать стоимость</button>
+          </section>
+
+          <section class="mobile-calc-sheet" data-mobile-calc-sheet hidden aria-hidden="true">
+            <button class="mobile-calc-sheet__backdrop" type="button" data-action="close-mobile-calc-sheet" aria-label="Закрыть"></button>
+            <div class="mobile-calc-sheet__panel" role="dialog" aria-modal="true" aria-labelledby="mobile-calc-sheet-title">
+              <button class="mobile-calc-sheet__handle" type="button" data-action="toggle-mobile-calc-sheet" data-mobile-sheet="project" aria-label="Свернуть панель параметров"></button>
+              <div class="mobile-calc-sheet__header">
+                <div>
+                  <p class="mobile-calc-sheet__eyebrow">Параметр сметы</p>
+                  <h2 class="mobile-calc-sheet__title" id="mobile-calc-sheet-title" data-mobile-sheet-title>Тип проекта</h2>
+                </div>
+                <button class="mobile-calc-sheet__close" type="button" data-action="close-mobile-calc-sheet" aria-label="Закрыть">×</button>
+              </div>
+
+              <div class="mobile-calc-sheet__body">
+                <section class="mobile-calc-sheet__section" data-mobile-sheet-panel="project">
+                  <div class="project-options mobile-calc-sheet__project-grid" role="radiogroup" aria-label="Тип проекта" data-project-options></div>
+                </section>
+
+                <section class="mobile-calc-sheet__section" data-mobile-sheet-panel="rate" hidden>
+                  <div class="segmented" role="tablist" aria-label="Режим ставки">
+                    <button class="segmented__item is-active" type="button" data-rate-mode="custom">Моя ставка</button>
+                    <button class="segmented__item" type="button" data-rate-mode="income">От дохода</button>
+                    <button class="segmented__item" type="button" data-rate-mode="market">По рынку</button>
+                  </div>
+
+                  <div class="rate-panel rate-panel--market is-hidden" data-rate-panel="market">
+                    <div class="market-grade-grid" aria-label="Рыночная ставка">
+                      <button class="market-grade is-active" type="button" data-market-grade="junior">
+                        <span>Джун</span>
+                        <strong>1 000 ₽</strong>
+                      </button>
+                      <button class="market-grade" type="button" data-market-grade="middle">
+                        <span>Мидл</span>
+                        <strong>2 500 ₽</strong>
+                      </button>
+                      <button class="market-grade" type="button" data-market-grade="senior">
+                        <span>Синьор</span>
+                        <strong>4 000 ₽</strong>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="rate-panel rate-panel--custom" data-rate-panel="custom">
+                    <div class="rate-summary">
+                      <input class="rate-input" type="number" min="0" step="100" data-input="designerRate" value="1500" aria-label="Ставка дизайнера">
+                      <span>₽/час</span>
+                    </div>
+                  </div>
+
+                  <div class="rate-panel rate-panel--income is-hidden" data-rate-panel="income" hidden>
+                    <label class="field">
+                      <span>Желаемый доход в месяц</span>
+                      <input type="number" min="0" step="1000" data-input="monthlyIncome" value="240000">
+                    </label>
+                    <div class="field-row">
+                      <label class="field">
+                        <span>Рабочих дней в неделю</span>
+                        <input type="number" min="1" max="7" data-input="workDays" value="5">
+                      </label>
+                      <label class="field">
+                        <span>Часов в день</span>
+                        <input type="number" min="1" max="12" data-input="billableHours" value="6">
+                      </label>
+                    </div>
+                    <div class="rate-summary">
+                      <strong data-income-rate>0 ₽/час</strong>
+                    </div>
+                  </div>
+                </section>
+
+                <section class="mobile-calc-sheet__section" data-mobile-sheet-panel="tax" hidden>
+                  <div class="tax-settings">
+                    <div class="segmented segmented--tax" role="tablist" aria-label="Налоговый режим">
+                      <button class="segmented__item is-active" type="button" data-tax-mode="selfEmployed">Самозанятый</button>
+                      <button class="segmented__item" type="button" data-tax-mode="ipUsn">ИП 6%</button>
+                      <button class="segmented__item" type="button" data-tax-mode="custom">Свой %</button>
+                    </div>
+
+                    <div class="segmented segmented--client" role="tablist" aria-label="Тип клиента">
+                      <button class="segmented__item is-active" type="button" data-client-type="individual">Физлицо</button>
+                      <button class="segmented__item" type="button" data-client-type="business">Юрлицо / ИП</button>
+                    </div>
+
+                    <div class="rate-summary tax-custom is-hidden" data-tax-custom>
+                      <input class="rate-input" type="number" min="0" max="100" step="0.5" data-input="customTaxRate" value="6" aria-label="Свой процент налога">
+                      <span>%</span>
+                    </div>
+
+                    <div class="tax-rate-line">Налог: <strong data-tax-rate-label>4%</strong></div>
+                  </div>
+                </section>
+              </div>
+
+              <button class="mobile-calc-sheet__apply" type="button" data-action="apply-mobile-calc-sheet">Применить</button>
+            </div>
+          </section>
 
           <!-- Hero -->
 
@@ -147,12 +260,12 @@
                 </div>
 
                 <div class="segmented" role="tablist" aria-label="Режим ставки">
-                  <button class="segmented__item is-active" type="button" data-rate-mode="market">По рынку</button>
-                  <button class="segmented__item" type="button" data-rate-mode="custom">Моя ставка</button>
+                  <button class="segmented__item is-active" type="button" data-rate-mode="custom">Моя ставка</button>
                   <button class="segmented__item" type="button" data-rate-mode="income">От дохода</button>
+                  <button class="segmented__item" type="button" data-rate-mode="market">По рынку</button>
                 </div>
 
-                <div class="rate-panel rate-panel--market" data-rate-panel="market">
+                <div class="rate-panel rate-panel--market is-hidden" data-rate-panel="market">
                   <div class="market-grade-grid" aria-label="Рыночная ставка">
                     <button class="market-grade is-active" type="button" data-market-grade="junior">
                       <span>Джун</span>
@@ -169,14 +282,14 @@
                   </div>
                 </div>
 
-                <div class="rate-panel rate-panel--custom is-hidden" data-rate-panel="custom">
+                <div class="rate-panel rate-panel--custom" data-rate-panel="custom">
                   <div class="rate-summary">
-                    <input class="rate-input" type="number" min="0" step="100" data-input="designerRate" value="3000" aria-label="Ставка дизайнера">
+                    <input class="rate-input" type="number" min="0" step="100" data-input="designerRate" value="1500" aria-label="Ставка дизайнера">
                     <span>₽/час</span>
                   </div>
                 </div>
 
-                <div class="rate-panel rate-panel--income is-hidden" data-rate-panel="income">
+                <div class="rate-panel rate-panel--income is-hidden" data-rate-panel="income" hidden>
                   <label class="field">
                     <span>Желаемый доход в месяц</span>
                     <input type="number" min="0" step="1000" data-input="monthlyIncome" value="240000">

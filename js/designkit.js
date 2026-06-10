@@ -80,7 +80,7 @@ const PROJECTS = {
 
 const MARKET_RATES = { junior: 1000, middle: 2500, senior: 4000 };
 const MODIFIERS = { urgent: 0.3 };
-const DEFAULT_DESIGNER_RATE = 3000;
+const DEFAULT_DESIGNER_RATE = 1500;
 const DEFAULT_PROJECT_KEY = "landing_design";
 const RU_CONTRACT_MONTHS = [
   "января",
@@ -105,7 +105,7 @@ const state = {
   navHistory: [],
   theme: localStorage.getItem("designkit.theme") || "light",
   projectKey: DEFAULT_PROJECT_KEY,
-  rateMode: "market",
+  rateMode: "custom",
   marketGrade: "middle",
   designerRate: Number(localStorage.getItem("designkit.designerRate") || DEFAULT_DESIGNER_RATE),
   rate: 0,
@@ -124,6 +124,7 @@ let draggedStageIndex = null;
 let contractSaveTimer = null;
 let contractObserver = null;
 let clientReplyParseTimer = null;
+let mobileCalcSheetKey = "";
 
 const CONTRACT_SECTIONS = [
   ["parties", "Стороны"],
@@ -423,6 +424,11 @@ function routeTo(view, pushHistory = true) {
     });
   }
 
+  if (state.view !== "calculator") {
+    mobileCalcSheetKey = "";
+  }
+
+  renderMobileCalculatorUI();
   if (state.view === "contract") renderContractWorkspace();
 }
 
@@ -437,14 +443,102 @@ function openSoonModal(target) {
   document.querySelector("[data-soon-modal]").showModal();
 }
 
+function isMobileCalculatorUI() {
+  return window.innerWidth <= 760;
+}
+
+function getMobileRateChipLabel() {
+  if (state.rateMode === "market") {
+    return `${({
+      junior: "Джун",
+      middle: "Мидл",
+      senior: "Синьор",
+    }[state.marketGrade] || "Мидл")} · ${formatNumber.format(MARKET_RATES[state.marketGrade] || 0)} ₽`;
+  }
+  if (state.rateMode === "income") {
+    return `Доход · ${formatNumber.format(getIncomeRate())} ₽`;
+  }
+  return `${formatNumber.format(state.designerRate || 0)} ₽/ч`;
+}
+
+function getMobileTaxChipLabel() {
+  if (state.taxMode === "selfEmployed") {
+    return `СЗ · ${formatNumber.format(getTaxRate())}%`;
+  }
+  if (state.taxMode === "ipUsn") {
+    return "ИП · 6%";
+  }
+  return `Свой · ${formatNumber.format(getTaxRate())}%`;
+}
+
+function renderMobileCalculatorUI() {
+  const rootNode = document.querySelector("[data-mobile-calc-sheet]");
+  const isOpen = Boolean(mobileCalcSheetKey && state.view === "calculator" && isMobileCalculatorUI());
+  const titleMap = {
+    project: "Тип проекта",
+    rate: "Ставка",
+    tax: "Налог",
+  };
+
+  document.querySelectorAll("[data-mobile-chip-value]").forEach((node) => {
+    if (node.dataset.mobileChipValue === "project") node.textContent = getProject().label;
+    if (node.dataset.mobileChipValue === "rate") node.textContent = getMobileRateChipLabel();
+    if (node.dataset.mobileChipValue === "tax") node.textContent = getMobileTaxChipLabel();
+  });
+
+  document.querySelectorAll("[data-action=\"open-mobile-calc-sheet\"]").forEach((button) => {
+    const isActive = button.dataset.mobileSheet === mobileCalcSheetKey && isOpen;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-pressed", String(isActive));
+  });
+
+  document.querySelectorAll(".mobile-calc-controls__cta").forEach((button) => {
+    button.textContent = state.generated ? "Пересчитать стоимость" : "Рассчитать стоимость";
+  });
+
+  if (!rootNode) return;
+
+  rootNode.hidden = !isOpen;
+  rootNode.setAttribute("aria-hidden", String(!isOpen));
+  document.body.classList.toggle("mobile-calc-sheet-open", isOpen);
+
+  const titleNode = document.querySelector("[data-mobile-sheet-title]");
+  if (titleNode) titleNode.textContent = titleMap[mobileCalcSheetKey] || "Параметр сметы";
+
+  document.querySelectorAll(".mobile-calc-sheet__handle").forEach((button) => {
+    button.setAttribute("aria-label", isOpen ? "Свернуть панель параметров" : "Развернуть панель параметров");
+    button.dataset.mobileSheet = mobileCalcSheetKey || "project";
+  });
+
+  document.querySelectorAll("[data-mobile-sheet-panel]").forEach((panel) => {
+    panel.hidden = panel.dataset.mobileSheetPanel !== mobileCalcSheetKey;
+  });
+}
+
+function openMobileCalcSheet(key) {
+  if (mobileCalcSheetKey === key && state.view === "calculator" && isMobileCalculatorUI()) {
+    closeMobileCalcSheet();
+    return;
+  }
+  mobileCalcSheetKey = key;
+  renderMobileCalculatorUI();
+}
+
+function closeMobileCalcSheet() {
+  mobileCalcSheetKey = "";
+  renderMobileCalculatorUI();
+}
+
 function renderProjectOptions() {
-  const container = document.querySelector("[data-project-options]");
-  container.innerHTML = Object.entries(PROJECTS).map(([key, project]) => `
-    <button class="project-option ${key === state.projectKey ? "is-selected" : ""}" type="button" data-project="${key}" role="radio" aria-checked="${key === state.projectKey}">
-      <strong>${project.label}</strong>
-    </button>
-  `).join("");
+  document.querySelectorAll("[data-project-options]").forEach((container) => {
+    container.innerHTML = Object.entries(PROJECTS).map(([key, project]) => `
+      <button class="project-option ${key === state.projectKey ? "is-selected" : ""}" type="button" data-project="${key}" role="radio" aria-checked="${key === state.projectKey}">
+        <strong>${project.label}</strong>
+      </button>
+    `).join("");
+  });
   updateEmptyHint();
+  renderMobileCalculatorUI();
 }
 
 function updateEmptyHint() {
@@ -455,9 +549,12 @@ function updateEmptyHint() {
 
 function renderRate() {
   state.rate = getActiveRate();
-  const designerRateInput = document.querySelector('[data-input="designerRate"]');
-  if (designerRateInput && document.activeElement !== designerRateInput) designerRateInput.value = state.designerRate;
-  document.querySelector("[data-income-rate]").textContent = `${formatNumber.format(getIncomeRate())} ₽/час`;
+  document.querySelectorAll('[data-input="designerRate"]').forEach((designerRateInput) => {
+    if (document.activeElement !== designerRateInput) designerRateInput.value = state.designerRate;
+  });
+  document.querySelectorAll("[data-income-rate]").forEach((node) => {
+    node.textContent = `${formatNumber.format(getIncomeRate())} ₽/час`;
+  });
 
   document.querySelectorAll("[data-rate-mode]").forEach((button) => {
     button.classList.toggle("is-active", button.dataset.rateMode === state.rateMode);
@@ -474,10 +571,16 @@ function renderRate() {
   document.querySelectorAll("[data-client-type]").forEach((button) => {
     button.classList.toggle("is-active", button.dataset.clientType === state.clientType);
   });
-  const customTaxInput = document.querySelector('[data-input="customTaxRate"]');
-  if (customTaxInput && document.activeElement !== customTaxInput) customTaxInput.value = state.customTaxRate;
-  document.querySelector("[data-tax-custom]").classList.toggle("is-hidden", state.taxMode !== "custom");
-  document.querySelector("[data-tax-rate-label]").textContent = `${formatNumber.format(getTaxRate())}%`;
+  document.querySelectorAll('[data-input="customTaxRate"]').forEach((customTaxInput) => {
+    if (document.activeElement !== customTaxInput) customTaxInput.value = state.customTaxRate;
+  });
+  document.querySelectorAll("[data-tax-custom]").forEach((node) => {
+    node.classList.toggle("is-hidden", state.taxMode !== "custom");
+  });
+  document.querySelectorAll("[data-tax-rate-label]").forEach((node) => {
+    node.textContent = `${formatNumber.format(getTaxRate())}%`;
+  });
+  renderMobileCalculatorUI();
 }
 
 function generateEstimate(force = false) {
@@ -504,6 +607,7 @@ function renderEstimate() {
   document.querySelector("[data-estimate-empty]").classList.toggle("is-hidden", state.generated);
   document.querySelector("[data-estimate-result]").classList.toggle("is-hidden", !state.generated);
   document.querySelector("[data-sticky-summary]").classList.toggle("is-hidden", !(state.view === "calculator" && state.generated));
+  renderMobileCalculatorUI();
 
   if (!state.generated) return;
 
@@ -2601,7 +2705,31 @@ function bindEvents() {
       syncRouteHash(state.view);
       return;
     }
-    if (action === "generate-estimate") generateEstimate(true);
+    if (action === "open-mobile-calc-sheet") {
+      openMobileCalcSheet(actionTarget.dataset.mobileSheet || "project");
+      return;
+    }
+    if (action === "toggle-mobile-calc-sheet") {
+      if (mobileCalcSheetKey) {
+        closeMobileCalcSheet();
+      } else {
+        openMobileCalcSheet(actionTarget.dataset.mobileSheet || "project");
+      }
+      return;
+    }
+    if (action === "close-mobile-calc-sheet") {
+      closeMobileCalcSheet();
+      return;
+    }
+    if (action === "apply-mobile-calc-sheet") {
+      closeMobileCalcSheet();
+      return;
+    }
+    if (action === "generate-estimate") {
+      closeMobileCalcSheet();
+      generateEstimate(true);
+      return;
+    }
     if (action === "regenerate-estimate") generateEstimate(true);
     if (action === "dismiss-hint") {
       const hint = document.querySelector("[data-estimate-hint]");
