@@ -3317,7 +3317,7 @@ h2 {
   }
 
   .deedoc-toggle__sun {
-    right: 10px;
+    right: 14px;
   }
 
   .deedoc-hero {
@@ -3343,6 +3343,8 @@ h2 {
     grid-template-columns: repeat(2, 1fr);
     gap: 10px;
     width: 100%;
+    padding: 0 10px;
+    box-sizing: border-box;
   }
 
   .deedoc-card {
