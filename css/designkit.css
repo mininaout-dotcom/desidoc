@@ -3305,11 +3305,11 @@ h2 {
     width: 20px;
     height: 20px;
     top: 12px;
-    left: 38px; /* light: 68 - 10 - 20 = 38 */
+    left: 35px; /* light: track right 58 - knob 20 - gap 3 = 35 */
   }
 
   [data-theme="dark"] .deedoc-toggle__knob {
-    left: 12px;
+    left: 13px; /* dark: track left 10 + gap 3 = 13 */
   }
 
   .deedoc-toggle__moon {
