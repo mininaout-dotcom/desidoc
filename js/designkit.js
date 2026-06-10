@@ -1026,32 +1026,23 @@ function renderBriefAiInsights() {
   const node = document.querySelector("[data-ai-estimate-insights]");
   if (!node) return;
   const analysis = state.briefAi.analysis;
-  node.hidden = !analysis || !state.generated;
-  if (!analysis || !state.generated) {
+  const isAiEstimate = Boolean(analysis && state.generated);
+
+  const stagesNote = document.querySelector("[data-ai-stages-note]");
+  if (stagesNote) stagesNote.hidden = !isAiEstimate;
+
+  const risks = isAiEstimate ? (analysis.pricing_risks || []) : [];
+  node.hidden = !risks.length;
+  if (!risks.length) {
     node.innerHTML = "";
     return;
   }
 
-  const risks = analysis.pricing_risks || [];
-  const costs = analysis.additional_costs || [];
   node.innerHTML = `
-    ${risks.length ? `
-      <section class="ai-insight-card">
-        <h3>Что может повлиять на стоимость проекта</h3>
-        ${renderInfoList(risks)}
-        <p>Некоторые данные отсутствуют и могут повлиять на точность расчёта. Добавьте недостающую информацию в описание проекта и нажмите «Рассчитать» повторно.</p>
-      </section>
-    ` : ""}
-    ${costs.length ? `
-      <section class="ai-insight-card">
-        <h3>Возможны дополнительные расходы</h3>
-        ${renderInfoList(costs)}
-      </section>
-    ` : ""}
-    <section class="ai-insight-card ai-insight-card--note">
-      <h3>Оценка примерная</h3>
-      <p>Измените часы под свою скорость работы, сложность проекта и договорённости с клиентом.</p>
-      <p>DesiDoc использует AI для предварительной оценки трудозатрат на основе описания проекта. Итоговые часы и стоимость определяются пользователем самостоятельно.</p>
+    <section class="ai-insight-card ai-insight-card--warning">
+      <h3>Уточните данные</h3>
+      ${renderInfoList(risks)}
+      <p>Некоторые данные отсутствуют и могут повлиять на точность расчёта. Добавьте недостающую информацию в описание проекта и нажмите «Рассчитать» повторно.</p>
     </section>
   `;
 }
@@ -3924,12 +3915,6 @@ function bindEvents() {
       return;
     }
     if (action === "regenerate-estimate") generateEstimate(true);
-    if (action === "dismiss-hint") {
-      const hint = document.querySelector("[data-estimate-hint]");
-      if (hint) hint.classList.add("is-hidden");
-      try { localStorage.setItem("designkit.stageHintDismissed", "1"); } catch (e) {}
-      return;
-    }
     if (action === "add-stage") addStage();
     if (action === "remove-stage") {
       state.stages.splice(Number(actionTarget.dataset.index), 1);
@@ -4367,11 +4352,6 @@ function init() {
   renderContractWorkspace();
   bindEvents();
   updateEmptyHint();
-  // Скрываем подсказку сметы если пользователь уже закрывал её
-  if (localStorage.getItem("designkit.stageHintDismissed") === "1") {
-    const hint = document.querySelector("[data-estimate-hint]");
-    if (hint) hint.classList.add("is-hidden");
-  }
   const initialRoute = location.hash.replace("#", "");
   routeTo(["calculator", "contract"].includes(initialRoute) ? initialRoute : "home");
   syncRouteHash(state.view, true);

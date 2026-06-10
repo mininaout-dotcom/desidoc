@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>DesiDoc — сметы и договоры</title>
   <meta name="description" content="DesiDoc: сметы, договоры и проектные документы для дизайнеров.">
-  <link rel="stylesheet" href="css/designkit.css?v=88">
+  <link rel="stylesheet" href="css/designkit.css?v=90">
 </head>
 <body data-view="home">
   <div class="app" data-view="home">
@@ -397,27 +397,21 @@
                   </div>
                 </div>
 
-                <!-- Stage edit hint -->
-                <div class="estimate-hint" data-estimate-hint>
-                  <div class="estimate-hint__tips">
-                    <span class="estimate-hint__tip">Названия и описания редактируются</span>
-                    <span class="estimate-hint__tip">Меняй часы в каждом этапе</span>
-                    <span class="estimate-hint__tip">✕ удаляет этап</span>
-                    <span class="estimate-hint__tip">⋮⋮ меняет порядок</span>
-                    <span class="estimate-hint__tip">+ добавляет новый</span>
-                  </div>
-                  <button class="estimate-hint__close" type="button" data-action="dismiss-hint" aria-label="Закрыть подсказку">✕</button>
-                </div>
-
                 <!-- Stage list -->
                 <div class="stage-list" data-stage-list></div>
+
+                <!-- AI disclaimer — под этапами, только для AI-смет -->
+                <p class="ai-stages-note" data-ai-stages-note hidden>Оценка примерная — измените часы под свою скорость работы, сложность проекта и договорённости с клиентом.</p>
 
                 <!-- Add stage -->
                 <button class="button button--ghost button--wide cv-add-stage-btn" type="button" data-action="add-stage">+ Добавить этап</button>
 
                 <!-- Expenses -->
                 <details class="expense-box" data-expense-box>
-                  <summary>+ Добавить расход</summary>
+                  <summary>
+                    <span class="expense-box__title">+ Добавить дополнительные расходы</span>
+                    <span class="expense-box__hint">Добавьте стоимость токенов нейросетей, если используете AI-инструменты в работе, лицензий на шрифты, фотостоков или печати.</span>
+                  </summary>
                   <div class="expense-form">
                     <label class="field">
                       <span>Название расхода</span>
