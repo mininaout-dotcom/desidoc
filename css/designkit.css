@@ -207,7 +207,7 @@
   --ddoc-color-card-solid: #ffffff;
   --ddoc-color-glass-card: rgba(0, 0, 0, 0.10);
   --ddoc-color-card-border: rgba(255, 255, 255, 0.50);
-  --ddoc-color-glass-pill: rgba(255, 255, 255, 0.72);
+  --ddoc-color-glass-pill: rgba(255, 255, 255, 0.32);
   --ddoc-color-text-on-glass: rgba(255, 255, 255, 0.7);
   --ddoc-color-brand-line: rgba(255, 255, 255, 0.8);
   --ddoc-blur-glass: 22.75px;
@@ -220,7 +220,6 @@
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --ddoc-color-glass-pill: rgba(40, 30, 24, 0.72);
   --bg: #171612;
   --surface: rgba(38, 36, 30, 0.76);
   --surface-strong: #23211c;
@@ -613,9 +612,8 @@ summary:focus-visible,
   height: 61px;
   flex: 0 0 auto;
   border-radius: 50%;
-  background: rgba(255,255,255,0.72);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
+  background: rgba(255,255,255,0.32);
+  backdrop-filter: blur(8px);
   box-shadow: 0 8px 24px rgba(32, 20, 16, 0.14);
   display: flex;
   align-items: center;
@@ -646,9 +644,7 @@ summary:focus-visible,
   height: 61px;
   box-sizing: border-box;
   border-radius: 999px;
-  background: rgba(255,255,255,0.72);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
+  background: rgba(255,255,255,0.28);
 }
 
 .deedoc-section-nav[hidden] { display: none; }
@@ -709,9 +705,7 @@ summary:focus-visible,
 }
 
 [data-theme="dark"] .deedoc-section-nav {
-  background: rgba(40,30,24,0.72);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
+  background: rgba(255,255,255,0.08);
 }
 
 [data-theme="dark"] .deedoc-section-tab.is-current {
@@ -5102,22 +5096,35 @@ body.mobile-calc-sheet-open {
     white-space: nowrap;
   }
 
+  .mobile-calc-chip__chevron {
+    display: block;
+    margin-top: auto;
+    color: var(--cv-muted);
+    flex-shrink: 0;
+  }
+
   .mobile-calc-chip.is-active {
     border-color: rgba(199, 109, 77, 0.42);
     box-shadow: 0 16px 38px rgba(94, 56, 39, 0.18);
     transform: translateY(-1px);
   }
 
+  .mobile-calc-chip.is-active .mobile-calc-chip__chevron {
+    transform: rotate(180deg);
+    color: var(--accent);
+  }
+
   .mobile-calc-controls__cta {
-    min-height: 48px;
+    min-height: 52px;
     border: 0;
     border-radius: 999px;
     background: var(--ddoc-color-button-bg);
     color: var(--ddoc-color-button-label);
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 600;
     letter-spacing: -0.02em;
     box-shadow: var(--ddoc-shadow-button);
+    margin-top: 4px;
   }
 
   .mobile-calc-sheet {
@@ -5294,29 +5301,77 @@ body.mobile-calc-sheet-open {
     grid-template-columns: 1fr;
   }
 
-  .view--calculator .setup-card {
-    display: none;
-  }
-
   .view--calculator .project-options {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  /* ── Sticky summary hidden on mobile — scroll to bottom actions ── */
+  .sticky-summary {
+    display: none !important;
+  }
+
+  /* ── Estimate result: name left, price right — keep row layout ── */
   .cv-result-header {
-    flex-direction: column;
-    gap: 16px;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .cv-result-meta {
+    flex: 1 1 auto;
+    min-width: 0;
   }
 
   .estimate-inline-input--title {
-    font-size: 22px;
+    font-size: 18px;
+    letter-spacing: -0.03em;
   }
 
   .cv-total-block {
-    align-items: flex-start;
+    align-items: flex-end;
+    flex-shrink: 0;
   }
 
   .cv-total-amount {
-    font-size: 40px;
+    font-size: 28px;
+  }
+
+  .cv-total-label {
+    font-size: 10px;
+  }
+
+  /* ── Stage cards: text wraps, no overflow ── */
+  .stage-card {
+    grid-template-columns: 36px minmax(0, 1fr) 96px;
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .stage-title-input {
+    font-size: 14px;
+    white-space: normal;
+    word-break: break-word;
+  }
+
+  .stage-description-input {
+    font-size: 12px;
+  }
+
+  /* ── Bottom actions block on mobile ── */
+  .cv-result-actions {
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 8px;
+    padding-top: 20px;
+    border-top: 1px solid var(--cv-line);
+  }
+
+  .cv-result-actions .button {
+    width: 100%;
+    min-height: 50px;
+    border-radius: 999px;
+    justify-content: center;
+    font-size: 15px;
   }
 
   .cv-empty-amount {

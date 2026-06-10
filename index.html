@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>DesiDoc — сметы и договоры</title>
   <meta name="description" content="DesiDoc: сметы, договоры и проектные документы для дизайнеров.">
-  <link rel="stylesheet" href="css/designkit.css?v=64">
+  <link rel="stylesheet" href="css/designkit.css?v=65">
 </head>
 <body data-view="home">
   <div class="app" data-view="home">
@@ -123,14 +123,17 @@
               <button class="mobile-calc-chip" type="button" data-action="open-mobile-calc-sheet" data-mobile-sheet="project">
                 <span>Проект</span>
                 <strong data-mobile-chip-value="project">Дизайн сайта</strong>
+                <svg class="mobile-calc-chip__chevron" width="10" height="6" viewBox="0 0 10 6" fill="none" aria-hidden="true"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </button>
               <button class="mobile-calc-chip" type="button" data-action="open-mobile-calc-sheet" data-mobile-sheet="rate">
                 <span>Ставка</span>
                 <strong data-mobile-chip-value="rate">1 500 ₽/ч</strong>
+                <svg class="mobile-calc-chip__chevron" width="10" height="6" viewBox="0 0 10 6" fill="none" aria-hidden="true"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </button>
               <button class="mobile-calc-chip" type="button" data-action="open-mobile-calc-sheet" data-mobile-sheet="tax">
                 <span>Налог</span>
                 <strong data-mobile-chip-value="tax">СЗ · 4%</strong>
+                <svg class="mobile-calc-chip__chevron" width="10" height="6" viewBox="0 0 10 6" fill="none" aria-hidden="true"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </button>
             </div>
             <button class="mobile-calc-controls__cta" type="button" data-action="generate-estimate">Рассчитать стоимость</button>
@@ -374,15 +377,6 @@
                   </div>
                 </div>
 
-                <!-- Actions row -->
-                <div class="estimate-actions cv-result-actions">
-                  <button class="button button--soft" type="button" data-action="regenerate-estimate">Пересчитать</button>
-                  <button class="button button--dark" type="button" data-action="open-export">
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M7 1v8M4 6l3 3 3-3M2 10v1a1 1 0 001 1h8a1 1 0 001-1v-1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    Скачать PDF
-                  </button>
-                </div>
-
                 <!-- Stage edit hint -->
                 <div class="estimate-hint" data-estimate-hint>
                   <div class="estimate-hint__tips">
@@ -420,6 +414,15 @@
 
                 <!-- Breakdown -->
                 <div class="estimate-breakdown" data-estimate-breakdown></div>
+
+                <!-- Actions row — bottom -->
+                <div class="estimate-actions cv-result-actions">
+                  <button class="button button--soft" type="button" data-action="regenerate-estimate">Пересчитать</button>
+                  <button class="button button--dark" type="button" data-action="open-export">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M7 1v8M4 6l3 3 3-3M2 10v1a1 1 0 001 1h8a1 1 0 001-1v-1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    Скачать PDF
+                  </button>
+                </div>
 
               </div>
             </section>
@@ -549,7 +552,7 @@
         <strong data-sticky-total>0 ₽</strong>
       </div>
       <div class="sticky-summary__actions">
-        <button class="button button--soft" type="button" data-action="save-estimate">Сохранить</button>
+        <button class="button button--soft" type="button" data-action="regenerate-estimate">Пересчитать</button>
         <button class="button button--dark" type="button" data-action="open-export">Скачать PDF</button>
         <button class="button button--ghost button--xs" type="button" data-action="open-export-settings" title="Изменить данные PDF">✎</button>
       </div>
