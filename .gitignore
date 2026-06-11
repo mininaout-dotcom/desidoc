@@ -12,6 +12,11 @@ DesignKit*.html
 DesignKit*.json
 DesignKit*.png
 
+# Dev review screenshots
+DesiDoc_*.png
+desidoc_*.png
+DESIGN_SYSTEM.md
+
 # Internal folders
 docs_archive/
 inputs/
