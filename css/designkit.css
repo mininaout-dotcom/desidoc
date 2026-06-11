@@ -304,16 +304,16 @@ button {
 button:focus-visible,
 a:focus-visible,
 input:focus-visible,
-textarea:focus-visible,
 summary:focus-visible,
 [role="button"]:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 3px;
 }
 
-textarea:focus {
-  outline: 2px solid var(--accent);
-  outline-offset: 3px;
+textarea:focus,
+textarea:focus-visible {
+  outline: none;
+  border-color: var(--accent);
 }
 .deedoc-card:focus-visible,
 .modal__close:focus-visible,
@@ -1118,22 +1118,9 @@ textarea:focus {
   color: var(--accent);
 }
 
-.page-grid,
 .calculator-shell {
   width: min(1180px, 100%);
   margin: 0 auto;
-}
-
-.page-grid {
-  min-height: calc(100vh - 68px);
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: clamp(26px, 4vw, 54px);
-  align-content: center;
-}
-
-.intro-panel {
-  max-width: 760px;
 }
 
 .eyebrow {
@@ -1160,11 +1147,6 @@ h1 {
   font-weight: 700;
 }
 
-.calculator-hero h1 {
-  max-width: 660px;
-  font-size: var(--type-h1);
-}
-
 h2 {
   margin-bottom: 14px;
   font-size: var(--type-h2);
@@ -1181,46 +1163,7 @@ h2 {
   line-height: 1.5;
 }
 
-.scenario-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 18px;
-}
-
-.scenario-card {
-  min-height: 250px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 34px;
-  padding: clamp(24px, 3vw, 36px);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
-  background: var(--surface);
-  box-shadow: var(--shadow);
-  backdrop-filter: blur(24px);
-}
-
-.scenario-card--primary {
-  border-color: color-mix(in srgb, var(--accent) 62%, var(--line));
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 46%, transparent), var(--shadow);
-  background: var(--surface);
-}
-
-.scenario-card p {
-  max-width: 520px;
-  margin-bottom: 0;
-  color: var(--muted);
-  font-size: 16px;
-  line-height: 1.55;
-}
-
-.scenario-card .button {
-  width: 100%;
-}
-
 .project-option,
-.total-pill,
 .rate-summary,
 .stage-stat,
 .expense-chip {
@@ -1228,8 +1171,7 @@ h2 {
   background: var(--surface-muted);
 }
 
-.button,
-.text-button {
+.button {
   border: 0;
   cursor: pointer;
 }
@@ -1293,23 +1235,8 @@ h2 {
   font-size: 12px;
 }
 
-.text-button {
-  width: max-content;
-  padding: 0;
-  background: transparent;
-  color: var(--muted);
-  font-size: 14px;
-}
-
 .calculator-shell {
   padding-top: 12px;
-}
-
-.calculator-hero {
-  display: flex;
-  flex-direction: column;
-  gap: 30px;
-  margin-bottom: 34px;
 }
 
 .builder-grid {
@@ -1516,7 +1443,6 @@ h2 {
   border-radius: 18px;
 }
 
-.total-pill span,
 .sticky-summary span {
   color: var(--muted);
   font-size: 12px;
@@ -1560,7 +1486,8 @@ h2 {
   font-size: var(--label-fs);
 }
 
-.field input {
+.field input,
+.field textarea {
   width: 100%;
   min-height: var(--input-height);
   border: 1px solid var(--line);
@@ -1569,6 +1496,19 @@ h2 {
   color: var(--text);
   padding: var(--input-padding);
   font-size: var(--input-fs);
+}
+
+.field textarea {
+  min-height: 120px;
+  padding: 11px 13px;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.field input:focus,
+.field textarea:focus {
+  outline: none;
+  border-color: var(--accent);
 }
 
 .estimate-empty {
@@ -1601,33 +1541,6 @@ h2 {
 .estimate-result {
   display: grid;
   gap: 20px;
-}
-
-.estimate-summary {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 18px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid var(--line);
-}
-
-.estimate-summary h2 {
-  margin-bottom: 0;
-}
-
-.total-pill {
-  min-width: 170px;
-  display: grid;
-  gap: 5px;
-  padding: 15px 18px;
-  border-radius: 20px;
-  text-align: right;
-}
-
-.total-pill strong {
-  font-size: 26px;
-  letter-spacing: -0.06em;
 }
 
 .estimate-actions {
@@ -1894,78 +1807,6 @@ h2 {
   padding: 8px 0 120px;
 }
 
-.contract-header,
-.contract-hero {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: start;
-  gap: 26px;
-  margin-bottom: 20px;
-}
-
-.contract-back {
-  margin-top: 7px;
-}
-
-.contract-hero__text {
-  max-width: 680px;
-}
-
-.contract-hero__text .lead {
-  max-width: 560px;
-}
-
-.contract-hero__actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding-top: 2px;
-}
-
-.contract-template-strip {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-  width: min(596px, 100%);
-  margin: 0 0 22px 0;
-}
-
-.contract-template-card {
-  min-height: 74px;
-  border: 1px solid var(--line);
-  border-radius: 24px;
-  background: var(--surface);
-  color: var(--muted);
-  cursor: pointer;
-  text-align: left;
-  padding: 16px 18px;
-  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
-}
-
-.contract-template-card span,
-.contract-template-card small {
-  display: block;
-}
-
-.contract-template-card span {
-  color: var(--text);
-  font-size: 15px;
-  font-weight: 700;
-}
-
-.contract-template-card small {
-  margin-top: 5px;
-  font-size: 12px;
-  line-height: 1.35;
-}
-
-.contract-template-card:hover,
-.contract-template-card.is-active {
-  transform: translateY(-1px);
-  border-color: color-mix(in srgb, var(--accent) 34%, var(--line));
-  background: color-mix(in srgb, var(--surface-strong) 78%, var(--accent-soft));
-}
-
 .contract-layout {
   display: grid;
   grid-template-columns: 274px minmax(0, 1fr);
@@ -2016,7 +1857,6 @@ h2 {
 }
 
 .contract-data-panel,
-.contract-mode-panel,
 .contract-signature-panel {
   padding-bottom: 12px;
 }
@@ -2123,28 +1963,6 @@ h2 {
   background: rgba(200, 77, 77, 0.1);
 }
 
-.contract-switch {
-  min-height: 38px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: var(--surface-strong);
-  color: var(--text);
-  cursor: pointer;
-  padding: 0 12px;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.contract-switch input {
-  width: 17px;
-  height: 17px;
-  accent-color: var(--accent);
-}
-
 .signature-preview {
   min-height: 54px;
   display: grid;
@@ -2174,48 +1992,10 @@ h2 {
   gap: 7px;
 }
 
-.signature-actions .button,
-.signature-pdf-toggle,
-.signature-mode button {
+.signature-actions .button {
   min-height: var(--btn-height-sm);
   border-radius: 999px;
   font-size: 11px;
-}
-
-.signature-mode {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 5px;
-  padding: 4px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: var(--surface-strong);
-}
-
-.signature-mode button,
-.signature-pdf-toggle {
-  border: 0;
-  background: transparent;
-  color: var(--muted);
-  cursor: pointer;
-  padding: 0 10px;
-}
-
-.signature-mode button.is-active,
-.signature-pdf-toggle.is-active {
-  background: var(--text);
-  color: var(--surface-strong);
-}
-
-.signature-pdf-toggle {
-  width: 100%;
-  border: 1px solid var(--line);
-  background: var(--surface-strong);
-}
-
-.signature-pdf-toggle:disabled {
-  cursor: not-allowed;
-  opacity: 0.55;
 }
 
 .contract-outline nav,
@@ -2655,11 +2435,6 @@ h2 {
   gap: 8px;
 }
 
-.document-toolbar__switch {
-  min-height: 40px;
-  white-space: nowrap;
-}
-
 .estimate-breakdown {
   display: grid;
   gap: 8px;
@@ -2728,8 +2503,9 @@ h2 {
 }
 
 .modal::backdrop {
-  background: rgba(18, 17, 14, 0.46);
-  backdrop-filter: blur(6px);
+  background: rgba(18, 17, 14, 0.4);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 .modal__panel {
@@ -2740,26 +2516,72 @@ h2 {
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   background: var(--surface-strong);
-  box-shadow: var(--shadow);
+  box-shadow: 0 32px 80px rgba(31, 22, 16, 0.22), 0 2px 10px rgba(31, 22, 16, 0.08);
+}
+
+[data-theme="dark"] .modal__panel {
+  border-color: color-mix(in srgb, var(--line) 70%, transparent);
+  background: color-mix(in srgb, var(--surface-strong) 86%, transparent);
+  backdrop-filter: blur(28px) saturate(1.35);
+  -webkit-backdrop-filter: blur(28px) saturate(1.35);
+}
+
+.modal[open] .modal__panel {
+  animation: ddoc-modal-in 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.modal[open]::backdrop {
+  animation: ddoc-fade-in 0.28s ease both;
+}
+
+@keyframes ddoc-modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modal[open] .modal__panel,
+  .modal[open]::backdrop {
+    animation: none;
+  }
 }
 
 .modal__panel--small {
   max-width: 440px;
 }
 
+.modal__panel h2 {
+  margin-bottom: 4px;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+}
+
 .modal__close {
   position: absolute;
   top: 12px;
   right: 12px;
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border: none;
   border-radius: 50%;
-  background: transparent;
+  background: var(--soft);
   color: var(--muted);
   cursor: pointer;
   font-size: 15px;
   line-height: 1;
+  transition: background 160ms ease, color 160ms ease;
+}
+
+.modal__close:hover {
+  background: var(--soft-strong);
+  color: var(--text);
 }
 
 .modal__lead {
@@ -2779,26 +2601,10 @@ h2 {
   font-family: var(--mono);
 }
 
-/* Profile modal typography */
-[data-profile-modal] h2 {
-  font-size: 28px;
-  letter-spacing: -0.04em;
-  font-weight: 700;
-  margin-bottom: 4px;
-}
-
-[data-profile-modal] .modal__lead {
-  font-size: 14px;
+/* Brief AI modal typography */
+[data-brief-ai-modal] .modal__lead {
+  font-size: 12.5px;
   line-height: 1.5;
-  margin-bottom: 0;
-}
-
-/* Brief AI modal typography — как у профиля */
-[data-brief-ai-modal] h2 {
-  font-size: 28px;
-  letter-spacing: -0.04em;
-  font-weight: 700;
-  margin-bottom: 4px;
 }
 
 [data-brief-ai-modal] .field textarea {
@@ -3091,14 +2897,9 @@ h2 {
 }
 
 @media (max-width: 1080px) {
-  .page-grid,
   .builder-grid,
   .contract-layout {
     grid-template-columns: 1fr;
-  }
-
-  .intro-panel {
-    padding-top: 64px;
   }
 
   .setup-card {
@@ -3180,29 +2981,8 @@ h2 {
     background: var(--surface-strong);
   }
 
-  .page-grid {
-    min-height: auto;
-    gap: 26px;
-  }
-
-  .intro-panel {
-    padding-top: 10px;
-  }
-
   h1 {
     font-size: clamp(32px, 11vw, 48px);
-  }
-
-  .scenario-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .scenario-card,
-  .scenario-card--primary {
-    grid-column: auto;
-    min-height: auto;
-    display: flex;
-    align-items: stretch;
   }
 
   .project-options,
@@ -3211,7 +2991,6 @@ h2 {
     grid-template-columns: 1fr;
   }
 
-  .estimate-summary,
   .stage-card {
     grid-template-columns: 1fr;
   }
@@ -3246,11 +3025,6 @@ h2 {
 
   .modal__panel {
     padding: 24px;
-  }
-
-  .contract-header {
-    gap: 20px;
-    margin-bottom: 22px;
   }
 
   .contract-outline {
@@ -3492,6 +3266,7 @@ h2 {
   .field input,
   .field textarea,
   .field select,
+  [data-brief-ai-modal] .field textarea,
   .contract-control input,
   .contract-control textarea,
   .stage-title-input,
@@ -3522,11 +3297,6 @@ h2 {
   .topbar__link,
   .topbar__theme {
     min-height: 44px;
-  }
-
-  /* ── total-pill: снимаем min-width чтобы не ломать layout ───── */
-  .total-pill {
-    min-width: 0;
   }
 
   /* ── document-toolbar: тумблер сверху, кнопки во всю ширину ── */
@@ -3973,7 +3743,7 @@ body[data-view="calculator"]::after {
 /* ── Design tokens ────────────────────────────────────────── */
 
 .view--calculator {
-  /* White-card palette (light mode) */
+  /* White-card palette (light mode) — как фон заметки в iOS Notes */
   --cv-glass:       #ffffff;
   --cv-text:        var(--text);
   --cv-muted:       var(--muted);
@@ -4005,8 +3775,8 @@ body[data-view="calculator"]::after {
 
 [data-theme="dark"] .view--calculator .setup-card,
 [data-theme="dark"] .view--calculator .estimate-card {
-  backdrop-filter: blur(var(--ddoc-blur-glass));
-  -webkit-backdrop-filter: blur(var(--ddoc-blur-glass));
+  backdrop-filter: blur(var(--ddoc-blur-glass)) saturate(1.3);
+  -webkit-backdrop-filter: blur(var(--ddoc-blur-glass)) saturate(1.3);
   box-shadow: 0 4px 40px rgba(0, 0, 0, 0.30), 0 1px 4px rgba(0, 0, 0, 0.20);
 }
 
@@ -4014,94 +3784,7 @@ body[data-view="calculator"]::after {
   padding-top: 0;
 }
 
-/* ── Hero area ────────────────────────────────────────────── */
-
-.view--calculator .calculator-hero {
-  flex-direction: row;
-  align-items: flex-start;
-  gap: 20px;
-  margin-bottom: 40px;
-}
-
-/* Glass pill back button */
-.view--calculator .cv-back-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  flex-shrink: 0;
-  margin-top: 8px;
-  padding: 10px 18px 10px 14px;
-  border-radius: 30px;
-  border: 1px solid var(--cv-line);
-  background: var(--cv-glass);
-  backdrop-filter: blur(var(--ddoc-blur-glass));
-  -webkit-backdrop-filter: blur(var(--ddoc-blur-glass));
-  color: var(--cv-muted);
-  font-size: 13px;
-  transition: color 180ms ease, background 180ms ease;
-}
-
-.view--calculator .cv-back-btn:hover {
-  color: var(--cv-text);
-  background: rgba(255, 255, 255, 0.10);
-}
-
-/* Breadcrumb nav */
-.cv-breadcrumb {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 14px;
-}
-
-.cv-breadcrumb__home {
-  background: none;
-  border: none;
-  padding: 0;
-  font: inherit;
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.50);
-  cursor: pointer;
-  transition: color 180ms ease;
-  letter-spacing: 0;
-}
-
-.cv-breadcrumb__home:hover {
-  color: rgba(255, 255, 255, 0.85);
-}
-
-.cv-breadcrumb__sep {
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.25);
-  user-select: none;
-}
-
-.cv-breadcrumb__current {
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.85);
-  font-weight: 500;
-}
-
-/* Hero text block */
-.cv-hero-text .eyebrow {
-  color: rgba(255, 255, 255, 0.40);
-  margin-bottom: 10px;
-  letter-spacing: 0.14em;
-}
-
-.view--calculator .calculator-hero h1 {
-  color: rgba(255, 255, 255, 0.90);
-  font-weight: 400;
-  letter-spacing: -0.02em;
-}
-
-.view--calculator .calculator-hero .lead {
-  color: rgba(255, 255, 255, 0.50);
-  font-size: 16px;
-  margin-bottom: 0;
-}
-
-/* ── White panels (shared) ───────────────────────────────── */
+/* ── White panels (light) / glass panels (dark) ──────────── */
 
 .view--calculator .setup-card,
 .view--calculator .estimate-card {
@@ -4259,19 +3942,16 @@ body[data-view="calculator"]::after {
 
 /* ── Rate summary & total pill ───────────────────────────── */
 
-.view--calculator .rate-summary,
-.view--calculator .total-pill {
+.view--calculator .rate-summary {
   border-color: var(--cv-line);
   background: var(--cv-surface);
 }
 
-.view--calculator .rate-summary span,
-.view--calculator .total-pill span {
+.view--calculator .rate-summary span {
   color: var(--cv-muted);
 }
 
-.view--calculator .rate-summary strong,
-.view--calculator .total-pill strong {
+.view--calculator .rate-summary strong {
   color: var(--cv-text);
 }
 
@@ -4292,7 +3972,7 @@ body[data-view="calculator"]::after {
 }
 
 .view--calculator .field input:focus {
-  border-color: var(--line-strong);
+  border-color: var(--accent);
   outline: none;
 }
 
@@ -4357,74 +4037,6 @@ body[data-view="calculator"]::after {
 }
 
 /* Add stage button — subtle dashed feel */
-/* ── Estimate hint ───────────────────────────────────────────── */
-
-.estimate-edit-hint {
-  margin: 4px 0 0;
-  font-size: 12px;
-  color: var(--cv-muted);
-  opacity: 0.65;
-  line-height: 1.4;
-}
-
-/* ── Estimate hint card ──────────────────────────────────── */
-.estimate-hint {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  margin: 6px 0 12px;
-  padding: 12px 10px 12px 16px;
-  border-radius: 16px;
-  background: color-mix(in srgb, var(--accent) 5%, var(--cv-glass));
-  border: 1px solid color-mix(in srgb, var(--accent) 25%, var(--cv-line));
-}
-
-.estimate-hint.is-hidden {
-  display: none;
-}
-
-.estimate-hint__tips {
-  flex: 1;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.estimate-hint__close {
-  flex-shrink: 0;
-  width: 26px;
-  height: 26px;
-  display: grid;
-  place-items: center;
-  border: none;
-  border-radius: 50%;
-  background: transparent;
-  color: var(--cv-muted);
-  font-size: 11px;
-  cursor: pointer;
-  opacity: 0.45;
-  transition: opacity 150ms, background 150ms;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.estimate-hint__close:hover {
-  opacity: 1;
-  background: var(--cv-surface);
-}
-
-.estimate-hint__tip {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 11px;
-  border-radius: 999px;
-  background: var(--surface);
-  border: 1px solid var(--cv-line);
-  font-size: 12px;
-  color: var(--cv-text);
-  white-space: nowrap;
-}
-
 .view--calculator .cv-add-stage-btn {
   margin-top: 4px;
   border-style: dashed;
@@ -4573,14 +4185,6 @@ body[data-view="calculator"]::after {
   color: color-mix(in srgb, var(--cv-text) 70%, transparent);
 }
 
-.cv-result-title {
-  color: var(--cv-text);
-  font-size: clamp(20px, 2vw, 26px);
-  font-weight: 500;
-  letter-spacing: -0.04em;
-  margin: 0;
-}
-
 .cv-total-block {
   display: flex;
   flex-direction: column;
@@ -4699,30 +4303,6 @@ body.mobile-contract-sheet-open {
 .view--calculator {
   padding-top: 118px;
   padding-bottom: 78px;
-}
-
-.view--calculator .calculator-hero {
-  gap: 14px;
-  margin-bottom: 22px;
-}
-
-.view--calculator .cv-back-btn {
-  margin-top: 2px;
-  padding: 8px 14px 8px 12px;
-  font-size: 12px;
-}
-
-.view--calculator .calculator-hero h1 {
-  max-width: 540px;
-  margin-bottom: 6px;
-  font-size: var(--type-h1);
-  line-height: 1.08;
-}
-
-.view--calculator .calculator-hero .lead {
-  max-width: 520px;
-  font-size: 14px;
-  line-height: 1.4;
 }
 
 .view--calculator .builder-grid {
@@ -4870,9 +4450,14 @@ body.mobile-contract-sheet-open {
 }
 
 .view--calculator .cv-cta-btn {
+  position: sticky;
+  bottom: 6px;
+  z-index: 2;
   height: var(--btn-height-md);
+  flex-shrink: 0;
   margin-top: 0;
   font-size: 14px;
+  box-shadow: var(--ddoc-shadow-button), 0 0 0 6px var(--cv-glass);
 }
 
 .view--calculator .estimate-card {
@@ -4882,11 +4467,6 @@ body.mobile-contract-sheet-open {
 .view--calculator .estimate-card .estimate-empty {
   min-height: 430px;
   padding: 28px;
-}
-
-.view--calculator .cv-empty-amount {
-  margin-bottom: 18px;
-  font-size: clamp(42px, 5.2vw, 64px);
 }
 
 .view--calculator .cv-empty-text h2 {
@@ -5203,28 +4783,6 @@ body.mobile-contract-sheet-open {
   resize: vertical;
 }
 
-.brief-ai-example {
-  margin: 0;
-  padding: 12px 14px;
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  background: var(--surface-muted);
-}
-
-.brief-ai-example strong {
-  display: block;
-  margin-bottom: 4px;
-  color: var(--text);
-  font-size: 12px;
-}
-
-.brief-ai-example p {
-  margin: 0;
-  color: var(--muted);
-  font-size: 12.5px;
-  line-height: 1.45;
-}
-
 /* ── Sticky summary ──────────────────────────────────────── */
 
 .app[data-view="calculator"] .sticky-summary {
@@ -5255,10 +4813,6 @@ body.mobile-contract-sheet-open {
 
 /* ── Calculator view entrance animation ──────────────────── */
 
-.view--calculator .calculator-hero {
-  animation: ddoc-fade-down 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
 .view--calculator .setup-card {
   animation: ddoc-scale-in 0.65s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both;
 }
@@ -5268,7 +4822,6 @@ body.mobile-contract-sheet-open {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .view--calculator .calculator-hero,
   .view--calculator .setup-card,
   .view--calculator .estimate-card {
     animation: none;
@@ -5278,15 +4831,6 @@ body.mobile-contract-sheet-open {
 /* ── Responsive ──────────────────────────────────────────── */
 
 @media (max-width: 1080px) {
-  .view--calculator .calculator-hero {
-    flex-direction: column;
-    gap: 14px;
-  }
-
-  .view--calculator .cv-back-btn {
-    margin-top: 0;
-  }
-
   .cv-total-amount {
     font-size: clamp(28px, 7vw, 44px);
   }
@@ -5610,10 +5154,6 @@ body.mobile-contract-sheet-open {
     box-shadow: var(--ddoc-shadow-button);
   }
 
-  .view--calculator .calculator-hero h1 {
-    font-size: 28px;
-  }
-
   .view--calculator .builder-grid {
     grid-template-columns: 1fr;
   }
@@ -5689,10 +5229,6 @@ body.mobile-contract-sheet-open {
     border-radius: 999px;
     justify-content: center;
     font-size: 15px;
-  }
-
-  .cv-empty-amount {
-    font-size: 64px;
   }
 
   /* ── AI-бриф: кнопка во всю ширину, карточки чуть крупнее ── */
@@ -5927,52 +5463,11 @@ body[data-view="contract"]::after {
   display: none;
 }
 
-.view--contract .contract-back {
-  display: none;
-}
-
-.view--contract .contract-hero h1 {
-  max-width: 560px;
-  margin: 0;
-  color: rgba(255, 255, 255, 0.92);
-  font-size: var(--type-h1);
-  font-weight: 400;
-  line-height: 1.08;
-  letter-spacing: -0.02em;
-}
-
-.view--contract .contract-type-picker__label {
-  margin: 0 0 6px;
-  padding: 0 4px;
-  color: var(--cv-eyebrow);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
-
-.view--contract .contract-hero .lead {
-  max-width: 520px;
-  margin: 0;
-  color: rgba(255, 255, 255, 0.54);
-  font-size: 14px;
-  line-height: 1.4;
-}
-
-.view--contract .contract-hero__actions {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding-top: 0;
-}
-
 .view--contract .autosave-status {
   min-height: 38px;
-  border-color: rgba(255, 255, 255, 0.18);
-  background: rgba(255, 255, 255, 0.12);
-  color: rgba(255, 255, 255, 0.70);
-  backdrop-filter: blur(var(--ddoc-blur-glass));
-  -webkit-backdrop-filter: blur(var(--ddoc-blur-glass));
+  border-color: var(--cv-line);
+  background: var(--cv-surface);
+  color: var(--cv-muted);
 }
 
 .view--contract .button--dark {
@@ -6022,8 +5517,8 @@ body[data-view="contract"]::after {
 [data-theme="dark"] .view--contract .contract-outline,
 [data-theme="dark"] .view--contract .document-canvas,
 [data-theme="dark"] .view--contract .document-toolbar {
-  backdrop-filter: blur(var(--ddoc-blur-glass));
-  -webkit-backdrop-filter: blur(var(--ddoc-blur-glass));
+  backdrop-filter: blur(var(--ddoc-blur-glass)) saturate(1.3);
+  -webkit-backdrop-filter: blur(var(--ddoc-blur-glass)) saturate(1.3);
   box-shadow: 0 4px 40px rgba(0, 0, 0, 0.30), 0 1px 4px rgba(0, 0, 0, 0.20);
 }
 
@@ -6251,14 +5746,16 @@ body[data-view="contract"]::after {
 
 /* Client request text */
 .view--contract .client-request-preview {
-  border: none !important;
-  background: transparent !important;
-  padding: 0 !important;
-  color: var(--text);
+  margin: 0;
+  border: none;
+  background: transparent;
+  padding: 0;
+  color: var(--cv-muted);
   font-size: 12px;
   white-space: pre-wrap;
+  word-break: break-word;
   font-family: inherit;
-  line-height: 1.65;
+  line-height: 1.6;
   font-weight: 500;
   position: relative;
 }
@@ -6322,21 +5819,6 @@ body[data-view="contract"]::after {
   line-height: 1.5;
   color: var(--cv-muted, var(--text));
   margin-bottom: 8px;
-}
-
-/* Explanations toggle in sidebar */
-.view--contract .contract-switch--sidebar {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  cursor: pointer;
-  user-select: none;
-}
-
-.view--contract .contract-switch--sidebar span {
-  font-size: 12px;
-  color: var(--cv-muted);
-  line-height: 1.3;
 }
 
 /* ── Sidebar typography: 3 levels ──────────────────────────
@@ -6445,50 +5927,6 @@ body[data-view="contract"]::after {
   flex-shrink: 0;
 }
 
-.view--contract .client-request-preview {
-  margin: 0;
-  padding: 10px 12px;
-  border: 1px solid var(--cv-line);
-  border-radius: 12px;
-  background: var(--cv-surface);
-  color: var(--cv-muted);
-  font-family: var(--font);
-  font-size: 11px;
-  line-height: 1.55;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
-.view--contract .client-reply-import {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-  color: var(--cv-muted);
-  font-size: 11px;
-  font-weight: 400;
-}
-
-.view--contract .client-reply-import textarea {
-  width: 100%;
-  min-height: 128px;
-  resize: vertical;
-  border: 1px solid var(--cv-line);
-  border-radius: 16px;
-  background: var(--cv-surface);
-  color: var(--cv-text);
-  padding: 11px 12px;
-  font: 500 12px/1.45 var(--font);
-  outline: none;
-}
-
-.view--contract .client-reply-import textarea::placeholder {
-  color: color-mix(in srgb, var(--cv-muted) 72%, transparent);
-}
-
-.view--contract .client-reply-import textarea:focus {
-  border-color: var(--line-strong);
-}
-
 .view--contract .client-reply-status {
   margin: 2px 0 8px;
   color: var(--cv-muted);
@@ -6502,10 +5940,7 @@ body[data-view="contract"]::after {
 
 .view--contract .contract-progress,
 .view--contract .contract-control input,
-.view--contract .signature-preview,
-.view--contract .signature-mode,
-.view--contract .signature-pdf-toggle,
-.view--contract .contract-switch {
+.view--contract .signature-preview {
   border-color: var(--cv-line);
   background: var(--cv-surface);
   color: var(--cv-text);
@@ -6532,9 +5967,6 @@ body[data-view="contract"]::after {
 
 .view--contract .contract-control span,
 .view--contract .signature-preview,
-.view--contract .signature-mode button,
-.view--contract .signature-pdf-toggle,
-.view--contract .contract-switch,
 .view--contract .optional-toggle small,
 .view--contract .outline-link,
 .view--contract .optional-toggle {
@@ -6548,66 +5980,15 @@ body[data-view="contract"]::after {
 }
 
 .view--contract .contract-control input:focus {
-  border-color: var(--line-strong);
+  border-color: var(--accent);
 }
 
-.view--contract .contract-template-strip {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 4px;
-  width: min(480px, 46vw);
-  margin: 0;
-  padding: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.14);
-  backdrop-filter: blur(var(--ddoc-blur-glass));
-  -webkit-backdrop-filter: blur(var(--ddoc-blur-glass));
-}
-
-.view--contract .contract-template-card,
 .view--contract .outline-link,
 .view--contract .optional-toggle {
   border-color: var(--cv-line);
   background: var(--cv-surface);
   color: var(--cv-text);
   transition: border-color 180ms ease, background 180ms ease, transform 180ms ease;
-}
-
-.view--contract .contract-template-card {
-  min-height: 36px;
-  padding: 8px 14px;
-  border: 0;
-  border-radius: 999px;
-  background: transparent;
-  color: rgba(255, 255, 255, 0.72);
-}
-
-.view--contract .contract-template-card span {
-  color: inherit;
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.view--contract .contract-template-card small {
-  display: none;
-}
-
-.view--contract .contract-template-card:hover,
-.view--contract .contract-template-card.is-active {
-  background: var(--surface-strong);
-  color: var(--text);
-  box-shadow: 0 16px 36px rgba(32, 20, 16, 0.18);
-  transform: translateY(-1px);
-}
-
-.view--contract .contract-template-card.is-active small {
-  color: var(--muted);
-}
-
-.view--contract .contract-template-card:hover:not(.is-active) {
-  background: rgba(255, 255, 255, 0.14);
-  color: rgba(255, 255, 255, 0.90);
 }
 
 .view--contract .outline-link:hover,
@@ -6619,9 +6000,6 @@ body[data-view="contract"]::after {
   transform: translateY(-1px);
 }
 
-.view--contract .contract-switch,
-.view--contract .signature-pdf-toggle,
-.view--contract .signature-mode button,
 .view--contract .signature-actions .button,
 .view--contract .outline-link {
   min-height: 30px;
@@ -6630,12 +6008,6 @@ body[data-view="contract"]::after {
   padding: 0 10px;
   text-align: center;
   justify-content: center;
-}
-
-.view--contract .document-toolbar__switch {
-  min-height: 42px;
-  background: var(--cv-surface);
-  padding: 0 14px;
 }
 
 .view--contract .signature-preview {
@@ -6648,17 +6020,6 @@ body[data-view="contract"]::after {
   display: grid;
   grid-template-columns: 1fr 0.62fr;
   gap: 7px;
-}
-
-.view--contract .signature-mode {
-  padding: 3px;
-  border-radius: 999px;
-}
-
-.view--contract .signature-mode button.is-active,
-.view--contract .signature-pdf-toggle.is-active {
-  background: var(--ddoc-color-button-bg);
-  color: var(--ddoc-color-button-label);
 }
 
 .view--contract .optional-list {
@@ -6741,7 +6102,7 @@ body[data-view="contract"]::after {
 
 .view--contract .inline-field:focus {
   background: var(--cv-selected-bg);
-  border-bottom-color: var(--line-strong);
+  border-bottom-color: var(--accent);
 }
 
 .view--contract .optional-section__actions button,
@@ -6824,17 +6185,8 @@ body[data-view="contract"]::after {
     padding: 96px 22px 72px;
   }
 
-  .view--contract .contract-hero,
   .view--contract .contract-layout {
     grid-template-columns: 1fr;
-  }
-
-  .view--contract .contract-hero {
-    flex-direction: column;
-  }
-
-  .view--contract .contract-template-strip {
-    width: min(420px, 100%);
   }
 
   .view--contract .contract-outline {
@@ -7312,20 +6664,11 @@ body[data-view="contract"]::after {
     border-radius: 999px;
   }
 
-  .view--contract .contract-hero__actions,
   .view--contract .document-toolbar,
   .view--contract .document-toolbar__actions {
     width: 100%;
     flex-direction: column;
     align-items: stretch;
-  }
-
-  .view--contract .contract-hero h1 {
-    font-size: 30px;
-  }
-
-  .view--contract .contract-template-strip {
-    width: 100%;
   }
 
   .view--contract .document-canvas {
@@ -7370,73 +6713,14 @@ body[data-view="contract"]::after {
   }
 }
 
-/* Contract explanation switch as a real tumbler */
-.view--contract .document-toolbar__switch {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  min-width: 198px;
-  padding: 0 8px 0 15px;
-  cursor: pointer;
-}
-
-.view--contract .document-toolbar__switch input {
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.view--contract .document-toolbar__switch span {
-  color: var(--cv-text);
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.view--contract .document-toolbar__switch i {
-  position: relative;
-  width: 46px;
-  height: 26px;
-  flex: 0 0 auto;
-  border-radius: 999px;
-  background: rgba(31, 29, 24, 0.16);
-  box-shadow: inset 0 0 0 1px var(--cv-line);
-  transition: background 180ms ease, box-shadow 180ms ease;
-}
-
-.view--contract .document-toolbar__switch i::after {
-  content: "";
-  position: absolute;
-  top: 4px;
-  left: 4px;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: #ffffff;
-  box-shadow: 0 4px 10px rgba(31, 29, 24, 0.22);
-  transition: transform 180ms ease;
-}
-
-.view--contract .document-toolbar__switch input:checked + span + i {
-  background: var(--ddoc-color-button-bg);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
-}
-
-.view--contract .document-toolbar__switch input:checked + span + i::after {
-  transform: translateX(20px);
-}
-
 /* ============================================================
    CONTRACT CHOOSER — document type selection screen
    ============================================================ */
 
 /* Show chooser / hide editor based on mode */
 .contract-workspace[data-mode="pick"] .contract-chooser { display: flex; }
-.contract-workspace[data-mode="pick"] .contract-hero,
 .contract-workspace[data-mode="pick"] .contract-layout,
-.contract-workspace[data-mode="pick"] .document-toolbar,
-.contract-workspace[data-mode="pick"] .contract-hero__actions { display: none; }
+.contract-workspace[data-mode="pick"] .document-toolbar { display: none; }
 
 .contract-workspace[data-mode="fill"] .contract-chooser { display: none; }
 
@@ -7606,151 +6890,7 @@ body[data-view="contract"]::after {
   white-space: nowrap;
 }
 
-.contract-chooser__groups {
-  width: 100%;
-  display: grid;
-  gap: 22px;
-}
-
-.contract-chooser-group {
-  width: 100%;
-  display: grid;
-  grid-template-columns: 238px minmax(0, 1fr);
-  gap: 14px;
-  align-items: stretch;
-  padding: 16px 12px 16px 40px;
-  border: 1px dashed rgba(255, 255, 255, 0.56);
-  border-radius: var(--ddoc-radius-card);
-}
-
-.contract-chooser-group__intro {
-  display: grid;
-  align-content: start;
-  gap: 10px;
-  padding: 36px 0 0;
-}
-
-.contract-chooser-group__intro h3 {
-  margin: 0;
-  color: rgba(255, 255, 255, 0.96);
-  font-family: "Suisse Intl", "Onest", "Helvetica Neue", Arial, sans-serif;
-  font-size: 22px;
-  font-weight: 500;
-  line-height: 1.1;
-  letter-spacing: 0;
-}
-
-.contract-chooser-group__intro p {
-  max-width: 210px;
-  margin: 0;
-  color: var(--ddoc-color-body-muted);
-  font-size: 13px;
-  line-height: 1.22;
-}
-
-.contract-chooser-group__cards {
-  display: grid;
-  grid-template-columns: repeat(2, 248px);
-  justify-content: end;
-  gap: 16px;
-  width: 100%;
-  text-align: left;
-}
-
-.contract-choice-card {
-  position: relative;
-  width: 248px;
-  max-width: 100%;
-  height: 248px;
-  flex: 0 0 248px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 0;
-  padding: 31px 27px;
-  border: 0;
-  border-radius: var(--ddoc-radius-card);
-  background: var(--ddoc-color-card-solid);
-  color: var(--ddoc-color-title);
-  text-align: left;
-  box-shadow: 0 18px 42px rgba(32, 20, 16, 0.14), 0 4px 14px rgba(0, 0, 0, 0.05);
-  transition: background 0.9s ease, background-color 0.9s ease, border-color 0.9s ease, backdrop-filter 0.9s ease, box-shadow 0.3s ease;
-  overflow: visible;
-}
-
-[data-theme="dark"] .view--contract .contract-choice-card {
-  border: 1px solid var(--ddoc-color-card-border);
-  backdrop-filter: blur(var(--ddoc-blur-glass));
-  -webkit-backdrop-filter: blur(var(--ddoc-blur-glass));
-}
-
-.contract-choice-card:hover {
-  box-shadow: 0 28px 70px rgba(32, 20, 16, 0.22), 0 8px 20px rgba(0, 0, 0, 0.08);
-}
-
-[data-theme="dark"] .view--contract .contract-choice-card:hover {
-  border-color: rgba(255, 255, 255, 0.22);
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.50), 0 4px 16px rgba(0, 0, 0, 0.30);
-}
-
-.contract-choice-card__body {
-  display: block;
-  flex: 1 1 auto;
-}
-
-.contract-choice-card__badge {
-  position: absolute;
-  top: -2px;
-  right: -6px;
-  width: 42px;
-  height: 42px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: #262626;
-  color: #ffffff;
-  font-size: 18px;
-  font-weight: 500;
-  z-index: 2;
-  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.16);
-}
-
-.contract-choice-card__label {
-  display: block;
-  margin: 0 0 8px;
-  font-size: 21px;
-  font-weight: 500;
-  letter-spacing: 0;
-  line-height: 1.1;
-  color: var(--ddoc-color-title);
-  white-space: pre-line;
-}
-
-.contract-choice-card__desc {
-  display: block;
-  margin: 0;
-  font-size: 13px;
-  font-weight: 400;
-  color: var(--ddoc-color-body-muted);
-  line-height: 1.35;
-  max-width: none;
-  white-space: pre-line;
-}
-
-.contract-choice-card__cta {
-  align-self: center;
-  width: 196px;
-  min-height: 44px;
-  height: 44px;
-  margin-top: 16px;
-  font-size: 13px;
-}
-
-.contract-choice-card__cta:hover {
-  transform: none;
-}
-
-/* ── New chooser (two-card mechanic) ─────────────────────── */
+/* ── Chooser (two-card mechanic) ─────────────────────────── */
 .contract-chooser__cards {
   display: flex;
   gap: 16px;
@@ -7864,75 +7004,10 @@ body[data-view="contract"]::after {
   transform: scale(1.02);
 }
 
-/* Chooser — mobile: карточки в столбик, CTA во всю ширину */
-@media (max-width: 760px) {
-  .contract-chooser__title {
-    font-size: 30px;
-    margin-bottom: 18px;
-  }
-
-  .contract-chooser__cards {
-    flex-direction: column;
-    max-width: none;
-    margin-bottom: 22px;
-  }
-
-  .chooser-card {
-    padding: 24px 22px 20px;
-  }
-
-  .chooser-cta {
-    width: 100%;
-    min-height: 50px;
-  }
-}
-
-/* "← Изменить тип" back button in fill mode */
-.contract-back-to-chooser {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.10);
-  backdrop-filter: blur(var(--ddoc-blur-glass));
-  -webkit-backdrop-filter: blur(var(--ddoc-blur-glass));
-  color: rgba(255, 255, 255, 0.70);
-  font: inherit;
-  font-size: 12px;
-  cursor: pointer;
-  transition: background 180ms ease, color 180ms ease;
-  white-space: nowrap;
-}
-
-.contract-back-to-chooser:hover {
-  background: rgba(255, 255, 255, 0.16);
-  color: rgba(255, 255, 255, 0.92);
-}
-
-/* Mobile */
+/* Chooser — планшет/мобила */
 @media (max-width: 1080px) {
   .contract-chooser__inner {
     max-width: 780px;
-  }
-
-  .contract-chooser-group {
-    grid-template-columns: 1fr;
-    gap: 14px;
-    padding: 18px;
-  }
-
-  .contract-chooser-group__intro {
-    padding: 8px 10px 0;
-  }
-
-  .contract-chooser-group__cards {
-    justify-content: start;
-  }
-
-  .contract-chooser-group__intro p {
-    max-width: 100%;
   }
 }
 
@@ -7952,42 +7027,19 @@ body[data-view="contract"]::after {
     content: " ";
   }
 
-  .contract-chooser-group {
-    padding: 12px;
-    border-radius: 28px;
+  .contract-chooser__cards {
+    flex-direction: column;
+    max-width: none;
+    margin-bottom: 22px;
   }
 
-  .contract-chooser-group__cards {
-    grid-template-columns: 1fr;
+  .chooser-card {
+    padding: 24px 22px 20px;
   }
 
-  .contract-choice-card {
+  .chooser-cta {
     width: 100%;
-    height: auto;
-    min-height: 240px;
-    padding: 28px 24px;
-    border-radius: 28px;
-  }
-
-  .contract-choice-card__cta {
-    width: min(207px, 100%);
-    margin-top: 16px;
-  }
-
-  .contract-choice-card__label {
-    font-size: 20px;
-  }
-
-  .contract-choice-card__desc {
-    font-size: 14px;
-  }
-
-  .contract-choice-card__badge {
-    width: 42px;
-    height: 42px;
-    top: -8px;
-    right: -8px;
-    font-size: 16px;
+    min-height: 50px;
   }
 }
 
@@ -7998,8 +7050,6 @@ body[data-view="contract"]::after {
 .market-grade:active,
 .segmented__item:active      { transform: scale(0.96); }
 .button:active               { transform: scale(0.97); }
-.contract-type-card:hover    { transform: translateY(-3px) scale(1.015); }
-.contract-type-card:active   { transform: scale(0.97); }
 
 /* ============================================================
    DARK THEME — мобильные шторки, чипы и панели
