@@ -6053,6 +6053,11 @@ body[data-view="contract"]::after {
   letter-spacing: 0;
 }
 
+/* "Создать допсоглашение" — taller primary action */
+.view--contract .button--wide[data-action="create-addendum"] {
+  min-height: 51px;
+}
+
 .view--contract .contract-layout {
   display: grid;
   grid-template-columns: minmax(320px, 409px) minmax(0, 1fr);

@@ -19,22 +19,9 @@
   <meta property="og:image:height" content="630">
   <meta property="og:locale" content="ru_RU">
   <meta name="twitter:card" content="summary_large_image">
-  <link rel="stylesheet" href="css/designkit.css?v=110">
-  <!-- Yandex.Metrika counter -->
-  <script type="text/javascript">
-    (function(m,e,t,r,i,k,a){
-        m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
-        m[i].l=1*new Date();
-        for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
-        k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
-    })(window, document,'script','https://mc.yandex.ru/metrika/tag.js?id=109865409', 'ym');
-
-    ym(109865409, 'init', {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:true});
-  </script>
-  <!-- /Yandex.Metrika counter -->
+  <link rel="stylesheet" href="css/designkit.css?v=111">
 </head>
 <body data-view="home">
-  <noscript><div><img src="https://mc.yandex.ru/watch/109865409" style="position:absolute; left:-9999px;" alt=""></div></noscript>
   <div class="app" data-view="home">
     <aside class="rail" aria-label="Основная навигация">
       <a class="brand" href="#home" data-route="home" aria-label="DesiDoc home">DD</a>
@@ -139,9 +126,9 @@
             <strong>DD</strong>
             <p>DesiDoc — создавайте сметы, договоры и проектные документы без сложных таблиц и ручной сборки.</p>
             <p class="deedoc-home__footer-legal">
-              <a class="link-btn" href="policy.html">Политика обработки персональных данных</a>
+              <a class="link-btn" href="policy.html">Политика конфиденциальности</a>
               <span>·</span>
-              <a class="link-btn" href="consent.html">Согласие на обработку персональных данных</a>
+              <a class="link-btn" href="personal-data-consent.html">Согласие на обработку персональных данных</a>
             </p>
           </footer>
         </div>
@@ -149,6 +136,7 @@
 
       <section class="view view--calculator" data-screen="calculator" aria-labelledby="calculator-title">
         <div class="calculator-shell">
+          <h1 class="visually-hidden" id="calculator-title">Смета</h1>
           <section class="mobile-calc-controls" aria-label="Параметры сметы">
             <div class="mobile-calc-controls__rail">
               <button class="mobile-calc-chip" type="button" data-action="open-mobile-calc-sheet" data-mobile-sheet="project">
@@ -215,11 +203,11 @@
                       </button>
                       <button class="market-grade" type="button" data-market-grade="middle">
                         <span>Мидл</span>
-                        <strong>1 500 ₽</strong>
+                        <strong>2 000 ₽</strong>
                       </button>
                       <button class="market-grade" type="button" data-market-grade="senior">
                         <span>Синьор</span>
-                        <strong>2 500 ₽</strong>
+                        <strong>3 500 ₽</strong>
                       </button>
                     </div>
                   </div>
@@ -327,11 +315,11 @@
                     </button>
                     <button class="market-grade" type="button" data-market-grade="middle">
                       <span>Мидл</span>
-                      <strong>1 500 ₽</strong>
+                      <strong>2 000 ₽</strong>
                     </button>
                     <button class="market-grade" type="button" data-market-grade="senior">
                       <span>Синьор</span>
-                      <strong>2 500 ₽</strong>
+                      <strong>3 500 ₽</strong>
                     </button>
                   </div>
                 </div>
@@ -479,6 +467,7 @@
 
       <section class="view view--contract" data-screen="contract" aria-labelledby="contract-title">
         <div class="contract-workspace">
+          <h1 class="visually-hidden" id="contract-title">Документы</h1>
           <header class="contract-header contract-hero"></header>
 
           <!-- Document type chooser (shown before editor) -->
@@ -757,7 +746,7 @@
 
       <label class="modal__consent">
         <input type="checkbox" data-profile-consent>
-        <span>Я принимаю <a class="link-btn" href="consent.html">Согласие на обработку персональных данных</a> и <a class="link-btn" href="policy.html">Политику обработки персональных данных</a></span>
+        <span>Я принимаю <a class="link-btn" href="personal-data-consent.html">Согласие на обработку персональных данных</a></span>
       </label>
 
       <div class="modal__actions">
@@ -774,23 +763,23 @@
       <div class="modal__privacy-body">
         <p><strong>Последнее обновление:</strong> июнь 2026 г.</p>
 
-        <h3>1. Какие данные мы собираем</h3>
-        <p>При использовании раздела «Мои данные» приложение сохраняет информацию, которую вы вводите самостоятельно: имя, ИНН, реквизиты оплаты, адрес, контактные данные. Эти сведения используются исключительно для автоматического заполнения смет и договоров.</p>
+        <h3>1. Какие данные мы используем</h3>
+        <p>В разделе «Мои данные» приложение сохраняет сведения, которые вы вводите самостоятельно: имя, ИНН, реквизиты, адрес, контактные данные и подпись. Эти сведения нужны для автозаполнения смет, договоров и дополнительных соглашений.</p>
 
         <h3>2. Где хранятся данные</h3>
-        <p>Все данные сохраняются <strong>только в localStorage вашего браузера</strong> — на вашем устройстве. Мы не передаём, не загружаем и не обрабатываем ваши данные на серверах DesiDoc или третьих лиц.</p>
+        <p>Данные документов сохраняются <strong>в localStorage вашего браузера</strong> — на вашем устройстве. DesiDoc не получает содержимое смет, договоров и реквизитов, пока вы сами не отправите данные через внешнюю форму обратной связи.</p>
 
-        <h3>3. Передача третьим лицам</h3>
-        <p>Ваши данные не передаются третьим лицам ни в каком виде. Сформированные PDF-документы создаются локально в браузере и сохраняются только на вашем устройстве.</p>
+        <h3>3. Cookie, аналитика и опрос</h3>
+        <p>После принятия cookie сайт подключает Яндекс Метрику для обезличенной аналитики работы интерфейса. После первого скачивания PDF DesiDoc может предложить пройти опрос в Яндекс Форме — переход и заполнение формы добровольные.</p>
 
         <h3>4. Удаление данных</h3>
-        <p>Вы можете удалить все сохранённые данные в любой момент, очистив localStorage браузера или воспользовавшись кнопкой «Очистить данные» в настройках браузера.</p>
+        <p>Вы можете удалить локально сохранённые данные, очистив localStorage и cookie в настройках браузера. Cookie также можно отключить в настройках браузера.</p>
 
         <h3>5. Применимое законодательство</h3>
-        <p>Сервис разработан с учётом требований Федерального закона № 152-ФЗ «О персональных данных». Поскольку данные хранятся исключительно на устройстве пользователя и не передаются оператору, DesiDoc не является оператором персональных данных в смысле 152-ФЗ.</p>
+        <p>Сервис разработан с учётом требований Федерального закона № 152-ФЗ «О персональных данных». Подробная редакция доступна в <a href="policy.html">Политике конфиденциальности</a> и <a href="personal-data-consent.html">Согласии на обработку персональных данных</a>.</p>
 
         <h3>6. Контакты</h3>
-        <p>По вопросам конфиденциальности: <a href="mailto:hello@desidoc.ru">hello@desidoc.ru</a></p>
+        <p>По вопросам конфиденциальности: <a href="mailto:minina.nataliya@inbox.ru">minina.nataliya@inbox.ru</a></p>
       </div>
       <div class="modal__actions">
         <button class="button button--dark button--wide" value="cancel">Понятно</button>
@@ -827,16 +816,29 @@
     </form>
   </dialog>
 
+  <dialog class="modal" data-feedback-modal>
+    <form method="dialog" class="modal__panel modal__panel--small">
+      <button class="modal__close" value="cancel" aria-label="Закрыть">×</button>
+      <h2>Спасибо, что попробовали DesiDoc 💛</h2>
+      <p class="modal__lead">Буду очень благодарна за честный отзыв.</p>
+      <p class="modal__lead">Это поможет решить, какие функции делать следующими.</p>
+      <div class="modal__actions">
+        <button class="button button--ghost" type="button" data-action="snooze-feedback-survey">Не сейчас</button>
+        <button class="button button--dark" type="button" data-action="start-feedback-survey">Пройти опрос</button>
+      </div>
+    </form>
+  </dialog>
+
   <section class="print-sheet" data-print-sheet aria-hidden="true"></section>
 
   <div class="cookie-banner" data-cookie-banner hidden role="region" aria-label="Уведомление о cookies">
-    <p>Мы используем cookie файлы для работы DesiDoc. Вы можете отключить их в любой момент в настройках браузера. <a href="policy.html">Подробнее в Политике обработки персональных данных.</a></p>
+    <p>Мы используем cookie файлы и аналитику для работы сайта. Вы можете отключить cookie в настройках браузера. <a href="policy.html">Подробнее в Политике конфиденциальности.</a></p>
     <button class="button button--dark cookie-banner__button" type="button" data-action="accept-cookies">Принять</button>
   </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://unpkg.com/html-to-image@1.11.11/dist/html-to-image.js"></script>
-  <script src="js/designkit.js?v=56"></script>
+  <script src="assets/vendor/html2canvas.min.js"></script>
+  <script src="assets/vendor/jspdf.umd.min.js"></script>
+  <script src="assets/vendor/html-to-image.js"></script>
+  <script src="js/designkit.js?v=60"></script>
 </body>
 </html>

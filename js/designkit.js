@@ -80,7 +80,7 @@ const PROJECTS = {
 
 const PROJECT_ORDER = ["logo", "branding", "landing_design", "landing_tilda", "presentation", "custom"];
 
-const MARKET_RATES = { junior: 800, middle: 1500, senior: 2500 };
+const MARKET_RATES = { junior: 800, middle: 2000, senior: 3500 };
 const MODIFIERS = { urgent: 0.3 };
 const DEFAULT_DESIGNER_RATE = 1500;
 const DEFAULT_PROJECT_KEY = "landing_design";
@@ -101,6 +101,12 @@ const RU_CONTRACT_MONTHS = [
 const PROFILE_STORAGE_KEY = "designkit.profile";
 const ESTIMATE_META_STORAGE_KEY = "designkit.estimateMeta";
 const COOKIE_CONSENT_STORAGE_KEY = "designkit.cookieConsent";
+const FEEDBACK_FORM_URL = "https://forms.yandex.ru/u/6a305ae94936390f65dd7fe0/";
+const FEEDBACK_COMPLETED_KEY = "desidoc_feedback_completed";
+const FEEDBACK_SNOOZED_UNTIL_KEY = "desidoc_feedback_snoozed_until";
+const FEEDBACK_SNOOZE_DELAY = 7 * 24 * 60 * 60 * 1000;
+const YANDEX_METRIKA_ID = 109865409;
+const YANDEX_METRIKA_SCRIPT_URL = `https://mc.yandex.ru/metrika/tag.js?id=${YANDEX_METRIKA_ID}`;
 const savedProfile = loadProfile();
 
 const state = {
@@ -1346,19 +1352,172 @@ function renderGreeting() {
     : `Привет!<br>С чего начнем работу?`;
 }
 
+function hasCookieConsent() {
+  try {
+    return localStorage.getItem(COOKIE_CONSENT_STORAGE_KEY) === "accepted";
+  } catch (error) {
+    return false;
+  }
+}
+
+function initYandexMetrika(force = false) {
+  if (!force && !hasCookieConsent()) return;
+  if (window.__desidocMetrikaLoaded) return;
+  window.__desidocMetrikaLoaded = true;
+  window.ym = window.ym || function ymStub() {
+    (window.ym.a = window.ym.a || []).push(arguments);
+  };
+  window.ym.l = window.ym.l || Date.now();
+  if (!document.querySelector(`script[src="${YANDEX_METRIKA_SCRIPT_URL}"]`)) {
+    const script = document.createElement("script");
+    script.async = true;
+    script.src = YANDEX_METRIKA_SCRIPT_URL;
+    document.head.appendChild(script);
+  }
+  window.ym(YANDEX_METRIKA_ID, "init", {
+    ssr: true,
+    webvisor: false,
+    clickmap: false,
+    referrer: document.referrer,
+    url: location.href,
+    accurateTrackBounce: true,
+    trackLinks: false,
+  });
+}
+
 function initCookieBanner() {
   const banner = document.querySelector("[data-cookie-banner]");
-  if (!banner || localStorage.getItem(COOKIE_CONSENT_STORAGE_KEY) === "accepted") return;
+  if (!banner) return;
+  if (hasCookieConsent()) {
+    initYandexMetrika();
+    return;
+  }
   banner.hidden = false;
   requestAnimationFrame(() => banner.classList.add("is-visible"));
 }
 
 function acceptCookies() {
   const banner = document.querySelector("[data-cookie-banner]");
-  localStorage.setItem(COOKIE_CONSENT_STORAGE_KEY, "accepted");
-  if (!banner) return;
-  banner.classList.remove("is-visible");
-  setTimeout(() => { banner.hidden = true; }, 220);
+  try {
+    localStorage.setItem(COOKIE_CONSENT_STORAGE_KEY, "accepted");
+  } catch (error) {}
+  initYandexMetrika(true);
+  if (banner) {
+    banner.classList.remove("is-visible");
+    setTimeout(() => { banner.hidden = true; }, 220);
+  }
+}
+
+let feedbackPromptCloseHandled = false;
+
+function trackFeedbackPromptGoal(goal) {
+  if (window.__desidocMetrikaLoaded && typeof window.ym === "function") {
+    window.ym(YANDEX_METRIKA_ID, "reachGoal", goal);
+  }
+}
+
+function getFeedbackSnoozedUntilTime() {
+  const value = localStorage.getItem(FEEDBACK_SNOOZED_UNTIL_KEY);
+  if (!value) return 0;
+  const numericValue = Number(value);
+  if (Number.isFinite(numericValue) && numericValue > 0) return numericValue;
+  const dateValue = Date.parse(value);
+  return Number.isFinite(dateValue) ? dateValue : 0;
+}
+
+function canShowFeedbackPrompt() {
+  if (localStorage.getItem(FEEDBACK_COMPLETED_KEY)) return false;
+  const snoozedUntil = getFeedbackSnoozedUntilTime();
+  return !snoozedUntil || snoozedUntil <= Date.now();
+}
+
+function showFeedbackPrompt() {
+  const modal = document.querySelector("[data-feedback-modal]");
+  if (!modal || modal.open || !canShowFeedbackPrompt()) return;
+  feedbackPromptCloseHandled = false;
+  modal.showModal();
+  trackFeedbackPromptGoal("feedback_prompt_shown");
+}
+
+function notifyPdfDownloadSuccess() {
+  setTimeout(showFeedbackPrompt, 220);
+}
+
+function startFeedbackSurvey() {
+  const modal = document.querySelector("[data-feedback-modal]");
+  feedbackPromptCloseHandled = true;
+  localStorage.setItem(FEEDBACK_COMPLETED_KEY, "true");
+  localStorage.removeItem(FEEDBACK_SNOOZED_UNTIL_KEY);
+  trackFeedbackPromptGoal("feedback_started");
+  window.open(FEEDBACK_FORM_URL, "_blank", "noopener");
+  modal?.close();
+}
+
+function snoozeFeedbackPrompt({ closeModal = true } = {}) {
+  const modal = document.querySelector("[data-feedback-modal]");
+  if (localStorage.getItem(FEEDBACK_COMPLETED_KEY)) return;
+  feedbackPromptCloseHandled = true;
+  localStorage.setItem(FEEDBACK_SNOOZED_UNTIL_KEY, new Date(Date.now() + FEEDBACK_SNOOZE_DELAY).toISOString());
+  trackFeedbackPromptGoal("feedback_snoozed");
+  if (closeModal) modal?.close();
+}
+
+function bindFeedbackPromptModal() {
+  const modal = document.querySelector("[data-feedback-modal]");
+  if (!modal) return;
+  modal.addEventListener("cancel", (event) => {
+    event.preventDefault();
+    snoozeFeedbackPrompt();
+  });
+  modal.addEventListener("close", () => {
+    if (feedbackPromptCloseHandled) {
+      feedbackPromptCloseHandled = false;
+      return;
+    }
+    snoozeFeedbackPrompt({ closeModal: false });
+    feedbackPromptCloseHandled = false;
+  });
+}
+
+let metrikaPrivacyObserver = null;
+
+const METRIKA_PRIVATE_FIELD_SELECTOR = [
+  "input",
+  "textarea",
+  "[contenteditable=\"true\"]",
+].join(",");
+
+const METRIKA_PRIVATE_CONTENT_SELECTOR = [
+  "[data-print-sheet]",
+  ".document-canvas",
+  ".document-page",
+  ".contract-clause__body",
+  ".inline-field",
+  ".inline-field--block",
+  ".signature-image",
+  ".contract-signature-img",
+].join(",");
+
+function applyMetrikaPrivacyGuards(root = document) {
+  const addClassIfMatch = (selector, className) => {
+    if (root.matches?.(selector)) root.classList.add(className);
+    root.querySelectorAll?.(selector).forEach((node) => node.classList.add(className));
+  };
+  addClassIfMatch(METRIKA_PRIVATE_FIELD_SELECTOR, "ym-disable-keys");
+  addClassIfMatch(METRIKA_PRIVATE_CONTENT_SELECTOR, "ym-hide-content");
+}
+
+function initMetrikaPrivacyGuards() {
+  applyMetrikaPrivacyGuards();
+  if (metrikaPrivacyObserver || !window.MutationObserver || !document.body) return;
+  metrikaPrivacyObserver = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      mutation.addedNodes.forEach((node) => {
+        if (node.nodeType === Node.ELEMENT_NODE) applyMetrikaPrivacyGuards(node);
+      });
+    });
+  });
+  metrikaPrivacyObserver.observe(document.body, { childList: true, subtree: true });
 }
 
 function openExport(force = false) {
@@ -1498,8 +1657,11 @@ function printEstimate() {
   sheet.style.cssText = "display:block;position:fixed;left:-9999px;top:0;width:794px;min-height:1123px;z-index:9999;background:#fff;overflow:visible;padding:0;";
   const page = sheet.querySelector(".pdf-page");
 
-  const projectLabel = getProject().label;
-  const filename = `смета-${projectLabel.toLowerCase().replace(/\s+/g, "-")}.pdf`;
+  const filename = generatePdfFileName({
+    documentType: "estimate",
+    projectName: estimateName,
+    date: issuedAt,
+  });
 
   if (!window.jspdf?.jsPDF || !page) { window.print(); sheet.style.cssText = ""; sheet.setAttribute("aria-hidden", "true"); return; }
   const { jsPDF } = window.jspdf;
@@ -1516,6 +1678,7 @@ function printEstimate() {
       while (y < imgH) { if (y > 0) pdf.addPage(); pdf.addImage(dataUrl, "PNG", 0, -y, pageW, imgH); y += pageH; }
       pdf.save(filename);
       cleanupSheet();
+      notifyPdfDownloadSuccess();
     };
     img.src = dataUrl;
   };
@@ -1563,6 +1726,36 @@ function formatNumericDate(date = new Date()) {
     padDatePart(safeDate.getMonth() + 1),
     safeDate.getFullYear(),
   ].join(".");
+}
+
+function formatFileDate(date = new Date()) {
+  const safeDate = Number.isNaN(date.getTime()) ? new Date() : date;
+  return [
+    padDatePart(safeDate.getDate()),
+    padDatePart(safeDate.getMonth() + 1),
+    safeDate.getFullYear(),
+  ].join("-");
+}
+
+function generatePdfFileName({ documentType = "document", projectName = "", date = new Date() } = {}) {
+  const typeName = {
+    estimate: "Смета",
+    contract: "Договор",
+    addendum: "Допсоглашение",
+    document: "Документ",
+  }[documentType] || "Документ";
+  const formattedDate = formatFileDate(date);
+  let safeProjectName = String(projectName || "Без названия")
+    .trim()
+    .replace(/[\/\\:*?"<>|]/g, "")
+    .replace(/[«»“”„'`]/g, "")
+    .replace(/\s+/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_+|_+$/g, "");
+  if (!safeProjectName) safeProjectName = "Без_названия";
+  const maxProjectLength = Math.max(1, 120 - typeName.length - formattedDate.length - 6);
+  safeProjectName = safeProjectName.slice(0, maxProjectLength).replace(/_+$/g, "") || "Без_названия";
+  return `${typeName}_${safeProjectName}_${formattedDate}.pdf`;
 }
 
 function addCalendarYears(date, years) {
@@ -2276,6 +2469,61 @@ function renderAddendumProgress() {
   if (!isRenderingMobileContractUI && !(document.activeElement && document.activeElement.closest?.("[data-mobile-contract-sheet]"))) {
     renderMobileContractUI();
   }
+}
+
+function getCurrentDocumentMissingRequiredFields() {
+  if (contractState.docType === "addendum") {
+    return ADDENDUM_REQUIRED_FIELDS.filter((key) => !isAddendumFieldFilled(key));
+  }
+  return CONTRACT_REQUIRED_FIELDS.filter((key) => !isContractFieldFilled(key));
+}
+
+function getCurrentDocumentFieldLabel(key) {
+  return contractState.docType === "addendum"
+    ? getAddendumFieldLabel(key)
+    : getContractFieldLabel(key);
+}
+
+function focusContractControlField(field) {
+  const input = field ? document.querySelector(`[data-contract-control="${field}"]`) : null;
+  if (!input) return;
+  input.closest("details")?.setAttribute("open", "open");
+  input.scrollIntoView({ behavior: "smooth", block: "center" });
+  input.focus();
+}
+
+function focusAddendumControlField(field) {
+  const input = field ? document.querySelector(`[data-addendum-control="${field}"]`) : null;
+  if (!input) return;
+  input.closest("details")?.setAttribute("open", "open");
+  input.scrollIntoView({ behavior: "smooth", block: "center" });
+  input.focus();
+}
+
+function focusCurrentDocumentField(field) {
+  if (contractState.docType === "addendum") {
+    focusAddendumControlField(field);
+    return;
+  }
+  focusContractControlField(field);
+}
+
+function ensureCurrentDocumentReadyForPdf() {
+  const missing = getCurrentDocumentMissingRequiredFields();
+  if (!missing.length) return true;
+  if (contractState.docType === "addendum") {
+    renderAddendumProgress();
+  } else {
+    renderContractProgress();
+  }
+  const labels = missing.map(getCurrentDocumentFieldLabel);
+  const documentName = contractState.docType === "addendum" ? "допсоглашения" : "договора";
+  const shortList = labels.slice(0, 3).join(", ");
+  const suffix = labels.length > 3 ? ` и ещё ${labels.length - 3}` : "";
+  updateAutosaveStatus(`Осталось заполнить: ${shortList}${suffix}`);
+  alert(`Перед скачиванием PDF заполните обязательные поля ${documentName}: ${labels.join(", ")}.`);
+  focusCurrentDocumentField(missing[0]);
+  return false;
 }
 
 function shouldAutoFillAddendumField(value) {
@@ -3007,6 +3255,7 @@ function renderAddendumControls() {
       </label>
     </details>
   `;
+  renderAddendumProgress();
   if (!isRenderingMobileContractUI && !(document.activeElement && document.activeElement.closest?.("[data-mobile-contract-sheet]"))) {
     renderMobileContractUI();
   }
@@ -3038,10 +3287,12 @@ function renderAddendumSidebar() {
   if (!sidebar) return;
   sidebar.innerHTML = `
     <!-- Шаг 1: Данные -->
-    <details class="outline-group contract-data-panel outline-group--collapsible">
+    <details class="outline-group contract-data-panel outline-group--collapsible" data-addendum-fields-panel>
       <summary class="outline-title outline-title--toggle"><span class="step-badge">1</span>Заполни данные</summary>
       <div class="outline-group-body">
         <p class="contract-data-hint">Данные подтянутся из договора. Проверь и добавь детали задачи.</p>
+        <div class="contract-progress" data-addendum-progress></div>
+        <div class="contract-required-summary" data-addendum-required-summary></div>
         <div class="contract-form" data-addendum-fields></div>
       </div>
     </details>
@@ -3558,9 +3809,9 @@ function renderContractDocument() {
         },
         {
           title: "Срок предоставления обратной связи",
-          note: "Молчание Заказчика в установленный срок = согласие. Рекомендуем всегда добиваться явного «ок».",
+          note: "Молчание лучше не считать автоматическим согласием без напоминания. Рекомендуем всегда добиваться явного «ок».",
           body: `<p>В течение 7 (семи) календарных дней с даты получения результатов работ Заказчик обязан направить Исполнителю либо подтверждение их согласования, либо мотивированный перечень замечаний с описанием необходимых доработок. Сообщения, направленные через согласованные Сторонами каналы связи (электронная почта, мессенджеры), имеют юридическую силу и признаются надлежащим способом взаимодействия Сторон.</p>
-          <p>В случае если в течение указанного срока Исполнитель не получил ни подтверждения согласования, ни мотивированного перечня замечаний, соответствующий этап считается выполненным надлежащим образом и утверждённым Заказчиком без замечаний в полном объёме.</p>`,
+          <p>Если в течение указанного срока Исполнитель не получил ни подтверждения согласования, ни мотивированного перечня замечаний, Исполнитель вправе направить Заказчику повторное уведомление. При отсутствии ответа в течение 3 (трёх) рабочих дней после такого уведомления соответствующий этап может считаться согласованным, если иное не установлено обязательными требованиями закона или письменным соглашением Сторон.</p>`,
         },
         {
           title: "Порядок предоставления замечаний и доработок",
@@ -3595,8 +3846,8 @@ function renderContractDocument() {
         },
         {
           title: "Последствия непредъявления замечаний",
-          note: "Бездействие = согласие. Следите за сроком — если хотите предъявить замечания, делайте это в пределах 7 рабочих дней.",
-          body: `<p>Если в течение 7 (семи) рабочих дней Исполнитель не получил ни подписанного Акта, ни мотивированного отказа от его подписания, Акт считается подписанным Заказчиком в последний день указанного срока, а Результаты работ — принятыми Заказчиком без замечаний в полном объёме и подлежащими оплате в полном размере.</p>`,
+          note: "Безопаснее сначала направить напоминание и только потом считать результаты принятыми.",
+          body: `<p>Если в течение 7 (семи) рабочих дней Исполнитель не получил ни подписанного Акта, ни мотивированного отказа от его подписания, Исполнитель вправе направить Заказчику повторное уведомление о необходимости подписать Акт или представить мотивированные замечания. При отсутствии ответа в течение 3 (трёх) рабочих дней после такого уведомления Результаты работ могут считаться принятыми без замечаний, если иное не установлено обязательными требованиями закона или письменным соглашением Сторон.</p>`,
         },
       ])}
 
@@ -3626,7 +3877,7 @@ function renderContractDocument() {
         },
         {
           title: "Маркировка рекламы",
-          body: `<p>В случае если создаваемый Исполнителем объект содержит рекламную информацию и предназначен для распространения в информационно-телекоммуникационной сети Интернет, Заказчик самостоятельно несёт обязанности оператора рекламных данных в соответствии с Федеральным законом от 13.03.2006 № 38-ФЗ «О рекламе» и при необходимости предоставляет Исполнителю сведения, необходимые для надлежащей маркировки рекламы. Исполнитель не несёт ответственности за соблюдение требований законодательства о маркировке интернет-рекламы.</p>`,
+          body: `<p>Если создаваемый объект содержит рекламную информацию и предназначен для распространения в сети Интернет, Стороны до размещения определяют свои роли по Федеральному закону от 13.03.2006 № 38-ФЗ «О рекламе» и правилам учёта интернет-рекламы. Заказчик предоставляет сведения, необходимые для маркировки и передачи данных, а каждая из Сторон выполняет обязанности в пределах своей фактической роли рекламодателя, рекламораспространителя, оператора рекламной системы или иного участника размещения.</p>`,
         },
       ])}
 
@@ -3650,7 +3901,7 @@ function renderContractDocument() {
         {
           title: "Удержание результатов работ при неоплате",
           note: "Не передавайте финальные файлы до получения оплаты.",
-          body: `<p>Окончательные Результаты работ передаются Заказчику исключительно после получения Исполнителем полного вознаграждения за фактически выполненные работы. В случае отказа Заказчика от оплаты Исполнитель вправе распорядиться созданными материалами по собственному усмотрению, в том числе разместить их в портфолио или передать третьим лицам, при условии соблюдения прав Заказчика на материалы, ранее переданные Заказчику.</p>`,
+          body: `<p>Окончательные Результаты работ передаются Заказчику после получения Исполнителем полного вознаграждения за фактически выполненные работы, если иное не согласовано Сторонами письменно. При просрочке оплаты Исполнитель вправе приостановить передачу финальных файлов и исключительных прав до погашения задолженности. Исполнитель не вправе передавать неоплаченные материалы третьим лицам; публичная демонстрация таких материалов допускается только при отсутствии конфиденциальной информации и персональных данных и если это не запрещено Договором или отдельным письменным соглашением Сторон.</p>`,
         },
       ])}
 
@@ -3661,8 +3912,8 @@ function renderContractDocument() {
           body: `<p>Обмен документами, материалами, замечаниями, уведомлениями и иными сведениями по настоящему Договору осуществляется с использованием адресов электронной почты и (или) аккаунтов в мессенджерах Сторон, указанных в разделе 11. Сообщения и документы, направленные с указанных каналов, считаются направленными от имени соответствующей Стороны. Ни одна из Сторон не вправе ссылаться на несанкционированный доступ третьих лиц к каналам связи как на основание оспаривания факта направления или содержания соответствующих сообщений.</p>`,
         },
         {
-          title: "Простая электронная подпись и юридическая сила документов",
-          body: `<p>Настоящий Договор, дополнительные соглашения, Акты и иные документы могут подписываться путём обмена скан-копиями документов, оформленных на бумажном носителе и направленных через электронные каналы связи, указанные в разделе 11. Такие документы, подписанные посредством обмена скан-копиями, признаются Сторонами равнозначными документам с собственноручными подписями в соответствии с Федеральным законом от 06.04.2011 № 63-ФЗ «Об электронной подписи».</p>`,
+          title: "Обмен скан-копиями документов",
+          body: `<p>Настоящий Договор, дополнительные соглашения, Акты и иные документы могут подписываться путём обмена скан-копиями документов, оформленных на бумажном носителе и направленных через согласованные электронные каналы связи. Такие скан-копии подтверждают содержание договорённостей и факт направления документа, если позволяют определить отправителя и содержание документа. Признание скан-копий простой электронной подписью или равнозначными документам с собственноручными подписями возможно только при наличии отдельного соглашения Сторон об использовании электронной подписи и соблюдении требований Федерального закона от 06.04.2011 № 63-ФЗ «Об электронной подписи».</p>`,
         },
         {
           title: "Претензионный порядок. Разрешение споров",
@@ -3761,7 +4012,7 @@ function renderContractDocument() {
         {
           optionalKey: "ads",
           title: "Маркировка рекламы",
-          body: `<p>При размещении на Сайте рекламы Заказчик самостоятельно выполняет требования законодательства о рекламе и предоставляет Исполнителю необходимые сведения.</p>`,
+          body: `<p>Если на Сайте размещается рекламная информация, Стороны до размещения определяют свои роли по законодательству о рекламе и правилам учёта интернет-рекламы. Заказчик предоставляет необходимые сведения для маркировки и передачи данных, а каждая из Сторон выполняет обязанности в пределах своей фактической роли при размещении рекламы.</p>`,
         },
       ])}
 
@@ -3841,9 +4092,11 @@ function printContract(onDone) {
   const clientName = isAddendum ? f.clientName : contractState.fields.clientName;
   const contractorName = isAddendum ? f.contractorName : contractState.fields.contractorName;
   const dateStr = isAddendum ? f.date : contractState.fields.date;
-  const filename = isAddendum
-    ? `допсоглашение-${(f.number || "1")}.pdf`
-    : `договор-${(contractState.fields.number || "1")}.pdf`;
+  const filename = generatePdfFileName({
+    documentType: isAddendum ? "addendum" : "contract",
+    projectName: isAddendum ? f.taskDescription : (contractState.fields.taskDescription || template.title),
+    date: new Date(),
+  });
 
   // Strip interactive styling from clone: inline-field borders, highlights
   clone.querySelectorAll(".inline-field, .inline-field--block").forEach(el => {
@@ -3865,6 +4118,12 @@ function printContract(onDone) {
       .pdf-clean-body .optional-section__actions, .pdf-clean-body .contract-clause-delete { display: none !important; }
       .pdf-clean-body [contenteditable] { outline: none !important; }
       .pdf-clean-body .contract-signature-img, .pdf-clean-body .signature-image { max-width: 160px; max-height: 60px; }
+      .pdf-clean-body .document-section { display: grid; grid-template-columns: 150px 1fr; column-gap: 28px; align-items: start; padding: 18px 0; border-top: 1px solid #ddd; break-inside: avoid; }
+      .pdf-clean-body .document-section:first-of-type { border-top: 0; }
+      .pdf-clean-body .document-section h2 { grid-column: 1; margin: 0; font-size: 13px; line-height: 1.24; letter-spacing: -0.02em; }
+      .pdf-clean-body .document-section > :not(h2) { grid-column: 2; }
+      .pdf-clean-body .contract-clause { padding-right: 0; }
+      .pdf-clean-body .contract-clause + .contract-clause { padding-top: 14px; border-top: 1px solid #e2e2e2; }
     </style>
     <div class="pdf-clean-body">${clone.innerHTML}</div>
   `;
@@ -3893,6 +4152,7 @@ function printContract(onDone) {
       }
       pdf.save(filename);
       cleanup();
+      notifyPdfDownloadSuccess();
     };
     img.src = dataUrl;
   };
@@ -4131,6 +4391,14 @@ function bindEvents() {
       acceptCookies();
       return;
     }
+    if (action === "start-feedback-survey") {
+      startFeedbackSurvey();
+      return;
+    }
+    if (action === "snooze-feedback-survey") {
+      snoozeFeedbackPrompt();
+      return;
+    }
     if (action === "open-privacy") document.querySelector("[data-privacy-modal]").showModal();
     if (action === "toggle-export-urgent") {
       state.mods.has("urgent") ? state.mods.delete("urgent") : state.mods.add("urgent");
@@ -4204,6 +4472,7 @@ function bindEvents() {
     if (action === "print-contract") {
       const btn = actionTarget;
       if (btn.disabled) return;
+      if (!ensureCurrentDocumentReadyForPdf()) return;
       btn.disabled = true;
       btn.dataset.originalText = btn.textContent;
       btn.textContent = "Готовлю PDF…";
@@ -4261,12 +4530,10 @@ function bindEvents() {
       applyClientReplyText(value);
     }
     if (action === "focus-contract-field") {
-      const field = actionTarget.dataset.field;
-      const input = field ? document.querySelector(`[data-contract-control="${field}"]`) : null;
-      if (!input) return;
-      input.closest("details")?.setAttribute("open", "open");
-      input.scrollIntoView({ behavior: "smooth", block: "center" });
-      input.focus();
+      focusContractControlField(actionTarget.dataset.field);
+    }
+    if (action === "focus-addendum-field") {
+      focusAddendumControlField(actionTarget.dataset.field);
     }
     if (action === "show-soon") openSoonModal(actionTarget);
   });
@@ -4277,6 +4544,7 @@ function bindEvents() {
       const key = input.dataset.addendumControl;
       contractState.addendumFields[key] = input.value;
       renderAddendumDocument();
+      renderAddendumProgress();
       if (!input.closest("[data-mobile-contract-sheet]")) renderMobileContractUI();
       scheduleContractSave();
       return;
@@ -4285,6 +4553,7 @@ function bindEvents() {
     if (input.matches("[data-addendum-field]")) {
       const key = input.dataset.addendumField;
       contractState.addendumFields[key] = input.textContent.trim();
+      renderAddendumProgress();
       renderMobileContractUI();
       scheduleContractSave();
       return;
@@ -4541,6 +4810,8 @@ function init() {
   syncExportInputs();
   renderContractWorkspace();
   bindEvents();
+  bindFeedbackPromptModal();
+  initMetrikaPrivacyGuards();
   initCookieBanner();
   updateEmptyHint();
   const initialRoute = location.hash.replace("#", "");
