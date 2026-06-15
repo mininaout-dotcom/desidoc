@@ -29,7 +29,7 @@ const PROJECTS = {
     ],
   },
   landing_tilda: {
-    label: "Лендинг Tilda",
+    label: "Сайт на Tilda",
     stages: [
       { title: "Брифинг и сбор данных", description: "Изучение продукта, целевой аудитории и задач, которые должен решать лендинг.", hours: { junior: 3, middle: 3, senior: 3 } },
       { title: "Прототип", description: "Текстовая структура страницы, логика блоков и призывов к действию.", hours: { junior: 11, middle: 9, senior: 8 } },
@@ -66,7 +66,7 @@ const PROJECTS = {
     ],
   },
   custom: {
-    label: "Свой проект",
+    label: "Другое",
     stages: [
       { title: "Брифинг", description: "Интервью с заказчиком, сбор вводной информации, уточнение задач и ожиданий.", hours: { junior: 3, middle: 2, senior: 2 } },
       { title: "Анализ конкурентов", description: "Изучение рынка, анализ конкурентных решений и позиционирования.", hours: { junior: 5, middle: 4, senior: 3 } },
@@ -77,6 +77,8 @@ const PROJECTS = {
     ],
   },
 };
+
+const PROJECT_ORDER = ["logo", "branding", "landing_design", "landing_tilda", "presentation", "custom"];
 
 const MARKET_RATES = { junior: 1000, middle: 2500, senior: 4000 };
 const MODIFIERS = { urgent: 0.3 };
@@ -914,7 +916,7 @@ function closeMobileCalcSheet() {
 
 function renderProjectOptions() {
   document.querySelectorAll("[data-project-options]").forEach((container) => {
-    container.innerHTML = Object.entries(PROJECTS).map(([key, project]) => `
+    container.innerHTML = PROJECT_ORDER.map((key) => [key, PROJECTS[key]]).filter(([, project]) => project).map(([key, project]) => `
       <button class="project-option ${key === state.projectKey ? "is-selected" : ""}" type="button" data-project="${key}" role="radio" aria-checked="${key === state.projectKey}">
         <strong>${project.label}</strong>
       </button>
@@ -4472,4 +4474,65 @@ init();
   }
 
   bind();
+}());
+
+/* Hide the top nav (Смета / Мои данные) on scroll down, reveal on scroll up */
+(function initNavHideOnScroll() {
+  const header = document.querySelector(".deedoc-home__top--global");
+  if (!header) return;
+  const THRESHOLD = 80; // stay visible near the very top
+  const DELTA = 6;      // ignore tiny scroll jitter
+  let lastY = window.scrollY || 0;
+  let ticking = false;
+
+  function update() {
+    ticking = false;
+    const y = window.scrollY || 0;
+    if (Math.abs(y - lastY) < DELTA) { lastY = y; return; }
+    if (y > lastY && y > THRESHOLD) {
+      header.classList.add("is-nav-hidden");    // scrolling down
+    } else {
+      header.classList.remove("is-nav-hidden");  // scrolling up / near top
+    }
+    lastY = y;
+  }
+
+  window.addEventListener("scroll", () => {
+    if (!ticking) { ticking = true; requestAnimationFrame(update); }
+  }, { passive: true });
+}());
+
+/* Mouse-move parallax on the calculator landscape (same feel as the home screen) */
+(function initCalcParallax() {
+  const MAX = 14;    // max px the background drifts
+  const LERP = 0.08; // smoothing
+  let targetX = 0, targetY = 0, curX = 0, curY = 0, rafId = null;
+
+  function tick() {
+    curX += (targetX - curX) * LERP;
+    curY += (targetY - curY) * LERP;
+    document.body.style.setProperty("--cv-px", curX.toFixed(2) + "px");
+    document.body.style.setProperty("--cv-py", curY.toFixed(2) + "px");
+    if (Math.abs(targetX - curX) > 0.05 || Math.abs(targetY - curY) > 0.05) {
+      rafId = requestAnimationFrame(tick);
+    } else {
+      rafId = null;
+    }
+  }
+  function start() { if (!rafId) rafId = requestAnimationFrame(tick); }
+
+  const PARALLAX_VIEWS = ["calculator", "contract"];
+
+  window.addEventListener("mousemove", (e) => {
+    if (!PARALLAX_VIEWS.includes(document.body.dataset.view)) return;
+    const w = window.innerWidth, h = window.innerHeight;
+    targetX = -((e.clientX - w / 2) / (w / 2)) * MAX; // drift opposite the cursor
+    targetY = -((e.clientY - h / 2) / (h / 2)) * MAX;
+    start();
+  }, { passive: true });
+
+  // ease the landscape back to centre when leaving a parallax view
+  window.addEventListener("hashchange", () => {
+    if (!PARALLAX_VIEWS.includes(document.body.dataset.view)) { targetX = 0; targetY = 0; start(); }
+  });
 }());

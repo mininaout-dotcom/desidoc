@@ -589,6 +589,22 @@ textarea:focus-visible {
   z-index: 200;
   padding: 22px 33px;
   pointer-events: none;
+  transition: top 0.34s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Hide the top nav (Смета / Мои данные) when scrolling down.
+   Uses `top` (not transform/opacity) because the header keeps an
+   entrance animation (ddoc-fade-down, fill: both) that would otherwise
+   override transform/opacity. */
+.deedoc-home__top--global.is-nav-hidden {
+  top: -140px;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .deedoc-home__top--global {
+    transition: none;
+  }
 }
 
 .deedoc-home__top--global > * {
@@ -716,6 +732,32 @@ textarea:focus-visible {
 
 [data-theme="dark"] .deedoc-section-tab.is-current {
   background: rgba(255,255,255,0.18);
+}
+
+/* Inner-screen header chips — 15% black base (light theme only; home untouched) */
+[data-theme="light"] body:not([data-view="home"]) .deedoc-section-nav,
+[data-theme="light"] body:not([data-view="home"]) .deedoc-user__avatar {
+  background: rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="light"] body:not([data-view="home"]) .deedoc-pill {
+  background: rgba(0, 0, 0, 0.15);
+  color: rgba(0, 0, 0, 0.55);
+}
+
+[data-theme="light"] body:not([data-view="home"]) .deedoc-section-tab {
+  color: rgba(0, 0, 0, 0.45);
+}
+
+[data-theme="light"] body:not([data-view="home"]) .deedoc-section-tab:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: rgba(0, 0, 0, 0.7);
+}
+
+/* Active "Смета" pill — white with black icon + label */
+[data-theme="light"] body:not([data-view="home"]) .deedoc-section-tab.is-current {
+  background: #ffffff;
+  color: #000000;
 }
 
 .deedoc-pill,
@@ -2610,6 +2652,18 @@ h2 {
 [data-brief-ai-modal] .field textarea {
   font-size: 14px;
   line-height: 1.5;
+  background: rgba(31, 29, 24, 0.05);
+  border: 1px solid rgba(31, 29, 24, 0.14);
+  border-radius: 14px;
+}
+
+[data-brief-ai-modal] .field textarea:focus {
+  border-color: var(--accent);
+}
+
+/* Neutral (not orange) eyebrow in the brief modal */
+[data-brief-ai-modal] .eyebrow {
+  color: var(--muted);
 }
 
 [data-brief-ai-modal] .client-reply-status {
@@ -3699,24 +3753,28 @@ body[data-view="calculator"] {
 body[data-view="calculator"]::before {
   content: "";
   position: fixed;
-  inset: 0;
+  inset: -40px;
   z-index: -1;
   background:
     url("../assets/deedoc-landscape.png") center / cover no-repeat,
     #d8b1a3;
+  transform: translate3d(var(--cv-px, 0px), var(--cv-py, 0px), 0);
+  will-change: transform;
 }
 
 /* Night landscape — crossfade */
 body[data-view="calculator"]::after {
   content: "";
   position: fixed;
-  inset: 0;
+  inset: -40px;
   z-index: -1;
   background:
     linear-gradient(180deg, rgba(2, 2, 1, 0.22), rgba(2, 2, 1, 0.68)),
     url("../assets/backgrounds/deedoc-landscape-night.png") center / cover no-repeat,
     #08070f;
   opacity: 0;
+  transform: translate3d(var(--cv-px, 0px), var(--cv-py, 0px), 0);
+  will-change: transform;
   transition: opacity 1.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -3755,8 +3813,13 @@ body[data-view="calculator"]::after {
   --cv-eyebrow:     rgba(31, 29, 24, 0.38);
   --cv-step-num-color: rgba(31, 29, 24, 0.28);
   --cv-empty-fig:   rgba(31, 29, 24, 0.08);
-  --cv-radius: 40px;
-  padding: 158px clamp(24px, 4vw, 56px) 120px;
+  --cv-radius: 69px;
+  --cv-field-h: 51px;
+  --cv-page-left: 104px;
+  --cv-page-right: 33px;
+  --cv-shell-width: 1214px;
+  --cv-setup-card-min-h: 596px;
+  padding: 158px var(--cv-page-right) 120px var(--cv-page-left);
 }
 
 [data-theme="dark"] .view--calculator {
@@ -3775,6 +3838,7 @@ body[data-view="calculator"]::after {
 
 [data-theme="dark"] .view--calculator .setup-card,
 [data-theme="dark"] .view--calculator .estimate-card {
+  border-color: var(--cv-line);
   backdrop-filter: blur(var(--ddoc-blur-glass)) saturate(1.3);
   -webkit-backdrop-filter: blur(var(--ddoc-blur-glass)) saturate(1.3);
   box-shadow: 0 4px 40px rgba(0, 0, 0, 0.30), 0 1px 4px rgba(0, 0, 0, 0.20);
@@ -3782,6 +3846,9 @@ body[data-view="calculator"]::after {
 
 .view--calculator .calculator-shell {
   padding-top: 0;
+  width: min(var(--cv-shell-width), 100%);
+  margin-left: 0;
+  margin-right: auto;
 }
 
 /* ── White panels (light) / glass panels (dark) ──────────── */
@@ -3789,8 +3856,9 @@ body[data-view="calculator"]::after {
 .view--calculator .setup-card,
 .view--calculator .estimate-card {
   background: var(--cv-glass);
-  border: 1px solid var(--cv-line);
+  border: 1px solid transparent;
   border-radius: var(--cv-radius);
+  corner-shape: superellipse(5); /* iOS-style smoothing (~84% Figma); ignored where unsupported */
   box-shadow: 0 4px 40px rgba(0, 0, 0, 0.10), 0 1px 4px rgba(0, 0, 0, 0.06);
   color: var(--cv-text);
 }
@@ -3876,16 +3944,16 @@ body[data-view="calculator"]::after {
   font-size: 13px;
 }
 
-.view--calculator .project-option:hover,
-.view--calculator .project-option.is-selected {
-  border-color: var(--line-strong);
+.view--calculator .project-option:hover {
+  border-color: color-mix(in srgb, var(--cv-text) 22%, transparent);
   background: var(--cv-hover-bg);
-  transform: translateY(-1px);
 }
 
 .view--calculator .project-option.is-selected {
-  background: var(--cv-selected-bg);
-  box-shadow: inset 0 0 0 1px var(--line-strong);
+  background: var(--cv-glass);
+  border-color: var(--ddoc-color-button-bg);
+  box-shadow: none;
+  transform: none;
 }
 
 /* ── Segmented controls (glass tab bar) ──────────────────── */
@@ -3902,24 +3970,24 @@ body[data-view="calculator"]::after {
 }
 
 .view--calculator .segmented__item.is-active {
-  background: var(--cv-active-tab);
+  background: var(--cv-glass);
   color: var(--cv-text);
-  box-shadow: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 /* ── Market grade buttons ────────────────────────────────── */
 
 .view--calculator .market-grade {
-  border-color: var(--cv-line);
+  border: 1.5px solid transparent;
   background: var(--cv-surface);
   color: var(--cv-text);
-  border-radius: 14px;
-  min-height: 58px;
+  border-radius: 999px;
+  min-height: var(--cv-field-h);
   transition: border-color 180ms ease, background 180ms ease, box-shadow 180ms ease, transform 180ms ease;
 }
 
 .view--calculator .market-grade span {
-  color: var(--cv-muted);
+  color: var(--cv-text);
   font-size: 11px;
 }
 
@@ -3929,26 +3997,26 @@ body[data-view="calculator"]::after {
 }
 
 .view--calculator .market-grade:hover {
-  border-color: var(--line-strong);
+  border-color: color-mix(in srgb, var(--cv-text) 22%, transparent);
   background: var(--cv-hover-bg);
-  transform: translateY(-1px);
 }
 
 .view--calculator .market-grade.is-active {
-  border-color: var(--line-strong);
-  background: var(--cv-selected-bg);
-  box-shadow: inset 0 0 0 1px var(--line-strong);
+  background: var(--cv-glass);
+  border-color: var(--ddoc-color-button-bg);
+  box-shadow: none;
 }
 
 /* ── Rate summary & total pill ───────────────────────────── */
 
 .view--calculator .rate-summary {
-  border-color: var(--cv-line);
+  border-color: transparent;
   background: var(--cv-surface);
 }
 
 .view--calculator .rate-summary span {
   color: var(--cv-muted);
+  font-size: 12px;
 }
 
 .view--calculator .rate-summary strong {
@@ -3962,11 +4030,11 @@ body[data-view="calculator"]::after {
 /* ── Form fields ─────────────────────────────────────────── */
 
 .view--calculator .field span {
-  color: var(--cv-muted);
+  color: #c8c4c4;
 }
 
 .view--calculator .field input {
-  border-color: var(--cv-line);
+  border-color: transparent;
   background: var(--cv-surface);
   color: var(--cv-text);
 }
@@ -3979,7 +4047,7 @@ body[data-view="calculator"]::after {
 /* ── Tax line ────────────────────────────────────────────── */
 
 .view--calculator .tax-rate-line {
-  border-color: var(--cv-line);
+  border-color: transparent;
   background: var(--cv-surface);
   color: var(--cv-muted);
 }
@@ -4147,7 +4215,7 @@ body[data-view="calculator"]::after {
 }
 
 .estimate-inline-caption {
-  color: var(--cv-muted);
+  color: #c8c4c4;
   font-size: 12px;
   line-height: 1.35;
 }
@@ -4306,17 +4374,16 @@ body.mobile-contract-sheet-open {
 }
 
 .view--calculator .builder-grid {
-  grid-template-columns: minmax(300px, 368px) minmax(0, 1fr);
+  grid-template-columns: minmax(320px, 409px) minmax(0, 1fr);
+  align-items: start;
   gap: 18px;
 }
 
 .view--calculator .setup-card {
-  top: 20px;
-  max-height: calc(100vh - 40px);
-  overflow: auto;
+  position: static;
   gap: 0;
-  padding: 18px;
-  scrollbar-width: thin;
+  min-height: var(--cv-setup-card-min-h);
+  padding: 39px 40px 28px;
 }
 
 .view--calculator .setup-card::-webkit-scrollbar {
@@ -4329,44 +4396,57 @@ body.mobile-contract-sheet-open {
 }
 
 .view--calculator .cv-step-block {
-  gap: 9px;
-  padding: 0 0 12px;
+  gap: 12px;
+  padding: 0 0 18px;
 }
 
-.view--calculator .cv-step-label {
-  gap: 8px;
+.view--calculator .cv-step-num {
+  display: none;
 }
 
 .view--calculator .cv-step-title {
-  font-size: 13px;
+  font-size: 16px;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  color: #c8c4c4;
 }
 
 .view--calculator .cv-divider {
-  margin: 0 0 12px;
+  display: none;
 }
 
 .view--calculator .project-options {
-  gap: 7px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
 }
 
 .view--calculator .project-option {
-  min-height: 38px;
-  padding: 8px 10px;
-  border-radius: 14px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--cv-field-h);
+  height: var(--cv-field-h);
+  padding: 0 10px;
+  border: 1.5px solid transparent;
+  border-radius: 999px;
 }
 
 .view--calculator .project-option strong {
   font-size: 12px;
-  line-height: 1.08;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .view--calculator .segmented {
-  gap: 3px;
-  padding: 3px;
+  gap: 4px;
+  padding: 4px;
+  border-color: transparent;
 }
 
 .view--calculator .segmented__item {
-  min-height: 32px;
+  min-height: 43px;
   font-size: 12px;
 }
 
@@ -4392,13 +4472,14 @@ body.mobile-contract-sheet-open {
 }
 
 .view--calculator .rate-summary {
-  min-height: 38px;
-  padding: 7px 10px;
-  border-radius: 14px;
+  min-height: var(--cv-field-h);
+  height: var(--cv-field-h);
+  padding: 0 20px;
+  border-radius: 999px;
 }
 
 .view--calculator .rate-input {
-  font-size: 15px;
+  font-size: 17px;
 }
 
 .view--calculator .field {
@@ -4410,9 +4491,9 @@ body.mobile-contract-sheet-open {
 }
 
 .view--calculator .field input {
-  min-height: var(--input-height);
-  padding: var(--input-padding);
-  border-radius: var(--input-radius);
+  min-height: var(--cv-field-h);
+  padding: 0 18px;
+  border-radius: 999px;
   font-size: var(--input-fs);
 }
 
@@ -4421,10 +4502,10 @@ body.mobile-contract-sheet-open {
 }
 
 .view--calculator .tax-custom {
-  min-height: 38px;
-  padding: 8px 10px;
-  border: 1px solid var(--cv-line);
-  border-radius: 13px;
+  min-height: var(--cv-field-h);
+  padding: 0 20px;
+  border: 1px solid transparent;
+  border-radius: 999px;
   background: var(--cv-surface);
 }
 
@@ -4444,34 +4525,45 @@ body.mobile-contract-sheet-open {
 }
 
 .view--calculator .tax-rate-line {
-  padding: 8px 10px;
-  border-radius: 13px;
+  min-height: var(--cv-field-h);
+  padding: 0 20px;
+  border-radius: 999px;
   font-size: 12px;
 }
 
-.view--calculator .cv-cta-btn {
+.view--calculator .builder-col {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-self: start;
   position: sticky;
-  bottom: 6px;
-  z-index: 2;
-  height: var(--btn-height-md);
+  top: 20px;
+}
+
+.view--calculator .cv-cta-btn {
+  position: static;
+  align-self: stretch;
+  width: auto;
+  height: var(--cv-field-h);
   flex-shrink: 0;
-  margin-top: 0;
-  font-size: 14px;
-  box-shadow: var(--ddoc-shadow-button), 0 0 0 6px var(--cv-glass);
+  margin-top: auto;
+  font-size: 15px;
+  box-shadow: var(--ddoc-shadow-button);
 }
 
 .view--calculator .estimate-card {
-  padding: 22px;
+  min-height: var(--cv-setup-card-min-h);
+  padding: 39px 40px 28px;
 }
 
 .view--calculator .estimate-card .estimate-empty {
-  min-height: 430px;
+  min-height: calc(var(--cv-setup-card-min-h) - 44px);
   padding: 28px;
 }
 
 .view--calculator .cv-empty-text h2 {
-  max-width: 300px;
-  font-size: clamp(20px, 2vw, 26px);
+  max-width: 380px;
+  font-size: clamp(22px, 2vw, 28px);
 }
 
 .view--calculator .cv-empty-text p:not(.eyebrow) {
@@ -4518,6 +4610,11 @@ body.mobile-contract-sheet-open {
   align-items: center;
   padding: 7px 8px;
   border-radius: 13px;
+  border-color: transparent;
+}
+
+.view--calculator .stage-card.is-drop-target {
+  border-color: var(--accent);
 }
 
 .view--calculator .stage-order {
@@ -4658,11 +4755,11 @@ body.mobile-contract-sheet-open {
 
 .brief-ai-card {
   display: grid;
-  gap: 9px;
+  gap: 10px;
   margin-top: 10px;
-  padding: 14px;
+  padding: 14px 16px 16px;
   border: 1px dashed color-mix(in srgb, var(--accent) 45%, transparent);
-  border-radius: 18px;
+  border-radius: 32px;
   background: var(--accent-soft);
 }
 
@@ -4682,7 +4779,7 @@ body.mobile-contract-sheet-open {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-height: 44px;
+  min-height: 51px;
   padding: 0 18px;
   border: 0;
   border-radius: 999px;
@@ -4846,6 +4943,11 @@ body.mobile-contract-sheet-open {
     display: none !important;
   }
 
+  /* CTA moved out of the card; hide the desktop one on mobile */
+  .view--calculator .builder-col > .cv-cta-btn {
+    display: none !important;
+  }
+
   .view--calculator .builder-grid {
     display: block;
   }
@@ -4920,9 +5022,9 @@ body.mobile-contract-sheet-open {
     align-items: center;
     justify-content: space-between;
     gap: 8px;
-    padding: 10px 12px;
-    border: 1px solid color-mix(in srgb, var(--cv-line) 88%, white);
-    border-radius: 19px;
+    padding: 10px 16px;
+    border: 1px solid transparent;
+    border-radius: 999px;
     background: rgba(255, 255, 255, 0.9);
     color: var(--cv-text);
     box-shadow: 0 14px 36px rgba(87, 52, 36, 0.12);
@@ -5014,7 +5116,7 @@ body.mobile-contract-sheet-open {
     gap: 14px;
     max-height: min(76svh, 680px);
     padding: 12px 16px calc(16px + env(safe-area-inset-bottom));
-    border: 1px solid color-mix(in srgb, var(--cv-line) 76%, white);
+    border: 1px solid transparent;
     border-radius: 28px 28px 0 0;
     background: rgba(255, 255, 255, 0.96);
     box-shadow: 0 -22px 44px rgba(37, 23, 18, 0.18);
@@ -5234,7 +5336,7 @@ body.mobile-contract-sheet-open {
   /* ── AI-бриф: кнопка во всю ширину, карточки чуть крупнее ── */
   .brief-ai-button {
     width: 100%;
-    min-height: 48px;
+    min-height: 51px;
     font-size: 15px;
   }
 
@@ -5373,23 +5475,27 @@ body[data-view="contract"] {
 body[data-view="contract"]::before {
   content: "";
   position: fixed;
-  inset: 0;
+  inset: -40px;
   z-index: -1;
   background:
     url("../assets/deedoc-landscape.png") center / cover no-repeat,
     #d8b1a3;
+  transform: translate3d(var(--cv-px, 0px), var(--cv-py, 0px), 0);
+  will-change: transform;
 }
 
 body[data-view="contract"]::after {
   content: "";
   position: fixed;
-  inset: 0;
+  inset: -40px;
   z-index: -1;
   background:
     linear-gradient(180deg, rgba(2, 2, 1, 0.22), rgba(2, 2, 1, 0.70)),
     url("../assets/backgrounds/deedoc-landscape-night.png") center / cover no-repeat,
     #08070f;
   opacity: 0;
+  transform: translate3d(var(--cv-px, 0px), var(--cv-py, 0px), 0);
+  will-change: transform;
   transition: opacity 1.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -5421,8 +5527,12 @@ body[data-view="contract"]::after {
   --cv-selected-bg: rgba(31, 29, 24, 0.10);
   --cv-active-tab: rgba(31, 29, 24, 0.08);
   --cv-eyebrow: rgba(255, 255, 255, 0.44);
-  --cv-radius: 40px;
-  padding: 118px clamp(24px, 4vw, 56px) 28px;
+  --cv-radius: 69px;
+  --cv-field-h: 51px;
+  --cv-page-left: 104px;
+  --cv-page-right: 33px;
+  --cv-shell-width: 1214px;
+  padding: 118px var(--cv-page-right) 28px var(--cv-page-left);
 }
 
 /* Sidebar has white background — eyebrow must be dark in light mode */
@@ -5455,7 +5565,9 @@ body[data-view="contract"]::after {
 }
 
 .view--contract .contract-workspace {
-  width: min(1200px, 100%);
+  width: var(--cv-shell-width);
+  max-width: 100%;
+  margin: 0 auto 0 0;
   padding: 0;
 }
 
@@ -5465,7 +5577,7 @@ body[data-view="contract"]::after {
 
 .view--contract .autosave-status {
   min-height: 38px;
-  border-color: var(--cv-line);
+  border-color: transparent;
   background: var(--cv-surface);
   color: var(--cv-muted);
 }
@@ -5493,7 +5605,7 @@ body[data-view="contract"]::after {
 
 .view--contract .contract-layout {
   display: grid;
-  grid-template-columns: minmax(300px, 368px) minmax(0, 1fr);
+  grid-template-columns: minmax(320px, 409px) minmax(0, 1fr);
   gap: 18px;
   align-items: stretch;
 }
@@ -5508,15 +5620,22 @@ body[data-view="contract"]::after {
 .view--contract .contract-outline,
 .view--contract .document-canvas,
 .view--contract .document-toolbar {
-  border: 1px solid var(--cv-line);
+  border: 1px solid transparent;
   background: var(--cv-glass);
   color: var(--cv-text);
   box-shadow: 0 4px 40px rgba(0, 0, 0, 0.10), 0 1px 4px rgba(0, 0, 0, 0.06);
 }
 
+/* iOS-style corner smoothing (~84% Figma) on the big cards — ignored where unsupported */
+.view--contract .contract-outline,
+.view--contract .document-canvas {
+  corner-shape: superellipse(5);
+}
+
 [data-theme="dark"] .view--contract .contract-outline,
 [data-theme="dark"] .view--contract .document-canvas,
 [data-theme="dark"] .view--contract .document-toolbar {
+  border-color: var(--cv-line);
   backdrop-filter: blur(var(--ddoc-blur-glass)) saturate(1.3);
   -webkit-backdrop-filter: blur(var(--ddoc-blur-glass)) saturate(1.3);
   box-shadow: 0 4px 40px rgba(0, 0, 0, 0.30), 0 1px 4px rgba(0, 0, 0, 0.20);
@@ -5529,7 +5648,7 @@ body[data-view="contract"]::after {
   align-self: start;
   gap: 0;
   overflow: auto;
-  padding: 18px;
+  padding: 39px 40px 28px;
   border-radius: var(--cv-radius);
   scrollbar-width: thin;
 }
@@ -5544,32 +5663,32 @@ body[data-view="contract"]::after {
 
 .view--contract .outline-group + .outline-group {
   padding-top: 16px;
-  border-top: 1px solid var(--cv-line);
+  border-top: 1px solid transparent;
 }
 
 .view--contract .outline-title {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   color: var(--cv-text);
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
   letter-spacing: -0.01em;
   text-transform: none;
 }
 
-/* Step number badges */
+/* Orange step numbers — bring back orientation/readability of the accordion */
 .view--contract .step-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   flex-shrink: 0;
   border-radius: 50%;
   background: var(--accent);
   color: #fff;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0;
   line-height: 1;
@@ -5616,9 +5735,9 @@ body[data-view="contract"]::after {
   align-items: center;
   background: rgba(0,0,0,0.07);
   border-radius: 999px;
-  padding: 3px;
+  padding: 4px;
   gap: 2px;
-  height: 37px;
+  height: 51px;
   box-sizing: border-box;
 }
 [data-theme="dark"] .doc-type-toggle {
@@ -5626,8 +5745,8 @@ body[data-view="contract"]::after {
 }
 
 .doc-type-toggle__btn {
-  padding: 0 18px;
-  height: 31px;
+  padding: 0 20px;
+  height: 43px;
   border: none;
   background: transparent;
   border-radius: 999px;
@@ -5658,9 +5777,9 @@ body[data-view="contract"]::after {
 }
 
 .doc-type-toggle__btn.is-active {
-  background: var(--surface-strong);
-  color: var(--text);
-  box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+  background: var(--cv-glass);
+  color: var(--cv-text);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 [data-theme="dark"] .doc-type-toggle__btn.is-active {
   background: rgba(255,255,255,0.15);
@@ -5672,8 +5791,8 @@ body[data-view="contract"]::after {
   align-items: center;
   justify-content: center;
   gap: 5px;
-  height: 37px;
-  padding: 0 16px;
+  height: 51px;
+  padding: 0 20px;
   font-size: 13px;
   font-weight: 500;
   color: var(--cv-muted);
@@ -5810,7 +5929,7 @@ body[data-view="contract"]::after {
 
 /* Addendum hint block */
 .view--contract .outline-group--addendum-hint {
-  border-top: 1px solid var(--cv-line);
+  border-top: 1px solid transparent;
   padding-top: 16px;
 }
 
@@ -5858,21 +5977,20 @@ body[data-view="contract"]::after {
 
 .view--contract .contract-required-chip {
   min-height: 28px;
-  padding: 0 10px;
-  border: 1px solid var(--cv-line);
+  padding: 0 12px;
+  border: 1.5px solid transparent;
   border-radius: 999px;
   background: var(--cv-surface);
   color: var(--cv-text);
   font: inherit;
   font-size: 12px;
   cursor: pointer;
-  transition: border-color 180ms ease, background 180ms ease, transform 180ms ease;
+  transition: border-color 180ms ease, background 180ms ease;
 }
 
 .view--contract .contract-required-chip:hover {
-  border-color: var(--line-strong);
+  border-color: color-mix(in srgb, var(--cv-text) 22%, transparent);
   background: var(--cv-hover-bg);
-  transform: translateY(-1px);
 }
 
 .view--contract .addendum-steps {
@@ -5954,7 +6072,7 @@ body[data-view="contract"]::after {
 .view--contract .contract-form__group {
   gap: 8px;
   padding-top: 14px;
-  border-top: 1px solid var(--cv-line);
+  border-top: 1px solid transparent;
 }
 
 .view--contract .contract-form__group summary {
@@ -5974,9 +6092,15 @@ body[data-view="contract"]::after {
 }
 
 .view--contract .contract-control input {
-  min-height: var(--input-height);
-  border-radius: var(--input-radius);
+  min-height: var(--cv-field-h);
+  border-radius: 999px;
+  border-color: transparent;
+  padding: 0 18px;
   font-size: var(--input-fs);
+}
+
+.view--contract .contract-control span {
+  color: #c8c4c4;
 }
 
 .view--contract .contract-control input:focus {
@@ -5985,19 +6109,18 @@ body[data-view="contract"]::after {
 
 .view--contract .outline-link,
 .view--contract .optional-toggle {
-  border-color: var(--cv-line);
+  border-color: transparent;
   background: var(--cv-surface);
   color: var(--cv-text);
-  transition: border-color 180ms ease, background 180ms ease, transform 180ms ease;
+  transition: border-color 180ms ease, background 180ms ease;
 }
 
 .view--contract .outline-link:hover,
 .view--contract .outline-link.is-active,
 .view--contract .optional-toggle:hover,
 .view--contract .optional-toggle.is-off {
-  border-color: var(--line-strong);
-  background: var(--cv-selected-bg);
-  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--cv-text) 22%, transparent);
+  background: var(--cv-hover-bg);
 }
 
 .view--contract .signature-actions .button,
@@ -6120,7 +6243,7 @@ body[data-view="contract"]::after {
 .view--contract .document-toolbar {
   width: min(794px, calc(100% - 386px));
   margin: -54px 0 0 auto;
-  border-radius: 28px;
+  border-radius: 999px;
   background: color-mix(in srgb, var(--cv-glass) 88%, transparent);
   backdrop-filter: blur(var(--ddoc-blur-glass));
   -webkit-backdrop-filter: blur(var(--ddoc-blur-glass));
@@ -6424,7 +6547,7 @@ body[data-view="contract"]::after {
     gap: 14px;
     max-height: min(78svh, 760px);
     padding: 12px 16px calc(16px + env(safe-area-inset-bottom));
-    border: 1px solid color-mix(in srgb, var(--cv-line) 76%, white);
+    border: 1px solid transparent;
     border-radius: 28px 28px 0 0;
     background: rgba(255, 255, 255, 0.97);
     box-shadow: 0 -22px 44px rgba(37, 23, 18, 0.18);
@@ -6615,7 +6738,7 @@ body[data-view="contract"]::after {
     z-index: 80;
     margin-top: 0;
     padding: 10px;
-    border: 1px solid color-mix(in srgb, var(--cv-line) 76%, white);
+    border: 1px solid transparent;
     border-radius: 28px;
     background: rgba(255, 255, 255, 0.94);
     box-shadow: 0 -18px 44px rgba(37, 23, 18, 0.16);
@@ -7114,5 +7237,49 @@ body[data-view="contract"]::after {
   [data-theme="dark"] .mobile-contract-cta:disabled {
     background: rgba(255, 255, 255, 0.1);
     color: rgba(255, 255, 255, 0.38);
+  }
+}
+
+/* Calculator polish: no orange focus frames on fields, cards, or buttons */
+.app[data-view="calculator"] button:focus-visible,
+.app[data-view="calculator"] input:focus-visible,
+.app[data-view="calculator"] textarea:focus-visible,
+.app[data-view="calculator"] summary:focus-visible,
+.app[data-view="calculator"] [role="button"]:focus-visible,
+body[data-view="calculator"] [data-brief-ai-modal] button:focus-visible,
+body[data-view="calculator"] [data-brief-ai-modal] textarea:focus-visible {
+  outline: none;
+}
+
+.app[data-view="calculator"] input:focus,
+.app[data-view="calculator"] textarea:focus,
+body[data-view="calculator"] [data-brief-ai-modal] textarea:focus,
+body[data-view="calculator"] [data-brief-ai-modal] textarea:focus-visible {
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.app[data-view="calculator"] .project-option:focus-visible,
+.app[data-view="calculator"] .segmented__item:focus-visible,
+.app[data-view="calculator"] .market-grade:focus-visible,
+.app[data-view="calculator"] .mobile-calc-chip:focus-visible,
+.app[data-view="calculator"] .cv-cta-btn:focus-visible,
+.app[data-view="calculator"] .button:focus-visible {
+  box-shadow: none;
+}
+
+.view--calculator .brief-ai-card,
+.view--calculator .expense-box,
+.view--calculator .ai-insight-card--warning {
+  border-color: transparent;
+}
+
+@media (max-width: 760px) {
+  .view--calculator .mobile-calc-chip.is-active {
+    border-color: transparent;
+  }
+
+  .view--calculator .mobile-calc-chip.is-active .mobile-calc-chip__chevron {
+    color: var(--cv-muted);
   }
 }
