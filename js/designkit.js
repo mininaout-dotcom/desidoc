@@ -100,6 +100,7 @@ const RU_CONTRACT_MONTHS = [
 ];
 const PROFILE_STORAGE_KEY = "designkit.profile";
 const ESTIMATE_META_STORAGE_KEY = "designkit.estimateMeta";
+const COOKIE_CONSENT_STORAGE_KEY = "designkit.cookieConsent";
 const savedProfile = loadProfile();
 
 const state = {
@@ -123,6 +124,10 @@ const state = {
   briefAi: {
     sourceText: "",
     analysis: null,
+    isLoading: false,
+  },
+  addendumBrief: {
+    sourceText: "",
     isLoading: false,
   },
 };
@@ -222,6 +227,36 @@ const CONTRACT_FIELD_GROUPS = [
   },
 ];
 
+const ADDENDUM_REQUIRED_FIELDS = [
+  "number",
+  "contractNumber",
+  "contractDate",
+  "clientName",
+  "contractorName",
+  "taskDescription",
+  "taskRequirements",
+  "deadline",
+  "price",
+  "paymentTerms",
+  "contactName",
+  "contactInfo",
+];
+
+const ADDENDUM_FIELD_LABELS = {
+  number: "Номер допсоглашения",
+  contractNumber: "Номер договора",
+  contractDate: "Дата договора",
+  clientName: "Заказчик",
+  contractorName: "Исполнитель",
+  taskDescription: "Предмет задания",
+  taskRequirements: "Техническое задание",
+  deadline: "Срок выполнения",
+  price: "Стоимость",
+  paymentTerms: "Порядок оплаты",
+  contactName: "Контактное лицо",
+  contactInfo: "Контакты",
+};
+
 const CONTRACT_REQUIRED_FIELDS = ["number", "city", "date", "clientName", "clientInn", "contractorName", "contractorInn", "bank", "days"];
 
 const CONTRACT_PLACEHOLDERS = new Set([
@@ -295,11 +330,18 @@ function getEstimateName(projectKey = state.projectKey) {
   return state.estimateMeta.estimateName.trim() || getDefaultEstimateName(projectKey);
 }
 
+function resizeEstimateNameInput(input) {
+  if (!input) return;
+  input.style.height = "auto";
+  input.style.height = `${input.scrollHeight}px`;
+}
+
 function syncEstimateMetaInputs() {
   const estimateNameInput = document.querySelector('[data-estimate-meta="estimateName"]');
 
   if (estimateNameInput && document.activeElement !== estimateNameInput) {
     estimateNameInput.value = state.estimateMeta.estimateName || getEstimateName();
+    resizeEstimateNameInput(estimateNameInput);
   }
 }
 
@@ -310,14 +352,10 @@ function syncExportInputs() {
   if (estimateInput) estimateInput.value = getEstimateName();
 }
 
-function syncEstimateNameWithProjectChange(previousProjectKey) {
-  const previousDefault = getDefaultEstimateName(previousProjectKey);
-  const previousLegacyDefault = `Смета: ${previousDefault}`;
-  const currentName = state.estimateMeta.estimateName.trim();
-  if (!currentName || currentName === previousDefault || currentName === previousLegacyDefault) {
-    state.estimateMeta.estimateName = "";
-    persistEstimateMeta();
-  }
+function syncEstimateNameWithProjectChange() {
+  state.estimateMeta.estimateName = "";
+  persistEstimateMeta();
+  syncEstimateMetaInputs();
 }
 
 function getProject() {
@@ -1287,6 +1325,21 @@ function renderGreeting() {
     : `Привет!<br>С чего начнем работу?`;
 }
 
+function initCookieBanner() {
+  const banner = document.querySelector("[data-cookie-banner]");
+  if (!banner || localStorage.getItem(COOKIE_CONSENT_STORAGE_KEY) === "accepted") return;
+  banner.hidden = false;
+  requestAnimationFrame(() => banner.classList.add("is-visible"));
+}
+
+function acceptCookies() {
+  const banner = document.querySelector("[data-cookie-banner]");
+  localStorage.setItem(COOKIE_CONSENT_STORAGE_KEY, "accepted");
+  if (!banner) return;
+  banner.classList.remove("is-visible");
+  setTimeout(() => { banner.hidden = true; }, 220);
+}
+
 function openExport(force = false) {
   const hasProfile = !!state.profile.designerName;
   syncExportInputs();
@@ -1309,8 +1362,16 @@ function renderExportOptions() {
 }
 
 function printEstimate() {
+  if (!state.stages.length) {
+    state.rate = getActiveRate();
+    state.stages = createStages(getProject(), getHoursLevel());
+    state.generated = true;
+    renderEstimate();
+  }
   const designerName = document.querySelector('[data-input="designerName"]').value.trim() || "Дизайнер";
   const estimateName = normalizeEstimateName(document.querySelector('[data-input="estimateName"]').value, state.projectKey) || getDefaultEstimateName();
+  const profileName = state.profile.contractorName || designerName;
+  const profileContact = state.profile.contractorContact || "";
   state.profile = { ...state.profile, designerName };
   state.estimateMeta = { estimateName: estimateName === getDefaultEstimateName() ? "" : estimateName };
   localStorage.setItem("designkit.profile", JSON.stringify(state.profile));
@@ -1321,65 +1382,90 @@ function printEstimate() {
   const validUntil = new Date();
   validUntil.setDate(validUntil.getDate() + 14);
   const validUntilText = validUntil.toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric" });
+  const issuedAt = new Date();
+  const todayShort = issuedAt.toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric" });
+  const estimateNumber = issuedAt.toISOString().slice(0, 10).replace(/-/g, "").slice(2);
 
-  const rows = state.stages.map((stage) => `
+  const rows = state.stages.map((stage, index) => `
     <tr>
+      <td class="pdf-index">${String(index + 1).padStart(2, "0")}</td>
       <td><div class="pdf-stage-name">${escapeHtml(stage.title)}</div><div class="pdf-stage-desc">${escapeHtml(stage.description)}</div></td>
       <td class="pdf-hours">${stage.hours}</td>
       <td class="pdf-cost">${money(getStageCost(stage))}</td>
     </tr>
   `).join("");
 
-  const expenses = state.expenses.map((expense) => `
+  const expenses = state.expenses.map((expense, index) => `
     <tr>
+      <td class="pdf-index">E${index + 1}</td>
       <td><div class="pdf-stage-name">${escapeHtml(expense.title)}</div><div class="pdf-stage-desc">Дополнительный расход</div></td>
       <td class="pdf-hours">—</td>
       <td class="pdf-cost">${money(expense.amount)}</td>
     </tr>
   `).join("");
   const urgencyRow = state.mods.has("urgent")
-    ? `<tr class="pdf-summary-row"><td><div class="pdf-stage-name">Срочность +30%</div><div class="pdf-stage-desc">Финальная опция перед экспортом PDF</div></td><td class="pdf-hours">—</td><td class="pdf-cost">${money(getUrgencyAmount())}</td></tr>`
+    ? `<tr><td class="pdf-index">U</td><td><div class="pdf-stage-name">Срочность +30%</div><div class="pdf-stage-desc">Финальная опция перед экспортом PDF</div></td><td class="pdf-hours">—</td><td class="pdf-cost">${money(getUrgencyAmount())}</td></tr>`
     : "";
   const activeMods = state.mods.has("urgent")
-    ? `<div class="pdf-mods"><span class="pdf-mod-tag">Срочность +30%</span></div>`
+    ? `<span class="pdf-note-chip">Срочность +30%</span>`
     : "";
-  const today = new Date().toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" });
 
   document.querySelector("[data-print-sheet]").innerHTML = `
-    <div class="pdf-page">
-      <div class="pdf-header">
-        <div class="pdf-logo">DesiDoc</div>
-        <div class="pdf-date">${today}</div>
-      </div>
-      <div class="pdf-title">
-        <div class="pdf-doc-label">Смета на разработку</div>
-        <div class="pdf-proj-name">${escapeHtml(estimateName)}</div>
-      </div>
-      <div class="pdf-meta">
-        <div class="pdf-meta-item"><div class="pdf-meta-label">Дизайнер</div><div class="pdf-meta-value">${escapeHtml(designerName)}</div></div>
-        <div class="pdf-meta-item"><div class="pdf-meta-label">Ставка</div><div class="pdf-meta-value">${money(state.rate)} / час</div></div>
-        <div class="pdf-meta-item"><div class="pdf-meta-label">Актуальна до</div><div class="pdf-meta-value">${validUntilText}</div></div>
-      </div>
-      ${activeMods}
+    <div class="pdf-page pdf-page--swiss">
+      <header class="pdf-swiss-hero">
+        <div>
+          <div class="pdf-swiss-kicker">DesiDoc / Estimate</div>
+          <h1>СМЕТА</h1>
+        </div>
+        <div class="pdf-swiss-number">#${estimateNumber}</div>
+      </header>
+
+      <section class="pdf-swiss-intro">
+        <div>
+          <div class="pdf-doc-label">Проект</div>
+          <div class="pdf-proj-name">${escapeHtml(estimateName)}</div>
+        </div>
+        <div class="pdf-swiss-total-card">
+          <span>Итого</span>
+          <strong>${money(getTotal())}</strong>
+        </div>
+      </section>
+
+      <section class="pdf-meta">
+        <div class="pdf-meta-item"><div class="pdf-meta-label">Исполнитель</div><div class="pdf-meta-value">${escapeHtml(profileName)}</div>${profileContact ? `<div class="pdf-meta-note">${escapeHtml(profileContact)}</div>` : ""}</div>
+        <div class="pdf-meta-item"><div class="pdf-meta-label">Дата</div><div class="pdf-meta-value">${todayShort}</div><div class="pdf-meta-note">Актуальна до ${validUntilText}</div></div>
+        <div class="pdf-meta-item"><div class="pdf-meta-label">Ставка</div><div class="pdf-meta-value">${money(state.rate)} / час</div><div class="pdf-meta-note">${getTotalHours()} ч работы</div></div>
+      </section>
+
       <table class="pdf-table">
         <colgroup>
+          <col style="width: 8%;">
           <col>
           <col style="width: 12%;">
-          <col style="width: 24%;">
+          <col style="width: 22%;">
         </colgroup>
-        <thead><tr><th>Этап работ</th><th class="pdf-th-hours">Часы</th><th>Стоимость</th></tr></thead>
+        <thead><tr><th>№</th><th>Описание</th><th class="pdf-th-hours">Часы</th><th>Сумма</th></tr></thead>
         <tbody>
           ${rows}
           ${expenses}
           ${urgencyRow}
-          <tr class="pdf-summary-row"><td><div class="pdf-stage-name">Работы и расходы</div></td><td class="pdf-hours">—</td><td class="pdf-cost">${money(getSubtotal())}</td></tr>
-          <tr class="pdf-summary-row"><td><div class="pdf-stage-name">Налог ${formatNumber.format(getTaxRate())}%</div></td><td class="pdf-hours">—</td><td class="pdf-cost">${money(getTaxAmount())}</td></tr>
         </tbody>
-        <tfoot><tr class="pdf-total-row"><td class="pdf-total-label">Итого</td><td class="pdf-total-hours">${getTotalHours()} ч</td><td class="pdf-total-cost">${money(getTotal())}</td></tr></tfoot>
       </table>
-      <div class="pdf-footer">
-        <div>Финальная сумма сметы. Смета действительна 14 дней.</div>
-      </div>
+
+      <section class="pdf-swiss-bottom">
+        <div class="pdf-summary">
+          <div><span>Работы</span><strong>${money(getBaseStagesTotal())}</strong></div>
+          ${state.mods.has("urgent") ? `<div><span>Срочность</span><strong>${money(getUrgencyAmount())}</strong></div>` : ""}
+          ${state.expenses.length ? `<div><span>Расходы</span><strong>${money(getExpensesTotal())}</strong></div>` : ""}
+          <div><span>Налог ${formatNumber.format(getTaxRate())}%</span><strong>${money(getTaxAmount())}</strong></div>
+          <div class="pdf-summary-total"><span>Всего</span><strong>${money(getTotal())}</strong></div>
+        </div>
+      </section>
+
+      <footer class="pdf-footer">
+        <div>Оценка действует 14 дней. Итоговые сроки и состав работ фиксируются в договоре или допсоглашении.</div>
+        <div>${activeMods}</div>
+      </footer>
     </div>
   `;
 
@@ -1523,6 +1609,7 @@ function applyContractProfileDefaults({ force = false } = {}) {
   if (profile.signatureDataUrl && !contractState.signature.dataUrl) {
     contractState.signature.dataUrl = profile.signatureDataUrl;
     contractState.signature.mode = "saved";
+    contractState.signature.includeInPdf = true;
     changed = true;
   }
 
@@ -1804,7 +1891,7 @@ function createDefaultContractDraft() {
     signature: {
       dataUrl: savedSignature,
       mode: savedSignature ? "saved" : "once",
-      includeInPdf: false,
+      includeInPdf: Boolean(savedSignature),
     },
     addendumFields: {
       number: "1",
@@ -1814,8 +1901,8 @@ function createDefaultContractDraft() {
       city: state.profile?.city || "Москва",
       clientName: "",
       contractorName: state.profile?.contractorName || "",
-      taskDescription: "Разработка фирменного стиля бренда",
-      taskRequirements: "Логотип (знак + логотип, горизонтальная и вертикальная версии)\nФирменная цветовая палитра (основные + дополнительные цвета, HEX/CMYK/Pantone)\nТипографика (заголовочный и текстовый шрифт, правила использования)\nФирменные паттерны или текстуры (при необходимости)\nВизитная карточка (90×50 мм, лицевая и оборотная сторона)\nБланк для документов А4\nРуководство по фирменному стилю (Brandbook / Brand Guidelines, PDF)\n\nФорматы для передачи: AI, PDF, PNG (на белом и прозрачном фоне), JPG",
+      taskDescription: "",
+      taskRequirements: "",
       deadline: "",
       price: "",
       paymentTerms: "",
@@ -1833,6 +1920,13 @@ function createDefaultContractDraft() {
 function normalizeContractDraft(saved) {
   const defaults = createDefaultContractDraft();
   const draft = saved || {};
+  const addendumFields = { ...defaults.addendumFields, ...(draft.addendumFields || {}) };
+  if (String(addendumFields.taskDescription || "").trim() === "Разработка фирменного стиля бренда") {
+    addendumFields.taskDescription = "";
+  }
+  if (/^Логотип \(знак \+ логотип/.test(String(addendumFields.taskRequirements || "").trim())) {
+    addendumFields.taskRequirements = "";
+  }
   return {
     ...defaults,
     ...draft,
@@ -1845,7 +1939,7 @@ function normalizeContractDraft(saved) {
     textOverrides: { ...defaults.textOverrides, ...(draft.textOverrides || {}) },
     hiddenClauses: { ...defaults.hiddenClauses, ...(draft.hiddenClauses || {}) },
     signature: { ...defaults.signature, ...(draft.signature || {}) },
-    addendumFields: { ...defaults.addendumFields, ...(draft.addendumFields || {}) },
+    addendumFields,
     addendumShowExplanations: draft.addendumShowExplanations ?? defaults.addendumShowExplanations,
   };
 }
@@ -1941,6 +2035,16 @@ function renderContractTemplateStrip() {
   strips.forEach((strip) => {
     strip.innerHTML = markup;
   });
+}
+
+function openAddendumDocument() {
+  syncAddendumFromContract();
+  contractState.docType = "addendum";
+  contractState.mode = "fill";
+  mobileContractDocVisible = false;
+  mobileContractSheetKey = "";
+  scheduleContractSave();
+  renderContractWorkspace();
 }
 
 function renderContractControls() {
@@ -2112,7 +2216,45 @@ function isMobileContractUI() {
 
 function isAddendumFieldFilled(key) {
   const value = String(contractState.addendumFields[key] ?? "").trim();
-  return Boolean(value && !/^_+$/.test(value));
+  return Boolean(value && !/^_+$/.test(value) && !/_{2,}/.test(value));
+}
+
+function getAddendumFieldLabel(key) {
+  return ADDENDUM_FIELD_LABELS[key] || key;
+}
+
+function renderAddendumProgress() {
+  const progress = document.querySelector("[data-addendum-progress]");
+  const summary = document.querySelector("[data-addendum-required-summary]");
+  const missing = ADDENDUM_REQUIRED_FIELDS.filter((key) => !isAddendumFieldFilled(key));
+  const filled = ADDENDUM_REQUIRED_FIELDS.length - missing.length;
+  if (progress) {
+    progress.textContent = `Заполнено ${filled} из ${ADDENDUM_REQUIRED_FIELDS.length}`;
+    progress.classList.toggle("is-complete", filled === ADDENDUM_REQUIRED_FIELDS.length);
+  }
+  const panel = document.querySelector("[data-addendum-fields-panel]");
+  if (panel) panel.open = missing.length > 0;
+  if (!summary) return;
+  if (!missing.length) {
+    summary.innerHTML = `<p class="contract-required-summary__ok">Все обязательные поля заполнены. Можно скачивать PDF.</p>`;
+    if (!isRenderingMobileContractUI && !(document.activeElement && document.activeElement.closest?.("[data-mobile-contract-sheet]"))) {
+      renderMobileContractUI();
+    }
+    return;
+  }
+  summary.innerHTML = `
+    <p class="contract-required-summary__title">Осталось заполнить</p>
+    <div class="contract-required-summary__list">
+      ${missing.map((key) => `
+        <button class="contract-required-chip" type="button" data-action="focus-addendum-field" data-field="${key}">
+          ${escapeHtml(getAddendumFieldLabel(key))}
+        </button>
+      `).join("")}
+    </div>
+  `;
+  if (!isRenderingMobileContractUI && !(document.activeElement && document.activeElement.closest?.("[data-mobile-contract-sheet]"))) {
+    renderMobileContractUI();
+  }
 }
 
 function shouldAutoFillAddendumField(value) {
@@ -2136,6 +2278,13 @@ function syncAddendumFromContract({ force = false } = {}) {
       addendum[key] = value;
     }
   });
+
+  if ((force || shouldAutoFillAddendumField(addendum.contactName)) && isContractFieldFilled("responsible")) {
+    addendum.contactName = fields.responsible;
+  }
+  if ((force || shouldAutoFillAddendumField(addendum.contactInfo)) && isContractFieldFilled("responsibleContact")) {
+    addendum.contactInfo = fields.responsibleContact;
+  }
 
   if (force || shouldAutoFillAddendumField(addendum.date)) {
     addendum.date = formatContractDate();
@@ -2188,6 +2337,14 @@ function getMobileContractSteps() {
         required: true,
         allKeys: ["taskRequirements"],
         requiredKeys: ["taskRequirements"],
+        filled: isAddendumFieldFilled,
+      },
+      {
+        key: "contact",
+        title: "Контактное лицо",
+        required: true,
+        allKeys: ["contactName", "contactInfo"],
+        requiredKeys: ["contactName", "contactInfo"],
         filled: isAddendumFieldFilled,
       },
       {
@@ -2280,6 +2437,10 @@ function getMobileContractStepSubtitle(step, stepState) {
     }
     if (step.key === "requirements") {
       return stepState.requiredComplete ? "конкретизация задачи готова" : "добавьте техническое задание";
+    }
+    if (step.key === "contact") {
+      if (stepState.requiredComplete) return contractState.addendumFields.contactName || "контакт заполнен";
+      return `осталось ${stepState.requiredRemaining} ${getMobileContractFieldWord(stepState.requiredRemaining)}`;
     }
     if (step.key === "signature") {
       return contractState.signature.dataUrl ? "подпись загружена" : "не обязательно";
@@ -3776,9 +3937,8 @@ function bindEvents() {
 
     const projectTarget = event.target.closest("[data-project]");
     if (projectTarget) {
-      const previousProjectKey = state.projectKey;
       state.projectKey = projectTarget.dataset.project;
-      syncEstimateNameWithProjectChange(previousProjectKey);
+      syncEstimateNameWithProjectChange();
       renderProjectOptions();
       if (state.generated) generateEstimate(true);
       return;
@@ -3942,6 +4102,10 @@ function bindEvents() {
     if (action === "open-export-settings") openExport(true);
     if (action === "open-profile") openProfileModal();
     if (action === "save-profile") saveProfile();
+    if (action === "accept-cookies") {
+      acceptCookies();
+      return;
+    }
     if (action === "open-privacy") document.querySelector("[data-privacy-modal]").showModal();
     if (action === "toggle-export-urgent") {
       state.mods.has("urgent") ? state.mods.delete("urgent") : state.mods.add("urgent");
@@ -3976,12 +4140,7 @@ function bindEvents() {
       renderContractWorkspace();
     }
     if (action === "show-addendum-doc") {
-      syncAddendumFromContract();
-      contractState.docType = "addendum";
-      mobileContractDocVisible = false;
-      mobileContractSheetKey = "";
-      scheduleContractSave();
-      renderContractWorkspace();
+      openAddendumDocument();
     }
     if (action === "upload-signature") {
       document.querySelector("[data-signature-file]")?.click();
@@ -4042,7 +4201,7 @@ function bindEvents() {
     if (action === "confirm-chooser") {
       const cardType = actionTarget.dataset.cardType;
       if (cardType === "addendum") {
-        document.querySelector("[data-addendum-modal]")?.showModal();
+        openAddendumDocument();
       } else if (cardType === "design") {
         contractState.templateKey = "design";
         contractState.mode = "fill";
@@ -4060,7 +4219,7 @@ function bindEvents() {
       renderContractWorkspace();
     }
     if (action === "create-addendum") {
-      document.querySelector("[data-addendum-modal]")?.showModal();
+      openAddendumDocument();
     }
     if (action === "copy-client-request") {
       const text = document.querySelector("[data-client-request-text]")?.textContent || "";
@@ -4177,6 +4336,7 @@ function bindEvents() {
       const key = input.dataset.estimateMeta;
       if (key === "estimateName") {
         state.estimateMeta.estimateName = normalizeEstimateName(input.value, state.projectKey);
+        resizeEstimateNameInput(input);
       }
       persistEstimateMeta();
       return;
@@ -4353,6 +4513,7 @@ function init() {
   syncExportInputs();
   renderContractWorkspace();
   bindEvents();
+  initCookieBanner();
   updateEmptyHint();
   const initialRoute = location.hash.replace("#", "");
   routeTo(["calculator", "contract"].includes(initialRoute) ? initialRoute : "home");

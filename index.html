@@ -19,9 +19,22 @@
   <meta property="og:image:height" content="630">
   <meta property="og:locale" content="ru_RU">
   <meta name="twitter:card" content="summary_large_image">
-  <link rel="stylesheet" href="css/designkit.css?v=109">
+  <link rel="stylesheet" href="css/designkit.css?v=110">
+  <!-- Yandex.Metrika counter -->
+  <script type="text/javascript">
+    (function(m,e,t,r,i,k,a){
+        m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+        m[i].l=1*new Date();
+        for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+        k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
+    })(window, document,'script','https://mc.yandex.ru/metrika/tag.js?id=109865409', 'ym');
+
+    ym(109865409, 'init', {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:true});
+  </script>
+  <!-- /Yandex.Metrika counter -->
 </head>
 <body data-view="home">
+  <noscript><div><img src="https://mc.yandex.ru/watch/109865409" style="position:absolute; left:-9999px;" alt=""></div></noscript>
   <div class="app" data-view="home">
     <aside class="rail" aria-label="Основная навигация">
       <a class="brand" href="#home" data-route="home" aria-label="DesiDoc home">DD</a>
@@ -125,7 +138,11 @@
           <footer class="deedoc-home__footer">
             <strong>DD</strong>
             <p>DesiDoc — создавайте сметы, договоры и проектные документы без сложных таблиц и ручной сборки.</p>
-            <p class="deedoc-home__footer-legal"><button class="link-btn" type="button" data-action="open-privacy">Политика конфиденциальности</button></p>
+            <p class="deedoc-home__footer-legal">
+              <a class="link-btn" href="policy.html">Политика обработки персональных данных</a>
+              <span>·</span>
+              <a class="link-btn" href="consent.html">Согласие на обработку персональных данных</a>
+            </p>
           </footer>
         </div>
       </section>
@@ -402,7 +419,7 @@
                   <div class="cv-result-meta">
                     <label class="estimate-inline-field" aria-label="Название сметы">
                       <span class="estimate-inline-caption">Введите название сметы</span>
-                      <input class="estimate-inline-input estimate-inline-input--title" type="text" data-estimate-meta="estimateName" placeholder="Название сметы" aria-label="Название сметы">
+                      <textarea class="estimate-inline-input estimate-inline-input--title" data-estimate-meta="estimateName" rows="1" placeholder="Название сметы" aria-label="Название сметы"></textarea>
                     </label>
                   </div>
                   <div class="cv-total-block">
@@ -606,7 +623,6 @@
                   </label>
                 </div>
                 <div class="mobile-contract-actions__main">
-                  <button class="button button--ghost" type="button" data-action="hide-mobile-contract-doc">Редактировать</button>
                   <button class="button button--dark" type="button" data-action="print-contract">Скачать PDF</button>
                 </div>
               </div>
@@ -678,20 +694,20 @@
     </form>
   </dialog>
 
-  <dialog class="modal" data-addendum-modal>
+  <dialog class="modal" data-addendum-brief-modal>
     <form method="dialog" class="modal__panel modal__panel--small">
       <button class="modal__close" value="cancel" aria-label="Закрыть">×</button>
-      <p class="eyebrow">Следующий шаг</p>
-      <h2>Допсоглашение</h2>
-      <p class="modal__lead">В рамочном договоре общие условия зафиксированы. Для каждого нового проекта оформляется отдельное допсоглашение — с конкретным ТЗ, сроками и стоимостью.</p>
-      <ol class="addendum-modal-steps">
-        <li>Клиент подписывает основной договор — один раз.</li>
-        <li>Для каждого нового проекта вы создаёте допсоглашение и договариваетесь о деталях.</li>
-        <li>Допсоглашение подписывается отдельно и становится частью договора.</li>
-      </ol>
+      <p class="eyebrow">Техническое задание</p>
+      <h2>Собрать из брифа</h2>
+      <p class="modal__lead">Вставьте бриф, сообщение клиента или заметки после созвона. DesiDoc заполнит предмет задания и требования к результату.</p>
+      <label class="field brief-ai-field">
+        <span>Бриф проекта</span>
+        <textarea data-addendum-brief-input rows="8" placeholder="Например: нужно сделать логотип, палитру, шрифты и 5 носителей за 3 недели."></textarea>
+      </label>
+      <p class="client-reply-status" data-addendum-brief-status>Текст можно будет отредактировать вручную в ТЗ.</p>
       <div class="modal__actions">
-        <button class="button button--ghost" value="cancel">Назад</button>
-        <button class="button button--dark" value="cancel" data-action="create-addendum-confirm">Понятно, создам</button>
+        <button class="button button--ghost" value="cancel">Отмена</button>
+        <button class="brief-ai-button" type="button" data-action="analyze-addendum-brief">✨ Собрать ТЗ</button>
       </div>
     </form>
   </dialog>
@@ -740,11 +756,9 @@
         <input type="text" data-profile="contractorContact" placeholder="телефон, email, telegram">
       </label>
 
-      <p class="modal__privacy-note">Данные хранятся только в вашем браузере и не передаются третьим лицам. <button class="link-btn" type="button" data-action="open-privacy">Политика конфиденциальности</button></p>
-
       <label class="modal__consent">
         <input type="checkbox" data-profile-consent>
-        <span>Я понимаю, что данные сохраняются локально в этом браузере</span>
+        <span>Я принимаю <a class="link-btn" href="consent.html">Согласие на обработку персональных данных</a> и <a class="link-btn" href="policy.html">Политику обработки персональных данных</a></span>
       </label>
 
       <div class="modal__actions">
@@ -802,7 +816,6 @@
       <h2>Собрать из брифа</h2>
 
       <label class="field brief-ai-field">
-        <span>Бриф клиента</span>
         <textarea data-brief-ai-input rows="8" placeholder="Вставьте сюда сообщение клиента, бриф, переписку или заметки после созвона."></textarea>
       </label>
 
@@ -817,9 +830,14 @@
 
   <section class="print-sheet" data-print-sheet aria-hidden="true"></section>
 
+  <div class="cookie-banner" data-cookie-banner hidden role="region" aria-label="Уведомление о cookies">
+    <p>Мы используем cookie файлы для работы DesiDoc. Вы можете отключить их в любой момент в настройках браузера. <a href="policy.html">Подробнее в Политике обработки персональных данных.</a></p>
+    <button class="button button--dark cookie-banner__button" type="button" data-action="accept-cookies">Принять</button>
+  </div>
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://unpkg.com/html-to-image@1.11.11/dist/html-to-image.js"></script>
-  <script src="js/designkit.js?v=55"></script>
+  <script src="js/designkit.js?v=56"></script>
 </body>
 </html>

@@ -1097,6 +1097,9 @@ textarea:focus-visible {
 }
 
 .deedoc-home__footer-legal {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
   text-indent: 0 !important;
   font-size: 13px !important;
   opacity: 0.55;
@@ -1119,6 +1122,12 @@ textarea:focus-visible {
   color: var(--muted);
   margin: 0;
   line-height: 1.5;
+}
+
+.modal__privacy-note .link-btn,
+.modal__consent .link-btn {
+  color: var(--accent);
+  opacity: 1;
 }
 
 .modal__consent {
@@ -1158,6 +1167,55 @@ textarea:focus-visible {
 
 .modal__privacy-body a {
   color: var(--accent);
+}
+
+.cookie-banner {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  width: min(680px, calc(100vw - 48px));
+  padding: 16px 18px 16px 22px;
+  border-radius: 30px;
+  background: var(--surface-strong);
+  box-shadow: 0 24px 70px rgba(42, 35, 25, 0.18);
+  opacity: 0;
+  transform: translateY(12px);
+  pointer-events: none;
+  transition: opacity 0.22s ease, transform 0.22s ease;
+}
+
+.cookie-banner[hidden] {
+  display: none;
+}
+
+.cookie-banner.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.cookie-banner p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.38;
+}
+
+.cookie-banner a {
+  color: var(--text);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.cookie-banner__button {
+  flex: 0 0 auto;
+  min-width: 120px;
+  height: 44px;
+  border-radius: 999px;
 }
 
 .calculator-shell {
@@ -2667,7 +2725,9 @@ h2 {
 }
 
 [data-brief-ai-modal] .client-reply-status {
+  color: var(--accent);
   font-size: 12px;
+  font-weight: 600;
 }
 
 .export-options {
@@ -2944,6 +3004,303 @@ h2 {
   color: #999;
   font-size: 10px;
   line-height: 1.45;
+}
+
+/* Swiss-style estimate PDF */
+.print-sheet .pdf-page--swiss {
+  position: relative;
+  min-height: 1123px;
+  padding: 28px 32px 30px;
+  background: #fff;
+  color: #050505;
+  font-family: "Suisse Intl", "Helvetica Neue", Arial, sans-serif;
+  letter-spacing: -0.035em;
+}
+
+.print-sheet .pdf-page--swiss::before {
+  content: "";
+  position: absolute;
+  inset: 28px 32px auto;
+  height: 2px;
+  background: #050505;
+}
+
+.print-sheet .pdf-swiss-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 32px;
+  padding-top: 22px;
+  margin-bottom: 30px;
+}
+
+.print-sheet .pdf-swiss-kicker {
+  margin-bottom: 4px;
+  color: #050505;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.print-sheet .pdf-page--swiss h1 {
+  margin: 0;
+  color: #050505;
+  font-size: 100px;
+  font-weight: 400;
+  line-height: 0.86;
+  letter-spacing: -0.105em;
+  text-transform: uppercase;
+}
+
+.print-sheet .pdf-swiss-number {
+  color: #050505;
+  font-size: 22px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.print-sheet .pdf-swiss-intro {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 210px;
+  align-items: end;
+  gap: 32px;
+  margin-bottom: 24px;
+  padding-bottom: 18px;
+  border-bottom: 1.5px solid #050505;
+}
+
+.print-sheet .pdf-page--swiss .pdf-doc-label,
+.print-sheet .pdf-page--swiss .pdf-meta-label,
+.print-sheet .pdf-section-title {
+  color: #050505;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  line-height: 1.05;
+  text-transform: uppercase;
+}
+
+.print-sheet .pdf-page--swiss .pdf-doc-label {
+  margin-bottom: 9px;
+}
+
+.print-sheet .pdf-page--swiss .pdf-proj-name {
+  max-width: 460px;
+  color: #050505;
+  font-size: 30px;
+  font-weight: 500;
+  line-height: 0.98;
+  letter-spacing: -0.065em;
+}
+
+.print-sheet .pdf-swiss-total-card {
+  text-align: right;
+}
+
+.print-sheet .pdf-swiss-total-card span {
+  display: block;
+  margin-bottom: 8px;
+  color: #8d8d8d;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.print-sheet .pdf-swiss-total-card strong {
+  display: block;
+  color: #050505;
+  font-size: 30px;
+  font-weight: 500;
+  line-height: 0.95;
+  letter-spacing: -0.075em;
+  white-space: nowrap;
+}
+
+.print-sheet .pdf-page--swiss .pdf-meta {
+  display: grid;
+  grid-template-columns: 1.45fr 1fr 1fr;
+  gap: 0;
+  margin-bottom: 28px;
+  border: 0;
+  border-bottom: 1px solid #050505;
+  border-radius: 0;
+  overflow: visible;
+}
+
+.print-sheet .pdf-page--swiss .pdf-meta-item {
+  min-width: 0;
+  padding: 0 18px 16px 0;
+  border-right: 0;
+}
+
+.print-sheet .pdf-page--swiss .pdf-meta-value {
+  margin-top: 9px;
+  color: #050505;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.05;
+}
+
+.print-sheet .pdf-meta-note {
+  margin-top: 5px;
+  color: #8b8b8b;
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+}
+
+.print-sheet .pdf-page--swiss .pdf-table {
+  width: 100%;
+  margin: 0 0 28px;
+  border-collapse: collapse;
+  border-top: 1.5px solid #050505;
+}
+
+.print-sheet .pdf-page--swiss .pdf-table thead tr {
+  background: transparent;
+}
+
+.print-sheet .pdf-page--swiss .pdf-table th {
+  padding: 9px 0 8px;
+  border-bottom: 1.5px solid #050505;
+  color: #050505;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  line-height: 1.05;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.print-sheet .pdf-page--swiss .pdf-table th:last-child,
+.print-sheet .pdf-page--swiss .pdf-table th.pdf-th-hours {
+  text-align: right;
+}
+
+.print-sheet .pdf-page--swiss .pdf-table td {
+  padding: 9px 0 10px;
+  border-bottom: 1px solid #050505;
+  vertical-align: top;
+}
+
+.print-sheet .pdf-index {
+  color: #050505;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.1;
+}
+
+.print-sheet .pdf-page--swiss .pdf-stage-name {
+  margin-bottom: 4px;
+  color: #050505;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.05;
+  letter-spacing: -0.045em;
+}
+
+.print-sheet .pdf-page--swiss .pdf-stage-desc {
+  max-width: 380px;
+  color: #8b8b8b;
+  font-size: 10.5px;
+  font-weight: 400;
+  line-height: 1.28;
+  letter-spacing: -0.015em;
+}
+
+.print-sheet .pdf-page--swiss .pdf-hours,
+.print-sheet .pdf-page--swiss .pdf-cost {
+  color: #050505;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.05;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.print-sheet .pdf-swiss-bottom {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 46px;
+  align-items: start;
+}
+
+.print-sheet .pdf-summary {
+  width: 282px;
+  border-top: 1.5px solid #050505;
+}
+
+.print-sheet .pdf-summary div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  padding: 8px 0;
+  border-bottom: 1px solid #050505;
+}
+
+.print-sheet .pdf-summary span,
+.print-sheet .pdf-summary strong {
+  color: #050505;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.025em;
+}
+
+.print-sheet .pdf-summary strong {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.print-sheet .pdf-summary .pdf-summary-total {
+  padding-top: 13px;
+  border-bottom-width: 1.5px;
+}
+
+.print-sheet .pdf-summary .pdf-summary-total span {
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.print-sheet .pdf-summary .pdf-summary-total strong {
+  font-size: 24px;
+  letter-spacing: -0.065em;
+}
+
+.print-sheet .pdf-page--swiss .pdf-footer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 20px;
+  margin-top: 48px;
+  padding-top: 12px;
+  border-top: 1.5px solid #050505;
+  color: #8b8b8b;
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+
+.print-sheet .pdf-note-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0 9px;
+  border: 1px solid #050505;
+  border-radius: 999px;
+  color: #050505;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .is-hidden {
@@ -4227,7 +4584,9 @@ body[data-view="calculator"]::after {
 }
 
 .estimate-inline-input--title {
-  min-height: auto;
+  display: block;
+  min-height: 1.08em;
+  max-height: none;
   border: 0;
   border-radius: 0;
   background: transparent;
@@ -4238,6 +4597,10 @@ body[data-view="calculator"]::after {
   letter-spacing: -0.05em;
   line-height: 1.04;
   box-shadow: none;
+  overflow: hidden;
+  resize: none;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
   transition: opacity 180ms ease;
 }
 
