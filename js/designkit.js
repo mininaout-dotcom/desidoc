@@ -80,7 +80,7 @@ const PROJECTS = {
 
 const PROJECT_ORDER = ["logo", "branding", "landing_design", "landing_tilda", "presentation", "custom"];
 
-const MARKET_RATES = { junior: 1000, middle: 2500, senior: 4000 };
+const MARKET_RATES = { junior: 800, middle: 1500, senior: 2500 };
 const MODIFIERS = { urgent: 0.3 };
 const DEFAULT_DESIGNER_RATE = 1500;
 const DEFAULT_PROJECT_KEY = "landing_design";
@@ -111,6 +111,9 @@ const state = {
   rateMode: "custom",
   marketGrade: "middle",
   designerRate: Number(localStorage.getItem("designkit.designerRate") || DEFAULT_DESIGNER_RATE),
+  monthlyIncome: Number(localStorage.getItem("designkit.monthlyIncome") || 240000),
+  workDays: Number(localStorage.getItem("designkit.workDays") || 5),
+  billableHours: Number(localStorage.getItem("designkit.billableHours") || 6),
   rate: 0,
   taxMode: "selfEmployed",
   clientType: "individual",
@@ -363,9 +366,9 @@ function getProject() {
 }
 
 function getIncomeRate() {
-  const income = Number(document.querySelector('[data-input="monthlyIncome"]')?.value || 0);
-  const daysPerWeek = Math.max(Number(document.querySelector('[data-input="workDays"]')?.value || 1), 1);
-  const hoursPerDay = Math.max(Number(document.querySelector('[data-input="billableHours"]')?.value || 1), 1);
+  const income = Number(state.monthlyIncome || 0);
+  const daysPerWeek = Math.max(Number(state.workDays || 1), 1);
+  const hoursPerDay = Math.max(Number(state.billableHours || 1), 1);
   return Math.round(income / (daysPerWeek * 4.33 * hoursPerDay));
 }
 
@@ -1092,6 +1095,11 @@ function renderRate() {
   document.querySelectorAll('[data-input="designerRate"]').forEach((designerRateInput) => {
     if (document.activeElement !== designerRateInput) designerRateInput.value = state.designerRate;
   });
+  ["monthlyIncome", "workDays", "billableHours"].forEach((key) => {
+    document.querySelectorAll(`[data-input="${key}"]`).forEach((input) => {
+      if (document.activeElement !== input) input.value = state[key] || "";
+    });
+  });
   document.querySelectorAll("[data-income-rate]").forEach((node) => {
     node.textContent = `${formatNumber.format(getIncomeRate())} ₽/час`;
   });
@@ -1139,6 +1147,19 @@ function generateEstimate(force = false, { preserveBrief = false } = {}) {
     const result = document.querySelector("[data-estimate-result]");
     if (result) setTimeout(() => result.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
   }
+}
+
+function resetEstimate() {
+  state.generated = false;
+  state.stages = [];
+  state.expenses = [];
+  state.mods.clear();
+  state.briefAi.sourceText = "";
+  state.briefAi.analysis = null;
+  state.estimateMeta.estimateName = "";
+  persistEstimateMeta();
+  renderEstimate();
+  routeTo("calculator");
 }
 
 function renderEstimate() {
@@ -4077,6 +4098,10 @@ function bindEvents() {
       return;
     }
     if (action === "regenerate-estimate") generateEstimate(true);
+    if (action === "reset-estimate") {
+      resetEstimate();
+      return;
+    }
     if (action === "add-stage") addStage();
     if (action === "remove-stage") {
       state.stages.splice(Number(actionTarget.dataset.index), 1);
@@ -4318,6 +4343,9 @@ function bindEvents() {
     }
 
     if (input.matches('[data-input="monthlyIncome"], [data-input="workDays"], [data-input="billableHours"]')) {
+      const key = input.dataset.input;
+      state[key] = Number(input.value || 0);
+      localStorage.setItem(`designkit.${key}`, String(state[key]));
       renderRate();
       if (state.generated && state.rateMode === "income") {
         state.rate = getActiveRate();

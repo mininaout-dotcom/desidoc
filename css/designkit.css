@@ -2701,6 +2701,93 @@ h2 {
   font-family: var(--mono);
 }
 
+[data-theme="dark"] [data-profile-modal]::backdrop {
+  background: rgba(4, 4, 4, 0.54);
+  backdrop-filter: blur(18px) saturate(1.15);
+  -webkit-backdrop-filter: blur(18px) saturate(1.15);
+}
+
+[data-theme="dark"] [data-profile-modal] .modal__panel {
+  overflow: hidden;
+  border-color: rgba(255, 255, 255, 0.18);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.17), rgba(255, 255, 255, 0.06)),
+    rgba(18, 17, 14, 0.62);
+  box-shadow:
+    0 30px 90px rgba(0, 0, 0, 0.46),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  backdrop-filter: blur(36px) saturate(1.35);
+  -webkit-backdrop-filter: blur(36px) saturate(1.35);
+}
+
+[data-theme="dark"] [data-profile-modal] .modal__panel::before {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  z-index: -1;
+  border-radius: inherit;
+  background:
+    radial-gradient(circle at 24% 0%, rgba(255, 255, 255, 0.16), transparent 34%),
+    radial-gradient(circle at 92% 12%, rgba(255, 255, 255, 0.08), transparent 32%);
+  pointer-events: none;
+}
+
+[data-theme="dark"] [data-profile-modal] .modal__panel h2 {
+  color: rgba(246, 239, 226, 0.96);
+}
+
+[data-theme="dark"] [data-profile-modal] .modal__lead,
+[data-theme="dark"] [data-profile-modal] .field span,
+[data-theme="dark"] [data-profile-modal] .modal__consent {
+  color: rgba(246, 239, 226, 0.58);
+}
+
+[data-theme="dark"] [data-profile-modal] .modal__section-label {
+  color: rgba(246, 239, 226, 0.46);
+}
+
+[data-theme="dark"] [data-profile-modal] .field input {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(246, 239, 226, 0.94);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] [data-profile-modal] .field input::placeholder {
+  color: rgba(246, 239, 226, 0.28);
+}
+
+[data-theme="dark"] [data-profile-modal] .field input:focus {
+  border-color: rgba(255, 255, 255, 0.32);
+  background: rgba(255, 255, 255, 0.12);
+}
+
+[data-theme="dark"] [data-profile-modal] .modal__consent {
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+[data-theme="dark"] [data-profile-modal] .modal__consent .link-btn {
+  color: rgba(246, 239, 226, 0.9);
+}
+
+[data-theme="dark"] [data-profile-modal] .modal__close {
+  background: rgba(255, 255, 255, 0.09);
+  color: rgba(246, 239, 226, 0.62);
+}
+
+[data-theme="dark"] [data-profile-modal] .button--ghost {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(246, 239, 226, 0.82);
+}
+
+[data-theme="dark"] [data-profile-modal] .button--dark {
+  background: rgba(246, 239, 226, 0.94);
+  color: #171612;
+}
+
 /* Brief AI modal typography */
 [data-brief-ai-modal] .modal__lead {
   font-size: 12.5px;
