@@ -108,7 +108,7 @@
                   <h2>Оформить<br>договор</h2>
                   <p>Выберите шаблон договора и создайте документ всего за пару минут.</p>
                 </div>
-                <button class="deedoc-card__button" type="button" data-route="contract" data-icon="document">Создать документ</button>
+                <button class="deedoc-card__button" type="button" data-route="contract" data-icon="document">Создать</button>
               </article>
 
               <article class="deedoc-card deedoc-card--paper" data-action="show-soon" data-label="Клиентский проект" tabindex="0" role="button" aria-label="Добавить клиентский проект">
@@ -116,7 +116,7 @@
                   <h2>Клиентский<br>проект</h2>
                   <p>Ведите весь документооборот проекта в одном месте.</p>
                 </div>
-                <button class="deedoc-card__button" type="button" data-action="show-soon" data-label="Клиентский проект" data-icon="project">Добавить проект</button>
+                <button class="deedoc-card__button" type="button" data-action="show-soon" data-label="Клиентский проект" data-icon="project">Добавить</button>
               </article>
             </div>
             </div>
@@ -571,18 +571,9 @@
                 </div>
               </details>
 
-              <!-- Шаг 4: Навигация по разделам -->
+              <!-- Шаг 4: Плановый перерыв -->
               <details class="outline-group outline-group--utility outline-group--collapsible" data-step="4">
-                <summary class="outline-title outline-title--toggle"><span class="step-badge">4</span>Навигация по разделам</summary>
-                <div class="outline-group-body">
-                  <p class="contract-data-hint">Быстрый переход к любому разделу договора.</p>
-                  <nav class="outline-nav-grid" data-contract-outline></nav>
-                </div>
-              </details>
-
-              <!-- Шаг 5: Плановый перерыв -->
-              <details class="outline-group outline-group--utility outline-group--collapsible" data-step="5">
-                <summary class="outline-title outline-title--toggle"><span class="step-badge">5</span>Запланируй отпуск</summary>
+                <summary class="outline-title outline-title--toggle"><span class="step-badge">4</span>Запланируй отпуск</summary>
                 <div class="outline-group-body">
                   <div class="optional-list" data-contract-options></div>
                 </div>
@@ -611,6 +602,9 @@
                 </div>
               </div>
             </div>
+            <aside class="contract-side-rail" aria-label="Быстрая навигация по договору">
+              <nav class="document-section-nav document-section-nav--floating" data-contract-outline aria-label="Навигация по разделам договора"></nav>
+            </aside>
           </div>
 
           <footer class="document-toolbar">

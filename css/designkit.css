@@ -3779,11 +3779,11 @@ h2 {
     box-sizing: border-box;
   }
 
-  /* Mobile card layout: все карточки в один столбец во всю ширину */
+  /* Mobile card layout: СМЕТА сверху во всю ширину, две карточки рядом снизу */
   .deedoc-actions {
     display: grid;
-    grid-template-columns: 1fr;
-    gap: 12px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
     margin: 0;
   }
 
@@ -3792,14 +3792,15 @@ h2 {
     min-height: 0;
     max-width: none;
     flex: unset;
-    border-radius: 40px;
+    border-radius: 32px;
   }
 
   /* СМЕТА card — во всю ширину сверху */
   .deedoc-card--quick {
+    grid-column: 1 / -1;
     width: 100%;
-    min-height: 168px;
-    border-radius: 40px;
+    min-height: 150px;
+    border-radius: 36px;
   }
 
   /* Плюсик на мобилке улетает — скрываем */
@@ -3807,43 +3808,40 @@ h2 {
     display: none;
   }
 
-  /* Выравниваем текст карточки смет по центру */
+  /* Текст карточки смет */
   .deedoc-card.deedoc-card--quick p {
-    font-size: 17px;
+    font-size: 16px;
     font-weight: 500;
     line-height: 1.2;
   }
 
-  /* Карточки «Договор / Проект» — во всю ширину, кнопка снизу */
+  /* Узкие карточки «Договор / Проект» — компактнее, чтобы всё влезало */
   .deedoc-card--paper {
     min-height: 0;
-    padding: 24px 24px 22px;
-    border-radius: 40px;
-  }
-
-  .deedoc-card--paper p {
-    max-width: 36ch;
+    padding: 18px 16px;
+    border-radius: 32px;
   }
 
   .deedoc-card__button {
     width: 100%;
-    min-height: 48px;
-    height: 48px;
+    min-height: 40px;
+    height: 40px;
     border-radius: 999px;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 500;
     letter-spacing: -0.01em;
   }
 
   .deedoc-card h2 {
-    font-size: 19px;
-    margin-bottom: 8px;
+    font-size: 16px;
+    margin-bottom: 6px;
+    line-height: 1.1;
   }
 
   .deedoc-card p {
-    font-size: 13px;
-    line-height: 1.4;
-    margin-bottom: 16px;
+    font-size: 11.5px;
+    line-height: 1.32;
+    margin-bottom: 12px;
   }
 
   .deedoc-home__footer {
@@ -6241,7 +6239,6 @@ body[data-view="contract"]::after {
 
 [data-theme="dark"] .view--contract .contract-outline,
 [data-theme="dark"] .view--contract .document-canvas,
-[data-theme="dark"] .view--contract .document-section-nav,
 [data-theme="dark"] .view--contract .document-toolbar {
   border-color: var(--cv-line);
   backdrop-filter: blur(var(--ddoc-blur-glass)) saturate(1.3);
@@ -6317,24 +6314,29 @@ body[data-view="contract"]::after {
   gap: 0;
 }
 
+.contract-side-rail {
+  display: none;
+}
+
 /* Top bar with doc-type toggle — inside canvas column */
 .view--contract .contract-top-bar {
   padding: 0 0 14px;
 }
 
 .view--contract .document-section-nav {
-  position: sticky;
-  top: 20px;
-  z-index: 5;
   display: flex;
-  flex-wrap: wrap;
+  align-items: center;
   gap: 6px;
-  margin: 0 0 14px;
-  padding: 10px;
-  border: 1px solid transparent;
-  border-radius: 28px;
-  background: var(--cv-glass);
-  box-shadow: 0 3px 24px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
+  margin: -2px 0 24px;
+  padding: 0 0 14px;
+  border-bottom: 1px solid color-mix(in srgb, var(--cv-line) 74%, transparent);
+  background: transparent;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.view--contract .document-section-nav::-webkit-scrollbar {
+  display: none;
 }
 
 .view--contract .document-section-nav:empty {
@@ -6343,6 +6345,205 @@ body[data-view="contract"]::after {
 
 .view--contract .contract-workspace[data-doc-type="addendum"] .document-section-nav {
   display: none;
+}
+
+.view--contract .document-section-nav__toggle,
+.view--contract .document-section-nav__top {
+  min-height: 32px;
+  flex: 0 0 auto;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: var(--cv-surface);
+  color: var(--cv-text);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.view--contract .document-section-nav__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 11px 0 12px;
+}
+
+.view--contract .document-section-nav__chevron {
+  transition: transform 180ms ease;
+}
+
+.view--contract .document-section-nav.is-collapsed .document-section-nav__chevron {
+  transform: rotate(180deg);
+}
+
+.view--contract .document-section-nav__list {
+  display: flex;
+  gap: 6px;
+}
+
+.view--contract .document-section-nav.is-collapsed .document-section-nav__list {
+  display: none;
+}
+
+.view--contract .document-section-nav__top {
+  padding: 0 12px;
+}
+
+.view--contract .document-section-nav__toggle:hover,
+.view--contract .document-section-nav__top:hover {
+  border-color: color-mix(in srgb, var(--cv-text) 18%, transparent);
+  background: var(--cv-hover-bg);
+}
+
+@media (min-width: 1081px) {
+  .view--contract .document-canvas:has(.document-section-nav) {
+    padding-right: calc(clamp(28px, 3.4vw, 48px) + 152px);
+  }
+
+  .view--contract .document-canvas:has(.document-section-nav.is-collapsed) {
+    padding-right: calc(clamp(28px, 3.4vw, 48px) + 104px);
+  }
+
+  .view--contract .document-section-nav {
+    position: sticky;
+    top: 20px;
+    z-index: 6;
+    float: right;
+    clear: right;
+    width: 136px;
+    max-height: calc(100vh - 148px);
+    flex-direction: column;
+    align-items: stretch;
+    margin: 0 -152px 24px 20px;
+    padding: 8px;
+    border: 1px solid transparent;
+    border-radius: 24px;
+    background: color-mix(in srgb, var(--cv-glass) 92%, transparent);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+  }
+
+  .view--contract .document-section-nav.is-collapsed {
+    width: 88px;
+    margin-right: -104px;
+  }
+
+  .view--contract .document-section-nav__list {
+    display: grid;
+    gap: 6px;
+    max-height: calc(100vh - 250px);
+    overflow: auto;
+    padding-right: 1px;
+    scrollbar-width: thin;
+  }
+
+  .view--contract .document-section-nav.is-collapsed .document-section-nav__list {
+    display: none;
+  }
+}
+
+@media (min-width: 1081px) {
+  .view--contract .contract-canvas-area {
+    grid-column: 2;
+    grid-row: 1;
+    position: relative;
+    z-index: 1;
+  }
+
+  .view--contract .contract-side-rail {
+    display: block;
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+    align-self: start;
+    position: sticky;
+    top: 112px;
+    z-index: 8;
+    width: 140px;
+    margin-right: 12px;
+    pointer-events: auto;
+  }
+
+  .view--contract .document-section-nav--inline {
+    display: none !important;
+  }
+
+  .view--contract .document-canvas {
+    padding-right: clamp(28px, 3.4vw, 48px);
+  }
+
+  .view--contract .document-canvas:has(.document-section-nav--inline),
+  .view--contract .document-canvas:has(.document-section-nav--inline.is-collapsed) {
+    padding-right: clamp(28px, 3.4vw, 48px);
+  }
+
+  .view--contract .document-section-nav--floating {
+    display: flex;
+    position: static;
+    float: none;
+    clear: none;
+    width: auto;
+    max-height: none;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    margin: 0;
+    padding: 10px;
+    border: 1px solid transparent;
+    border-radius: 24px;
+    background: color-mix(in srgb, var(--cv-glass) 92%, transparent);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 180ms ease, transform 180ms ease;
+    pointer-events: none;
+  }
+
+  .view--contract .document-section-nav--floating.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+
+  .view--contract .document-section-nav--floating .document-section-nav__list {
+    display: grid;
+    gap: 6px;
+    max-height: calc(100vh - 254px);
+    overflow: auto;
+    padding-right: 1px;
+    scrollbar-width: thin;
+  }
+
+  .view--contract .document-section-nav--floating.is-collapsed .document-section-nav__list {
+    display: none;
+  }
+
+  .view--contract .document-section-nav--floating .outline-link {
+    width: 100%;
+    min-width: 0;
+    justify-content: flex-start;
+    text-align: left;
+    padding: 0 9px;
+    white-space: normal;
+  }
+}
+
+@media (min-width: 1600px) {
+  .view--contract {
+    --cv-shell-width: 1440px;
+  }
+
+  .view--contract .contract-layout {
+    grid-template-columns: minmax(320px, 409px) minmax(0, 1fr) 148px;
+  }
+
+  .view--contract .contract-side-rail {
+    grid-column: 3;
+    width: 148px;
+    margin-right: -12px;
+    pointer-events: auto;
+  }
 }
 
 /* Strip: toggle слева по центру, reset справа */
@@ -6767,8 +6968,19 @@ body[data-view="contract"]::after {
 .view--contract .document-section-nav .outline-link {
   width: auto;
   flex: 0 0 auto;
+  min-width: max-content;
   padding: 0 12px;
   white-space: nowrap;
+}
+
+@media (min-width: 1081px) {
+  .view--contract .document-section-nav .outline-link {
+    width: 100%;
+    min-width: 0;
+    justify-content: flex-start;
+    padding: 0 9px;
+    text-align: left;
+  }
 }
 
 .view--contract .signature-preview {
@@ -7442,12 +7654,14 @@ body[data-view="contract"]::after {
   }
 
   .view--contract .document-section-nav {
-    position: static;
     flex-wrap: nowrap;
     overflow-x: auto;
-    margin-bottom: 4px;
-    padding: 8px;
-    border-radius: 22px;
+    position: sticky;
+    top: 88px;
+    z-index: 9;
+    margin: -6px 0 18px;
+    padding: 8px 0 10px;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--cv-glass) 94%, transparent), rgba(255, 255, 255, 0));
     scrollbar-width: none;
   }
 
