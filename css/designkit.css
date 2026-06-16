@@ -605,6 +605,18 @@ textarea:focus-visible {
   pointer-events: none;
 }
 
+/* Прокрученная шапка на не-домашних экранах (договор, смета) получает
+   фон, чтобы контент не просвечивал сквозь полупрозрачные блоки навигации
+   и не наслаивался («каша»). На главной и в самом верху — остаётся прозрачной. */
+@media (max-width: 760px) {
+  body:not([data-view="home"]) .deedoc-home__top--global.is-scrolled {
+    background: color-mix(in srgb, var(--surface-strong) 88%, transparent);
+    backdrop-filter: blur(18px) saturate(1.08);
+    -webkit-backdrop-filter: blur(18px) saturate(1.08);
+    border-bottom: 1px solid color-mix(in srgb, var(--line) 55%, transparent);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .deedoc-home__top--global {
     transition: none;
@@ -5199,8 +5211,16 @@ body.mobile-contract-sheet-open {
   display: grid;
   grid-template-columns: 18px minmax(22px, auto);
   align-items: center;
+  align-self: start;
+  padding-top: 2px;
   gap: 6px;
   min-width: 0;
+}
+
+/* Крестик удаления — наверх, вровень с заголовком этапа */
+.view--calculator .icon-button--remove {
+  align-self: start;
+  margin-top: 2px;
 }
 
 .view--calculator .stage-order > span {
@@ -5898,19 +5918,20 @@ body.mobile-contract-sheet-open {
     font-size: 12px;
   }
 
-  /* Calculator stage cards: stack side below body */
+  /* Calculator stage cards: × наверху вровень с заголовком, side под телом */
   .view--calculator .stage-card {
-    grid-template-columns: 48px minmax(0, 1fr);
+    grid-template-columns: 44px minmax(0, 1fr) 22px;
     grid-template-areas:
-      "order body"
-      ".     side";
+      "order body   remove"
+      ".     side   side";
     gap: 4px 6px;
     align-items: start;
   }
 
   .view--calculator .stage-order {
     grid-area: order;
-    padding-top: 4px;
+    align-self: start;
+    padding-top: 1px;
   }
 
   .view--calculator .stage-card__body {
@@ -5938,8 +5959,10 @@ body.mobile-contract-sheet-open {
   }
 
   .view--calculator .stage-card .icon-button--remove {
+    grid-area: remove;
+    align-self: start;
+    margin-top: 0;
     flex-shrink: 0;
-    margin-left: auto;
   }
 
   /* ── Bottom actions block on mobile ── */

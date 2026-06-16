@@ -1208,8 +1208,8 @@ function renderEstimate() {
             <span>ч</span>
           </label>
           <div class="stage-stat"><strong data-stage-cost="${index}">${money(getStageCost(stage))}</strong></div>
-          <button class="icon-button icon-button--remove" type="button" data-action="remove-stage" data-index="${index}" aria-label="Удалить этап">×</button>
         </div>
+        <button class="icon-button icon-button--remove" type="button" data-action="remove-stage" data-index="${index}" aria-label="Удалить этап">×</button>
       </article>
     `;
   }).join("");
@@ -2428,20 +2428,9 @@ function renderContractOutline() {
 function syncContractOutlineVisibility() {
   const floatingOutline = document.querySelector(".document-section-nav--floating");
   if (!floatingOutline) return;
-  const canFloat = state.view === "contract" && contractState.docType === "contract" && window.innerWidth >= 1660;
+  const canFloat = state.view === "contract" && contractState.docType === "contract" && window.innerWidth >= 1081;
   floatingOutline.classList.toggle("is-floating-mode", canFloat);
-  if (!canFloat) {
-    floatingOutline.classList.remove("is-visible");
-    return;
-  }
-  const canvas = document.querySelector("[data-contract-canvas]");
-  if (!canvas) {
-    floatingOutline.classList.remove("is-visible");
-    return;
-  }
-  const rect = canvas.getBoundingClientRect();
-  const shouldShow = rect.top <= 132 && rect.bottom >= 320;
-  floatingOutline.classList.toggle("is-visible", shouldShow);
+  floatingOutline.classList.toggle("is-visible", canFloat && window.scrollY > 48);
 }
 
 function scheduleContractOutlineVisibilitySync() {
@@ -2485,8 +2474,11 @@ function renderContractOptions() {
 }
 
 function renderContractModeControls() {
+  const checked = contractState.docType === "addendum"
+    ? Boolean(contractState.addendumShowExplanations)
+    : Boolean(contractState.showExplanations);
   document.querySelectorAll("[data-contract-explanation-toggle]").forEach((toggle) => {
-    toggle.checked = Boolean(contractState.showExplanations);
+    toggle.checked = checked;
   });
 }
 
@@ -3344,9 +3336,7 @@ function renderAddendumControls() {
 }
 
 function renderAddendumModeControls() {
-  document.querySelectorAll("[data-contract-explanation-toggle]").forEach((t) => {
-    t.checked = Boolean(contractState.addendumShowExplanations);
-  });
+  renderContractModeControls();
 }
 
 function getAddendumClauseKey(key) {
@@ -5067,6 +5057,9 @@ init();
   function update() {
     ticking = false;
     const y = window.scrollY || 0;
+    // Прокрученное состояние: на не-домашних экранах включаем фон под шапкой,
+    // чтобы контент не просвечивал сквозь неё и не было «каши».
+    header.classList.toggle("is-scrolled", y > 6);
     if (Math.abs(y - lastY) < DELTA) { lastY = y; return; }
     if (y > lastY && y > THRESHOLD) {
       header.classList.add("is-nav-hidden");    // scrolling down
