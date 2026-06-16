@@ -19,7 +19,7 @@
   <meta property="og:image:height" content="630">
   <meta property="og:locale" content="ru_RU">
   <meta name="twitter:card" content="summary_large_image">
-  <link rel="stylesheet" href="css/designkit.css?v=113">
+  <link rel="stylesheet" href="css/designkit.css?v=116">
 </head>
 <body data-view="home">
   <div class="app" data-view="home">
@@ -96,6 +96,7 @@
           <section class="deedoc-hero" aria-labelledby="home-title">
             <div class="deedoc-hero__inner">
             <h1 id="home-title" data-home-greeting>Привет!<br>С чего начнем работу?</h1>
+            <p class="deedoc-hero__sub">Сначала заполните «Мои данные», затем выберите документ или смету. Всё сохраняется только в вашем браузере.</p>
 
             <div class="deedoc-actions" aria-label="Рабочие сценарии">
               <article class="deedoc-card deedoc-card--quick" data-route="calculator" tabindex="0" role="button" aria-label="Быстро рассчитать смету">
@@ -113,10 +114,11 @@
 
               <article class="deedoc-card deedoc-card--paper" data-action="show-soon" data-label="Клиентский проект" tabindex="0" role="button" aria-label="Добавить клиентский проект">
                 <div>
+                  <span class="deedoc-card__badge">Скоро</span>
                   <h2>Клиентский<br>проект</h2>
                   <p>Веди весь документооборот проекта в одном месте</p>
                 </div>
-                <button class="deedoc-card__button" type="button" data-action="show-soon" data-label="Клиентский проект" data-icon="project">Добавить проект</button>
+                <button class="deedoc-card__button" type="button" data-action="show-soon" data-label="Клиентский проект" data-icon="project">Скоро</button>
               </article>
             </div>
             </div>
@@ -452,6 +454,7 @@
                 <!-- Actions row — bottom -->
                 <div class="estimate-actions cv-result-actions">
                   <button class="button button--soft" type="button" data-action="reset-estimate">Сбросить</button>
+                  <button class="button button--ghost" type="button" data-action="open-export-settings">Параметры PDF</button>
                   <button class="button button--dark" type="button" data-action="open-export">
                     <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M7 1v8M4 6l3 3 3-3M2 10v1a1 1 0 001 1h8a1 1 0 001-1v-1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     Скачать PDF
@@ -536,6 +539,10 @@
 Если вы самозанятый или физлицо — реквизиты счёта всё равно нужны для оплаты.</pre>
                   <button class="button button--ghost button--wide" type="button" data-action="copy-client-request">Скопировать запрос</button>
                   <textarea class="client-reply-textarea" data-client-reply-input rows="4" placeholder="Вставьте ответ клиента — разложу данные по полям автоматически."></textarea>
+                  <label class="contract-control contract-control--checkbox client-reply-consent">
+                    <input type="checkbox" data-client-pd-ack>
+                    <span>Подтверждаю, что вправе использовать и вносить данные клиента в документ.</span>
+                  </label>
                   <button class="button button--primary button--wide" type="button" data-action="parse-client-reply">Заполнить из ответа</button>
                   <p class="client-reply-status" data-client-reply-status>Принимаю свободный текст: ФИО, ИНН, телефон, email, Telegram, адрес.</p>
                 </div>
@@ -556,7 +563,7 @@
               <details class="outline-group contract-signature-panel outline-group--collapsible" data-step="3" data-signature-panel>
                 <summary class="outline-title outline-title--toggle"><span class="step-badge">3</span>Добавь подпись</summary>
                 <div class="outline-group-body">
-                  <p class="contract-data-hint">Сфотографируйте подпись на белом листе — уберём фон и сделаем синей автоматически.</p>
+                  <p class="contract-data-hint">Сфотографируйте подпись на белом листе — уберём фон и сделаем синей автоматически. В PDF она будет вставлена только как изображение.</p>
                   <div class="signature-preview" data-signature-preview></div>
                   <input class="visually-hidden" type="file" accept="image/*" data-signature-file>
                   <div class="signature-actions">
@@ -610,6 +617,7 @@
 
           <footer class="document-toolbar">
             <span class="autosave-status" data-autosave-status>Сохранено</span>
+            <p class="document-toolbar__legal">Подпись в PDF вставляется только как изображение и не является электронной подписью.</p>
             <div class="document-toolbar__actions">
               <label class="expl-toggle">
                 <input type="checkbox" data-contract-explanation-toggle>
@@ -630,7 +638,7 @@
         <strong data-sticky-total>0 ₽</strong>
       </div>
       <div class="sticky-summary__actions">
-        <button class="button button--soft" type="button" data-action="reset-estimate">Сбросить</button>
+        <button class="button button--soft" type="button" data-action="open-export-settings">Параметры PDF</button>
         <button class="button button--dark" type="button" data-action="open-export">Скачать PDF</button>
       </div>
     </aside>
@@ -643,6 +651,7 @@
       <p class="eyebrow">Экспорт</p>
       <h2>Данные для PDF</h2>
       <p class="modal__lead">Финальная сумма сметы. Смета актуальна 14 дней.</p>
+      <p class="modal__hint">Данные для сметы сохраняются только в вашем браузере и не отправляются на сервер DesiDoc.</p>
 
       <label class="field">
         <span>Имя дизайнера</span>
@@ -736,7 +745,7 @@
 
       <label class="modal__consent">
         <input type="checkbox" data-profile-consent>
-        <span>Я принимаю <a class="link-btn" href="personal-data-consent.html">Согласие на обработку персональных данных</a></span>
+        <span>Я принимаю <a class="link-btn" href="personal-data-consent.html">Согласие на обработку персональных данных</a> для заполнения моих данных</span>
       </label>
 
       <div class="modal__actions">
@@ -829,6 +838,6 @@
   <script src="assets/vendor/html2canvas.min.js"></script>
   <script src="assets/vendor/jspdf.umd.min.js"></script>
   <script src="assets/vendor/html-to-image.js"></script>
-  <script src="js/designkit.js?v=64"></script>
+  <script src="js/designkit.js?v=67"></script>
 </body>
 </html>

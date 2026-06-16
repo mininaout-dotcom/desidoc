@@ -84,6 +84,7 @@ const MARKET_RATES = { junior: 800, middle: 2000, senior: 3500 };
 const MODIFIERS = { urgent: 0.3 };
 const DEFAULT_DESIGNER_RATE = 1500;
 const DEFAULT_PROJECT_KEY = "landing_design";
+const PROFILE_CONSENT_VERSION = "2026-06-16";
 const RU_CONTRACT_MONTHS = [
   "января",
   "февраля",
@@ -1319,6 +1320,11 @@ function openProfileModal() {
   modal.querySelectorAll("[data-profile]").forEach(input => {
     input.value = p[input.dataset.profile] || "";
   });
+  const consent = modal.querySelector("[data-profile-consent]");
+  if (consent) {
+    consent.checked = p.personalDataConsentVersion === PROFILE_CONSENT_VERSION;
+    consent.closest(".modal__consent")?.style.removeProperty("color");
+  }
   modal.showModal();
 }
 
@@ -1335,7 +1341,9 @@ function saveProfile() {
     if (val) state.profile[input.dataset.profile] = val;
     else delete state.profile[input.dataset.profile];
   });
-  localStorage.setItem("designkit.profile", JSON.stringify(state.profile));
+  state.profile.personalDataConsentVersion = PROFILE_CONSENT_VERSION;
+  state.profile.personalDataConsentAcceptedAt = new Date().toISOString();
+  localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(state.profile));
   renderGreeting();
   if (state.view === "contract") {
     applyContractAutoDefaults({ force: true });
@@ -1588,8 +1596,8 @@ function saveTallPngAsPdf(dataUrl, { jsPDF, filename, margin = PDF_PAGE_MARGIN_M
    ============================================================ */
 
 const PDF_FONT_URLS = {
-  normal: "assets/fonts/ptsans/PTSans-Regular.ttf",
-  bold: "assets/fonts/ptsans/PTSans-Bold.ttf",
+  normal: "assets/fonts/onest/Onest-Regular.ttf",
+  bold: "assets/fonts/onest/Onest-SemiBold.ttf",
 };
 let _pdfFontCache = null;
 
@@ -1614,11 +1622,11 @@ function loadPdfFonts() {
 }
 
 function registerPdfFonts(doc, fonts) {
-  doc.addFileToVFS("PTSans-Regular.ttf", fonts.normal);
-  doc.addFont("PTSans-Regular.ttf", "PTSans", "normal");
-  doc.addFileToVFS("PTSans-Bold.ttf", fonts.bold);
-  doc.addFont("PTSans-Bold.ttf", "PTSans", "bold");
-  doc.setFont("PTSans", "normal");
+  doc.addFileToVFS("Onest-Regular.ttf", fonts.normal);
+  doc.addFont("Onest-Regular.ttf", "Onest", "normal");
+  doc.addFileToVFS("Onest-Bold.ttf", fonts.bold);
+  doc.addFont("Onest-Bold.ttf", "Onest", "bold");
+  doc.setFont("Onest", "normal");
 }
 
 // Заменяем экзотические пробелы/дефисы, которых нет в сабсете шрифта
@@ -1689,7 +1697,7 @@ function renderPdfFromBlocks(blocks, { jsPDF, fonts, filename, onDone }) {
     }
     const st = PDF_BLOCK_STYLES[b.type] || PDF_BLOCK_STYLES.body;
     y += st.before;
-    doc.setFont("PTSans", st.font);
+    doc.setFont("Onest", st.font);
     doc.setFontSize(st.size);
     doc.setTextColor(st.color[0], st.color[1], st.color[2]);
     const lineH = st.size * st.lh;
@@ -1720,7 +1728,7 @@ function renderEstimatePdf({ jsPDF, fonts, filename, title, number, projectName,
 
   let y = 0; // курсор в px макета
 
-  const font = (px, weight) => { doc.setFont("PTSans", weight === "bold" ? "bold" : "normal"); doc.setFontSize(px * k); };
+  const font = (px, weight) => { doc.setFont("Onest", weight === "bold" ? "bold" : "normal"); doc.setFontSize(px * k); };
   const color = (c) => doc.setTextColor(c[0], c[1], c[2]);
   const space = (emPx) => doc.setCharSpace((emPx || 0) * k);
   const T = (s, xpx, ypx, align) => doc.text(pdfText(s), xpx * k, ypx * k, align ? { align } : undefined);
@@ -1838,6 +1846,84 @@ function renderEstimatePdf({ jsPDF, fonts, filename, title, number, projectName,
     doc.roundedRect(chipX * k, chipY * k, chipW * k, chipH * k, 11 * k, 11 * k);
     color(BLACK); T(label, chipX + 9, chipY + 15); space(0);
   }
+
+  doc.save(filename);
+  if (onDone) onDone();
+}
+
+// Векторный договор/допсоглашение: два столбца — слева пункт (номер + название),
+// справа текст. Абзацы и пункты переносятся на новую страницу целиком.
+function renderContractPdf(root, { jsPDF, fonts, filename, onDone }) {
+  const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
+  registerPdfFonts(doc, fonts);
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const M = { l: 54, r: 54, t: 54, b: 56 };
+  const leftW = 132, gap = 16, rightX = M.l + leftW + gap, rightW = pageW - M.r - rightX;
+  const pageBottom = pageH - M.b, maxBlock = pageBottom - M.t;
+  const BLACK = [17, 17, 17], GRAY = [140, 140, 140];
+  let y = M.t;
+
+  const setF = (px, weight, c) => { doc.setFont("Onest", weight === "bold" ? "bold" : "normal"); doc.setFontSize(px); if (c) doc.setTextColor(c[0], c[1], c[2]); };
+  const txt = (s) => pdfText((s || "").replace(/\s+/g, " ").trim());
+
+  // Рисует блок строк в колонке x; целый блок переносится на новую страницу, если не влезает.
+  const drawBlock = (lines, x, lh) => {
+    const h = lines.length * lh;
+    if (y + h > pageBottom && h <= maxBlock) { doc.addPage(); y = M.t; }
+    lines.forEach((l) => { y += lh; doc.text(l, x, y); });
+  };
+
+  // — Заголовок —
+  const titleEl = root.querySelector(".document-title");
+  if (titleEl) { setF(17, "bold", BLACK); drawBlock(doc.splitTextToSize(txt(titleEl.textContent), pageW - M.l - M.r), M.l, 22); }
+  const metaEl = root.querySelector(".document-meta");
+  if (metaEl) { setF(9, "normal", GRAY); y += 16; doc.text(txt(metaEl.textContent), M.l, y); }
+  y += 12;
+
+  // — Секции: слева h2, справа пункты —
+  root.querySelectorAll(".document-section").forEach((sec) => {
+    const h2 = sec.querySelector("h2");
+    const clauses = Array.from(sec.querySelectorAll(".contract-clause"));
+    if (y + 56 > pageBottom) { doc.addPage(); y = M.t; }
+    y += 16;
+    doc.setDrawColor(212, 212, 212); doc.setLineWidth(0.6); doc.line(M.l, y, pageW - M.r, y);
+    y += 14;
+
+    const top = y;
+    // h2 в левой колонке
+    setF(11, "bold", BLACK);
+    let hy = top;
+    doc.splitTextToSize(txt(h2 ? h2.textContent : ""), leftW).forEach((l) => { hy += 13; doc.text(l, M.l, hy); });
+    const leftBottom = hy;
+
+    // пункты в правой колонке
+    y = top;
+    clauses.forEach((cl) => {
+      const ctEl = cl.querySelector(".clause-title");
+      if (ctEl) { const ctText = txt(ctEl.textContent).replace(/^(\d+\.\d+)(?=\S)/, "$1 "); setF(9.8, "bold", BLACK); drawBlock(doc.splitTextToSize(ctText, rightW), rightX, 12.6); y += 2; }
+      const body = cl.querySelector(".contract-clause__body") || cl;
+      collectPdfBlocks(body).forEach((b) => {
+        if (b.type === "img") {
+          try {
+            const src = b.el.tagName === "CANVAS" ? b.el.toDataURL("image/png") : b.el.src;
+            const nW = b.el.naturalWidth || b.el.width || 160, nH = b.el.naturalHeight || b.el.height || 60;
+            let w = Math.min(150, rightW * 0.5), h = w * (nH / nW);
+            if (h > 64) { h = 64; w = h * (nW / nH); }
+            if (y + h + 6 > pageBottom) { doc.addPage(); y = M.t; }
+            doc.addImage(src, "PNG", rightX, y + 4, w, h); y += h + 8;
+          } catch (e) { /* пропускаем битую картинку */ }
+          return;
+        }
+        setF(9.5, "normal", BLACK);
+        drawBlock(doc.splitTextToSize(pdfText(b.text), rightW), rightX, 13.4);
+        y += 5;
+      });
+      y += 4;
+    });
+
+    y = Math.max(y, leftBottom) + 8;
+  });
 
   doc.save(filename);
   if (onDone) onDone();
@@ -2422,7 +2508,7 @@ function createDefaultContractDraft() {
   const savedSignature = state.profile?.signatureDataUrl || "";
   return {
     templateKey: "design",
-    mode: "fill",
+    mode: "pick",
     docType: "contract",
     showExplanations: true,
     fields: {
@@ -2493,7 +2579,7 @@ function normalizeContractDraft(saved) {
     ...defaults,
     ...draft,
     templateKey: CONTRACT_TEMPLATES[draft.templateKey] ? draft.templateKey : defaults.templateKey,
-    mode: "fill",
+    mode: draft.mode === "fill" || draft.mode === "pick" ? draft.mode : defaults.mode,
     docType: draft.docType === "addendum" ? "addendum" : "contract",
     showExplanations: draft.showExplanations ?? defaults.showExplanations,
     fields: { ...defaults.fields, ...(draft.fields || {}) },
@@ -2536,9 +2622,18 @@ function contractField(key, placeholder) {
   return `<span class="inline-field" contenteditable="true" spellcheck="false" data-contract-field="${key}" data-placeholder="${escapeHtml(placeholder)}">${escapeHtml(value || placeholder)}</span>`;
 }
 
+function isUnderscorePlaceholder(value) {
+  return !value || /^_+$/.test(value) || /_{2,}/.test(value);
+}
+
+function isContractPlaceholderValue(value) {
+  const normalized = String(value || "").trim();
+  return !normalized || CONTRACT_PLACEHOLDERS.has(normalized) || isUnderscorePlaceholder(normalized);
+}
+
 function isContractFieldFilled(key) {
   const value = String(contractState.fields[key] || "").trim();
-  return Boolean(value && !CONTRACT_PLACEHOLDERS.has(value) && !/_/.test(value));
+  return Boolean(value && !isContractPlaceholderValue(value));
 }
 
 function getContractFieldLabel(key) {
@@ -2814,7 +2909,10 @@ function isMobileContractUI() {
 
 function isAddendumFieldFilled(key) {
   const value = String(contractState.addendumFields[key] ?? "").trim();
-  return Boolean(value && !/^_+$/.test(value) && !/_{2,}/.test(value));
+  if (!value || isUnderscorePlaceholder(value)) return false;
+  if ((key === "clientName" || key === "contractorName") && isContractPlaceholderValue(value)) return false;
+  if (key === "contractNumber" && isContractPlaceholderValue(value)) return false;
+  return true;
 }
 
 function getAddendumFieldLabel(key) {
@@ -2905,7 +3003,7 @@ function ensureCurrentDocumentReadyForPdf() {
   const shortList = labels.slice(0, 3).join(", ");
   const suffix = labels.length > 3 ? ` и ещё ${labels.length - 3}` : "";
   updateAutosaveStatus(`Осталось заполнить: ${shortList}${suffix}`);
-  alert(`Перед скачиванием PDF заполните обязательные поля ${documentName}: ${labels.join(", ")}.`);
+  setClientReplyStatus(`Перед скачиванием PDF заполните обязательные поля ${documentName}: ${labels.join(", ")}.`, true);
   focusCurrentDocumentField(missing[0]);
   return false;
 }
@@ -2919,16 +3017,20 @@ function syncAddendumFromContract({ force = false } = {}) {
   const fields = contractState.fields;
   const addendum = contractState.addendumFields;
   const pairs = [
-    ["clientName", fields.clientName],
-    ["contractorName", fields.contractorName],
-    ["city", fields.city],
-    ["contractNumber", fields.number],
-    ["contractDate", fields.date],
+    ["clientName", fields.clientName, isContractFieldFilled("clientName")],
+    ["contractorName", fields.contractorName, isContractFieldFilled("contractorName")],
+    ["city", fields.city, Boolean(String(fields.city || "").trim())],
+    ["contractNumber", fields.number, isContractFieldFilled("number")],
+    ["contractDate", fields.date, isContractFieldFilled("date")],
   ];
 
-  pairs.forEach(([key, value]) => {
-    if ((force || shouldAutoFillAddendumField(addendum[key])) && value) {
-      addendum[key] = value;
+  pairs.forEach(([key, value, isValid]) => {
+    if (force || shouldAutoFillAddendumField(addendum[key])) {
+      if (isValid && value) {
+        addendum[key] = value;
+      } else if (shouldAutoFillAddendumField(addendum[key])) {
+        addendum[key] = "";
+      }
     }
   });
 
@@ -3268,6 +3370,10 @@ function renderMobileContractSheetContent() {
 Если вы самозанятый или физлицо — реквизиты счёта всё равно нужны для оплаты.</pre>
               <button class="button button--ghost button--wide" type="button" data-action="copy-client-request">Скопировать запрос</button>
               <textarea class="client-reply-textarea" data-client-reply-input rows="5" placeholder="Вставьте ответ клиента — разложу данные по полям автоматически.">${escapeHtml(mobileContractClientReplyDraft)}</textarea>
+              <label class="mobile-contract-sheet__toggle mobile-contract-sheet__toggle--compact">
+                <input type="checkbox" data-client-pd-ack>
+                <span>Подтверждаю, что вправе использовать данные клиента в документе</span>
+              </label>
               <button class="button button--primary button--wide" type="button" data-action="parse-client-reply">Заполнить из ответа</button>
               <p class="client-reply-status" data-client-reply-status>Принимаю свободный текст: ФИО, ИНН, телефон, email, Telegram, адрес.</p>
             </div>
@@ -3311,7 +3417,7 @@ function renderMobileContractSheetContent() {
 
   body.innerHTML = `
     <div class="mobile-contract-sheet__section">
-      <p class="mobile-contract-sheet__hint">Подпись опциональна. Если загрузите её один раз, можно вставлять в PDF автоматически.</p>
+      <p class="mobile-contract-sheet__hint">Подпись опциональна. Если загрузите её один раз, можно вставлять в PDF автоматически как изображение.</p>
       <div class="signature-preview" data-signature-preview></div>
       <div class="signature-actions">
         <button class="button button--ghost button--wide" type="button" data-action="upload-signature">Загрузить подпись</button>
@@ -3497,6 +3603,7 @@ function renderContractChooser() {
   chooser.innerHTML = `
     <div class="contract-chooser__inner">
       <h2 class="contract-chooser__title">Выбери договор под задачу</h2>
+      <p class="contract-chooser__intro">1. Заполните «Мои данные». 2. Выберите документ. 3. Проверьте поля и скачайте PDF. Все данные сохраняются только в вашем браузере.</p>
       <div class="contract-chooser__cards">
 
         <button class="chooser-card" type="button" data-chooser-card="design">
@@ -3690,6 +3797,7 @@ function renderAddendumSidebar() {
     <details class="outline-group contract-signature-panel outline-group--collapsible" data-signature-panel>
       <summary class="outline-title outline-title--toggle"><span class="step-badge">3</span>Добавь подпись</summary>
       <div class="outline-group-body">
+        <p class="contract-data-hint">Подпись вставляется в PDF только как изображение и не является электронной подписью.</p>
         <div class="signature-preview" data-signature-preview></div>
         <input class="visually-hidden" type="file" accept="image/*" data-signature-file>
         <div class="signature-actions">
@@ -3723,6 +3831,12 @@ function renderAddendumDocument() {
   const canvas = document.querySelector("[data-contract-canvas]");
   if (!canvas) return;
   const f = contractState.addendumFields;
+  const addendumPartyValue = (key, fallback = "________________") => isAddendumFieldFilled(key)
+    ? escapeHtml(String(f[key] || "").trim())
+    : fallback;
+  const contractValue = (key) => isContractFieldFilled(key)
+    ? escapeHtml(String(contractState.fields[key] || "").trim())
+    : "";
 
   const sig = contractState.signature;
   const hasSignature = sig.dataUrl && sig.includeInPdf;
@@ -3820,15 +3934,15 @@ function renderAddendumDocument() {
           <div class="requisites-grid">
             <div class="requisite-card">
               <p><strong>Заказчик</strong></p>
-              <p>${escapeHtml(f.clientName || contractState.fields.clientName || "________________")}</p>
-              ${contractState.fields.clientInn ? `<p>ИНН: ${escapeHtml(contractState.fields.clientInn)}</p>` : ""}
+              <p>${addendumPartyValue("clientName")}</p>
+              ${contractValue("clientInn") ? `<p>ИНН: ${contractValue("clientInn")}</p>` : ""}
               ${contractState.fields.clientAddress ? `<p>Адрес: ${escapeHtml(contractState.fields.clientAddress)}</p>` : ""}
               <span class="sign-line">Подпись</span>
             </div>
             <div class="requisite-card">
               <p><strong>Исполнитель</strong></p>
-              <p>${escapeHtml(f.contractorName || contractState.fields.contractorName || "________________")}</p>
-              ${contractState.fields.contractorInn ? `<p>ИНН: ${escapeHtml(contractState.fields.contractorInn)}</p>` : ""}
+              <p>${addendumPartyValue("contractorName")}</p>
+              ${contractValue("contractorInn") ? `<p>ИНН: ${contractValue("contractorInn")}</p>` : ""}
               ${state.profile?.contractorAddress ? `<p>${escapeHtml(state.profile.contractorAddress)}</p>` : ""}
               ${state.profile?.contractorContact ? `<p>${escapeHtml(state.profile.contractorContact)}</p>` : ""}
               <div class="signature-slot">
@@ -3847,14 +3961,24 @@ function renderAddendumDocument() {
 
 function renderContractWorkspace() {
   const workspace = document.querySelector(".contract-workspace");
-  contractState.mode = "fill";
+  renderContractChooser();
   if (workspace) {
-    workspace.dataset.mode = contractState.mode;
+    workspace.dataset.mode = contractState.mode || "pick";
     workspace.dataset.docType = contractState.docType || "contract";
     workspace.dataset.mobileDoc = mobileContractDocVisible ? "doc" : "steps";
   }
   applyContractAutoDefaults();
   mobileContractSheetSignature = "";
+
+  if (contractState.mode === "pick") {
+    renderContractTemplateStrip();
+    renderMobileContractUI({ forceSheet: true });
+    updateAutosaveStatus("Выберите документ");
+    requestAnimationFrame(() => {
+      syncContractOutlineVisibility();
+    });
+    return;
+  }
 
   renderContractTemplateStrip();
 
@@ -4582,8 +4706,7 @@ function printContract(onDone) {
   Promise.all(sigPromises)
     .then(() => loadPdfFonts())
     .then((fonts) => {
-      const blocks = collectPdfBlocks(page);
-      renderPdfFromBlocks(blocks, {
+      renderContractPdf(page, {
         jsPDF, fonts, filename,
         onDone: () => { cleanup(); notifyPdfDownloadSuccess(); },
       });
@@ -4604,7 +4727,10 @@ function bindEvents() {
       event.preventDefault();
       const nextRoute = routeTarget.dataset.route;
       if (nextRoute === "contract" && state.view === "home") {
-        contractState.mode = "fill";
+        contractState.mode = "pick";
+        contractState.docType = "contract";
+        mobileContractDocVisible = false;
+        mobileContractSheetKey = "";
       }
       routeTo(nextRoute);
       syncRouteHash(state.view);
@@ -4940,6 +5066,12 @@ function bindEvents() {
     }
     if (action === "parse-client-reply") {
       const container = actionTarget.closest(".client-reply-import, .mobile-contract-sheet__import-box");
+      const consent = container?.querySelector("[data-client-pd-ack]") || document.querySelector("[data-client-pd-ack]");
+      if (consent && !consent.checked) {
+        setClientReplyStatus("Подтвердите, что вправе использовать данные клиента в документе.", true);
+        consent.focus();
+        return;
+      }
       const value = container?.querySelector("[data-client-reply-input]")?.value
         || document.querySelector("[data-client-reply-input]")?.value
         || mobileContractClientReplyDraft
@@ -5187,6 +5319,12 @@ function bindEvents() {
     const routeCard = event.target.closest(".deedoc-card[data-route]");
     if (!routeCard || !["Enter", " "].includes(event.key)) return;
     event.preventDefault();
+    if (routeCard.dataset.route === "contract" && state.view === "home") {
+      contractState.mode = "pick";
+      contractState.docType = "contract";
+      mobileContractDocVisible = false;
+      mobileContractSheetKey = "";
+    }
     routeTo(routeCard.dataset.route);
     syncRouteHash(state.view);
   });
