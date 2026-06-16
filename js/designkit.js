@@ -105,6 +105,7 @@ const FEEDBACK_FORM_URL = "https://forms.yandex.ru/u/6a305ae94936390f65dd7fe0/";
 const FEEDBACK_COMPLETED_KEY = "desidoc_feedback_completed";
 const FEEDBACK_SNOOZED_UNTIL_KEY = "desidoc_feedback_snoozed_until";
 const FEEDBACK_SNOOZE_DELAY = 7 * 24 * 60 * 60 * 1000;
+const PDF_PAGE_MARGIN_MM = Object.freeze({ top: 8, right: 8, bottom: 16, left: 8 });
 const YANDEX_METRIKA_ID = 109865409;
 const YANDEX_METRIKA_SCRIPT_URL = `https://mc.yandex.ru/metrika/tag.js?id=${YANDEX_METRIKA_ID}`;
 const savedProfile = loadProfile();
@@ -153,6 +154,8 @@ let mobileContractSheetSignature = "";
 let mobileContractClientReplyDraft = "";
 let isRenderingMobileContractUI = false;
 let lastDeletedContractClause = null;
+let contractOutlineCollapsed = false;
+let contractOutlineVisibilityFrame = 0;
 
 const CONTRACT_SECTIONS = [
   ["parties", "Стороны"],
@@ -1549,6 +1552,36 @@ function renderExportOptions() {
   urgent.setAttribute("aria-pressed", String(isActive));
 }
 
+function getPdfRenderScale() {
+  return Math.min(3, Math.max(2.5, window.devicePixelRatio || 1));
+}
+
+function saveTallPngAsPdf(dataUrl, { jsPDF, filename, margin = PDF_PAGE_MARGIN_MM, onDone, onError }) {
+  const image = new Image();
+  image.onload = () => {
+    const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const contentWidth = pageWidth - margin.left - margin.right;
+    const contentHeight = pageHeight - margin.top - margin.bottom;
+    const renderedImageHeight = (image.naturalHeight * contentWidth) / image.naturalWidth;
+    let consumedHeight = 0;
+
+    while (consumedHeight < renderedImageHeight - 0.2) {
+      if (consumedHeight > 0) pdf.addPage();
+      pdf.addImage(dataUrl, "PNG", margin.left, margin.top - consumedHeight, contentWidth, renderedImageHeight);
+      consumedHeight += contentHeight;
+    }
+
+    pdf.save(filename);
+    if (onDone) onDone();
+  };
+  image.onerror = () => {
+    if (onError) onError();
+  };
+  image.src = dataUrl;
+}
+
 function printEstimate() {
   if (!state.stages.length) {
     state.rate = getActiveRate();
@@ -1676,27 +1709,26 @@ function printEstimate() {
   const cleanupSheet = () => { sheet.style.cssText = ""; sheet.setAttribute("aria-hidden", "true"); };
 
   const savePdf = (dataUrl) => {
-    const img = new Image();
-    img.onload = () => {
-      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-      const pageW = pdf.internal.pageSize.getWidth();
-      const pageH = pdf.internal.pageSize.getHeight();
-      const imgH = (img.naturalHeight * pageW) / img.naturalWidth;
-      let y = 0;
-      while (y < imgH) { if (y > 0) pdf.addPage(); pdf.addImage(dataUrl, "PNG", 0, -y, pageW, imgH); y += pageH; }
-      pdf.save(filename);
-      cleanupSheet();
-      notifyPdfDownloadSuccess();
-    };
-    img.src = dataUrl;
+    saveTallPngAsPdf(dataUrl, {
+      jsPDF,
+      filename,
+      onDone: () => {
+        cleanupSheet();
+        notifyPdfDownloadSuccess();
+      },
+      onError: () => {
+        window.print();
+        cleanupSheet();
+      },
+    });
   };
 
   if (window.htmlToImage) {
-    window.htmlToImage.toPng(page, { pixelRatio: 1.5, backgroundColor: "#ffffff" }).then(savePdf).catch(() => { window.print(); cleanupSheet(); });
+    window.htmlToImage.toPng(page, { pixelRatio: getPdfRenderScale(), backgroundColor: "#ffffff", cacheBust: true }).then(savePdf).catch(() => { window.print(); cleanupSheet(); });
     return;
   }
-  window.html2canvas(page, { scale: 2, useCORS: true, backgroundColor: "#ffffff", logging: false })
-    .then(c => savePdf(c.toDataURL("image/png"))).catch(() => { window.print(); cleanupSheet(); });
+  window.html2canvas(page, { scale: getPdfRenderScale(), useCORS: true, backgroundColor: "#ffffff", logging: false })
+    .then((canvas) => savePdf(canvas.toDataURL("image/png"))).catch(() => { window.print(); cleanupSheet(); });
 }
 
 function flashButton(selector, label) {
@@ -2368,12 +2400,56 @@ function renderDocumentSection(id, title, clauses) {
 }
 
 function renderContractOutline() {
-  const outline = document.querySelector("[data-contract-outline]");
-  if (!outline) return;
+  const outlines = [...document.querySelectorAll("[data-contract-outline]")];
+  if (!outlines.length) return;
+  if (contractState.docType === "addendum") {
+    outlines.forEach((outline) => { outline.innerHTML = ""; });
+    return;
+  }
   const sections = (contractState.templateKey === "design" ? CONTRACT_SECTIONS_DESIGN : CONTRACT_SECTIONS);
-  outline.innerHTML = sections.map(([id, label], i) => `
+  const markup = `
+    <button class="document-section-nav__toggle" type="button" data-action="toggle-contract-outline" aria-expanded="${String(!contractOutlineCollapsed)}">
+      <span>Разделы</span>
+      <span class="document-section-nav__chevron" aria-hidden="true">⌃</span>
+    </button>
+    <div class="document-section-nav__list">
+      ${sections.map(([id, label], i) => `
     <button class="outline-link" type="button" data-scroll-section="${id}"><span class="outline-link__num">${i + 1}.</span>${label}</button>
-  `).join("");
+      `).join("")}
+    </div>
+    <button class="document-section-nav__top" type="button" data-action="scroll-contract-top">↑ Наверх</button>
+  `;
+  outlines.forEach((outline) => {
+    outline.classList.toggle("is-collapsed", contractOutlineCollapsed);
+    outline.innerHTML = markup;
+  });
+}
+
+function syncContractOutlineVisibility() {
+  const floatingOutline = document.querySelector(".document-section-nav--floating");
+  if (!floatingOutline) return;
+  const canFloat = state.view === "contract" && contractState.docType === "contract" && window.innerWidth >= 1660;
+  floatingOutline.classList.toggle("is-floating-mode", canFloat);
+  if (!canFloat) {
+    floatingOutline.classList.remove("is-visible");
+    return;
+  }
+  const canvas = document.querySelector("[data-contract-canvas]");
+  if (!canvas) {
+    floatingOutline.classList.remove("is-visible");
+    return;
+  }
+  const rect = canvas.getBoundingClientRect();
+  const shouldShow = rect.top <= 132 && rect.bottom >= 320;
+  floatingOutline.classList.toggle("is-visible", shouldShow);
+}
+
+function scheduleContractOutlineVisibilitySync() {
+  if (contractOutlineVisibilityFrame) return;
+  contractOutlineVisibilityFrame = requestAnimationFrame(() => {
+    contractOutlineVisibilityFrame = 0;
+    syncContractOutlineVisibility();
+  });
 }
 
 function renderContractOptions() {
@@ -3488,21 +3564,29 @@ function renderContractWorkspace() {
     syncAddendumFromContract();
     renderAddendumSidebar();
     renderAddendumDocument();
+    renderContractOutline();
     renderMobileContractUI({ forceSheet: true });
     updateAutosaveStatus("Сохранено");
+    requestAnimationFrame(() => {
+      setupContractScrollSpy();
+      syncContractOutlineVisibility();
+    });
     return;
   }
 
   renderContractControls();
   renderContractModeControls();
   renderSignaturePanel();
-  renderContractOutline();
   renderContractOptions();
   renderContractDocument();
+  renderContractOutline();
   renderContractProgress();
   renderMobileContractUI({ forceSheet: true });
   updateAutosaveStatus("Сохранено");
-  requestAnimationFrame(setupContractScrollSpy);
+  requestAnimationFrame(() => {
+    setupContractScrollSpy();
+    syncContractOutlineVisibility();
+  });
 }
 
 function renderContractDocument() {
@@ -3731,6 +3815,7 @@ function renderContractDocument() {
   ];
 
   const docHeader = `
+    <nav class="document-section-nav document-section-nav--inline" data-contract-outline aria-label="Навигация по разделам договора"></nav>
     <h1 class="document-title">${escapeHtml(template.title)} № ${contractField("number", "___")}</h1>
     <div class="document-meta">
       <span>${contractField("city", "Город")}</span>
@@ -4071,8 +4156,9 @@ function validateContractFields() {
 function setupContractScrollSpy() {
   const links = [...document.querySelectorAll("[data-scroll-section]")];
   const sections = [...document.querySelectorAll("[data-contract-section]")];
-  if (!links.length || !sections.length) return;
   if (contractObserver) contractObserver.disconnect();
+  contractObserver = null;
+  if (!links.length || !sections.length) return;
   contractObserver = new IntersectionObserver((entries) => {
     const visible = entries.filter((entry) => entry.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
     if (!visible) return;
@@ -4085,7 +4171,7 @@ function printContract(onDone) {
   const source = document.querySelector("[data-contract-canvas]");
   if (!source) return;
   const clone = source.cloneNode(true);
-  clone.querySelectorAll(".optional-section__actions, .contract-clause-delete, .document-note, .document-coverline").forEach((node) => node.remove());
+  clone.querySelectorAll(".document-section-nav, .optional-section__actions, .contract-clause-delete, .document-note, .document-coverline").forEach((node) => node.remove());
   clone.querySelectorAll("[contenteditable]").forEach((node) => node.removeAttribute("contenteditable"));
 
   const isAddendum = contractState.docType === "addendum";
@@ -4119,16 +4205,18 @@ function printContract(onDone) {
   // Clean Word-style PDF — no DesiDoc header, just the document body
   sheet.innerHTML = `
     <style>
-      .pdf-clean-body { padding: 60px 72px; background: #fff; font-family: "Onest", Arial, sans-serif; color: #111; min-height: 1123px; box-sizing: border-box; }
-      .pdf-clean-body .inline-field, .pdf-clean-body .inline-field--block { border: none !important; background: none !important; padding: 0 !important; border-radius: 0 !important; }
+      .pdf-clean-body { width: 794px; min-height: 1123px; padding: 64px 76px 108px; background: #fff; color: #111; box-sizing: border-box; font-family: "Onest", Arial, sans-serif; font-size: 13px; line-height: 1.5; text-rendering: geometricPrecision; }
+      .pdf-clean-body, .pdf-clean-body * { box-sizing: border-box; hyphens: auto; overflow-wrap: anywhere; word-break: normal; }
+      .pdf-clean-body p { line-height: 1.5; }
+      .pdf-clean-body .inline-field, .pdf-clean-body .inline-field--block { max-width: 100%; white-space: normal !important; border: none !important; background: none !important; padding: 0 !important; border-radius: 0 !important; }
       .pdf-clean-body .document-note { display: none !important; }
       .pdf-clean-body .optional-section__actions, .pdf-clean-body .contract-clause-delete { display: none !important; }
       .pdf-clean-body [contenteditable] { outline: none !important; }
       .pdf-clean-body .contract-signature-img, .pdf-clean-body .signature-image { max-width: 160px; max-height: 60px; }
-      .pdf-clean-body .document-section { display: grid; grid-template-columns: 150px 1fr; column-gap: 28px; align-items: start; padding: 18px 0; border-top: 1px solid #ddd; break-inside: avoid; }
+      .pdf-clean-body .document-section { display: grid; grid-template-columns: 150px minmax(0, 1fr); column-gap: 28px; row-gap: 8px; align-items: start; padding: 20px 0; border-top: 1px solid #ddd; break-inside: avoid; }
       .pdf-clean-body .document-section:first-of-type { border-top: 0; }
       .pdf-clean-body .document-section h2 { grid-column: 1; margin: 0; font-size: 13px; line-height: 1.24; letter-spacing: -0.02em; }
-      .pdf-clean-body .document-section > :not(h2) { grid-column: 2; }
+      .pdf-clean-body .document-section > :not(h2) { grid-column: 2; min-width: 0; }
       .pdf-clean-body .contract-clause { padding-right: 0; }
       .pdf-clean-body .contract-clause + .contract-clause { padding-top: 14px; border-top: 1px solid #e2e2e2; }
     </style>
@@ -4144,24 +4232,18 @@ function printContract(onDone) {
   const { jsPDF } = window.jspdf;
 
   const renderToPdf = (dataUrl) => {
-    const img = new Image();
-    img.onload = () => {
-      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-      const pageW = pdf.internal.pageSize.getWidth();
-      const pageH = pdf.internal.pageSize.getHeight();
-      const imgW = pageW;
-      const imgH = (img.naturalHeight * imgW) / img.naturalWidth;
-      let y = 0;
-      while (y < imgH) {
-        if (y > 0) pdf.addPage();
-        pdf.addImage(dataUrl, "PNG", 0, -y, imgW, imgH);
-        y += pageH;
-      }
-      pdf.save(filename);
-      cleanup();
-      notifyPdfDownloadSuccess();
-    };
-    img.src = dataUrl;
+    saveTallPngAsPdf(dataUrl, {
+      jsPDF,
+      filename,
+      onDone: () => {
+        cleanup();
+        notifyPdfDownloadSuccess();
+      },
+      onError: () => {
+        window.print();
+        cleanup();
+      },
+    });
   };
 
   // Pre-resolve base64 signature images → canvas so SVG foreignObject can paint them
@@ -4185,7 +4267,7 @@ function printContract(onDone) {
   // Use html-to-image (SVG foreignObject — handles color-mix & P3 natively)
   if (window.htmlToImage) {
     Promise.all(sigPromises).then(() => {
-      window.htmlToImage.toPng(page, { pixelRatio: 1.5, backgroundColor: "#ffffff", cacheBust: true })
+      window.htmlToImage.toPng(page, { pixelRatio: getPdfRenderScale(), backgroundColor: "#ffffff", cacheBust: true })
         .then(renderToPdf)
         .catch(err => { console.error("html-to-image error:", err); window.print(); cleanup(); });
     });
@@ -4194,7 +4276,7 @@ function printContract(onDone) {
 
   // Fallback: html2canvas
   if (window.html2canvas) {
-    window.html2canvas(page, { scale: 2, useCORS: true, backgroundColor: "#ffffff", logging: false })
+    window.html2canvas(page, { scale: getPdfRenderScale(), useCORS: true, backgroundColor: "#ffffff", logging: false })
       .then(canvas => renderToPdf(canvas.toDataURL("image/png")))
       .catch(err => { console.error("html2canvas error:", err); window.print(); cleanup(); });
     return;
@@ -4283,6 +4365,16 @@ function bindEvents() {
 
     const action = actionTarget.dataset.action;
     if (action === "toggle-theme") setTheme(state.theme === "dark" ? "light" : "dark");
+    if (action === "toggle-contract-outline") {
+      contractOutlineCollapsed = !contractOutlineCollapsed;
+      renderContractOutline();
+      scheduleContractOutlineVisibilitySync();
+      return;
+    }
+    if (action === "scroll-contract-top") {
+      document.querySelector("[data-contract-canvas]")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
     if (action === "go-back") {
       const prev = state.navHistory.pop() || "home";
       routeTo(prev, false);
@@ -4556,6 +4648,9 @@ function bindEvents() {
     }
     if (action === "show-soon") openSoonModal(actionTarget);
   });
+
+  window.addEventListener("scroll", scheduleContractOutlineVisibilitySync, { passive: true });
+  window.addEventListener("resize", scheduleContractOutlineVisibilitySync);
 
   document.addEventListener("input", (event) => {
     const input = event.target;
@@ -4866,11 +4961,15 @@ init();
 
   let rafPending = false;
   document.addEventListener("pointermove", (e) => {
+    // Эффект только для мыши: на тач pointerleave не срабатывает и
+    // scale «залипает», вынося карточку из центра. См. onLeave.
+    if (e.pointerType && e.pointerType !== "mouse") return;
     if (rafPending) return;
     rafPending = true;
     requestAnimationFrame(() => { onMove(e); rafPending = false; });
   });
   document.addEventListener("pointerleave", onLeave);
+  document.addEventListener("pointercancel", onLeave);
 })();
 
 // — Background parallax (multi-layer) —
