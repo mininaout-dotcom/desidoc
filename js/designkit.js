@@ -1911,8 +1911,8 @@ function renderContractPdf(root, { jsPDF, fonts, filename, onDone }) {
   // — Заголовок —
   const titleEl = root.querySelector(".document-title");
   if (titleEl) {
-    const titleLines = doc.splitTextToSize(txt(titleEl.textContent), pageW - M.l - M.r);
     setF(17, "bold", BLACK);
+    const titleLines = doc.splitTextToSize(txt(titleEl.textContent), pageW - M.l - M.r);
     drawLines(titleLines, M.l, 22);
   }
   const metaEl = root.querySelector(".document-meta");
@@ -1922,10 +1922,12 @@ function renderContractPdf(root, { jsPDF, fonts, filename, onDone }) {
   // — Секции: слева h2, справа пункты —
   root.querySelectorAll(".document-section").forEach((sec) => {
     const h2 = sec.querySelector("h2");
+    setF(11, "bold");
     const leftTitleLines = doc.splitTextToSize(txt(h2 ? h2.textContent : ""), leftW);
     const clauses = Array.from(sec.querySelectorAll(".contract-clause")).map((clause) => {
       const clauseTitle = clause.querySelector(".clause-title");
       const clauseTitleText = clauseTitle ? txt(clauseTitle.textContent).replace(/^(\d+\.\d+)(?=\S)/, "$1 ") : "";
+      setF(9.8, "bold");
       const clauseTitleLines = clauseTitleText ? doc.splitTextToSize(clauseTitleText, rightW) : [];
       const body = clause.querySelector(".contract-clause__body") || clause;
       const blocks = collectPdfBlocks(body).map((block) => {
@@ -1933,6 +1935,7 @@ function renderContractPdf(root, { jsPDF, fonts, filename, onDone }) {
           return { kind: "img", el: block.el, ...prepareImage(block.el) };
         }
         const spec = getTextSpec(block.type);
+        setF(spec.size, spec.font);
         const lines = doc.splitTextToSize(pdfText(block.text), rightW);
         return {
           kind: "text",
@@ -1996,6 +1999,13 @@ function renderContractPdf(root, { jsPDF, fonts, filename, onDone }) {
 
     y = Math.max(y, leftBottom) + 10;
   });
+
+  const totalPages = doc.getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    setF(8, "normal", GRAY);
+    doc.text(`${i} / ${totalPages}`, pageW / 2, pageH - 32, { align: "center" });
+  }
 
   doc.save(filename);
   if (onDone) onDone();
