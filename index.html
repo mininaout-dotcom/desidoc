@@ -567,6 +567,7 @@
                     <input type="checkbox" data-signature-pdf-toggle>
                     <span>Включить подпись в PDF</span>
                   </label>
+                  <p class="signature-legal-note"><strong>Важно:</strong> подпись будет использоваться только как изображение в документах и не является электронной подписью.</p>
                 </div>
               </details>
 
@@ -603,16 +604,10 @@
               </div>
               <article class="document-canvas" data-contract-canvas aria-label="Договор"></article>
               <div class="mobile-contract-actions" hidden>
-                <div class="mobile-contract-actions__top">
-                  <button class="mobile-contract-undo" type="button" data-action="undo-contract-delete" disabled>Отменить</button>
-                  <label class="expl-toggle mobile-contract-expl-toggle">
-                    <input type="checkbox" data-contract-explanation-toggle>
-                    <span class="expl-toggle__track"><span class="expl-toggle__thumb"></span></span>
-                    <span class="expl-toggle__label">Пояснения</span>
-                  </label>
-                </div>
-                <div class="mobile-contract-actions__main">
-                  <button class="button button--dark" type="button" data-action="print-contract">Скачать PDF</button>
+                <button class="button button--dark" type="button" data-action="print-contract">Скачать PDF</button>
+                <div class="mobile-contract-actions__secondary">
+                  <button class="button button--ghost" type="button" data-action="hide-mobile-contract-doc">← Изменить данные</button>
+                  <button class="button button--ghost" type="button" data-action="reset-contract-data">Сбросить</button>
                 </div>
               </div>
             </div>

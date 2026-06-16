@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=Onest:wght@100..900&display=swap");
+
 @font-face {
   font-family: "Suisse Intl";
   src: url("../assets/fonts/suisse-intl/SuisseIntl-Thin.otf") format("opentype");
@@ -161,7 +163,7 @@
   --radius-lg: 34px;
   --radius-md: 24px;
   --radius-sm: 16px;
-  --font: "Suisse Intl", "Onest", "Helvetica Neue", Arial, sans-serif;
+  --font: "Onest", "Helvetica Neue", Arial, sans-serif;
   --mono: var(--font);
 
   /* ── Typography scale ──────────────────────────────────────
@@ -1107,14 +1109,60 @@ textarea:focus-visible {
 }
 
 .link-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28em;
   background: none;
   border: none;
   padding: 0;
   font: inherit;
   color: inherit;
   cursor: pointer;
-  text-decoration: underline;
-  text-underline-offset: 2px;
+  text-decoration: none;
+  transition: color 180ms ease, opacity 180ms ease, transform 180ms ease;
+}
+
+.link-btn::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -0.16em;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: right;
+  opacity: 0.85;
+  transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.link-btn::after {
+  content: "↗";
+  display: inline-block;
+  font-size: 0.86em;
+  line-height: 1;
+  transform: translate(-0.18em, 0.12em);
+  opacity: 0;
+  transition: opacity 220ms ease, transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.link-btn:hover,
+.link-btn:focus-visible {
+  opacity: 1;
+  transform: translateY(-1px);
+}
+
+.link-btn:hover::before,
+.link-btn:focus-visible::before {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
+.link-btn:hover::after,
+.link-btn:focus-visible::after {
+  opacity: 1;
+  transform: translate(0, 0);
 }
 
 .modal__privacy-note {
@@ -2096,6 +2144,22 @@ h2 {
   min-height: var(--btn-height-sm);
   border-radius: 999px;
   font-size: 11px;
+}
+
+.signature-legal-note {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--line) 78%, transparent);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--surface-strong) 88%, var(--accent) 12%);
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.42;
+}
+
+.signature-legal-note strong {
+  color: var(--text);
+  font-weight: 650;
 }
 
 .contract-outline nav,
@@ -3100,7 +3164,7 @@ h2 {
   padding: 28px 32px 30px;
   background: #fff;
   color: #050505;
-  font-family: "Suisse Intl", "Helvetica Neue", Arial, sans-serif;
+  font-family: var(--font);
   letter-spacing: -0.035em;
 }
 
@@ -3712,32 +3776,46 @@ h2 {
   .deedoc-card--quick {
     grid-column: 1 / -1;
     width: 100%;
-    min-height: 200px;
+    min-height: 160px;
+    border-radius: 32px;
+  }
+
+  /* Плюсик на мобилке улетает — скрываем */
+  .deedoc-card__plus {
+    display: none;
+  }
+
+  /* Выравниваем текст карточки смет по центру */
+  .deedoc-card.deedoc-card--quick p {
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 1.2;
   }
 
   /* Satellite cards */
   .deedoc-card--paper {
-    min-height: 250px;
-    padding: 27px 24px 28px 27px;
+    min-height: 220px;
+    padding: 22px 20px 22px 22px;
+    border-radius: 32px;
   }
 
   .deedoc-card__button {
     width: 100%;
-    min-height: 44px;
-    height: 44px;
-    border-radius: var(--ddoc-radius-button-mobile);
+    min-height: 42px;
+    height: 42px;
+    border-radius: 18px;
     font-size: 13px;
   }
 
   .deedoc-card h2 {
-    font-size: 20px;
-    margin-bottom: 10px;
+    font-size: 18px;
+    margin-bottom: 8px;
   }
 
   .deedoc-card p {
-    font-size: 13px;
+    font-size: 12px;
     line-height: 1.4;
-    margin-bottom: 16px;
+    margin-bottom: 14px;
   }
 
   .deedoc-home__footer {
@@ -5766,6 +5844,50 @@ body.mobile-contract-sheet-open {
     font-size: 12px;
   }
 
+  /* Calculator stage cards: stack side below body */
+  .view--calculator .stage-card {
+    grid-template-columns: 30px 1fr;
+    grid-template-areas:
+      "order body"
+      ".     side";
+    gap: 4px 6px;
+    align-items: start;
+  }
+
+  .view--calculator .stage-order {
+    grid-area: order;
+    padding-top: 4px;
+  }
+
+  .view--calculator .stage-card__body {
+    grid-area: body;
+    min-width: 0;
+  }
+
+  .view--calculator .stage-card__side {
+    display: flex;
+    grid-area: side;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .view--calculator .stage-card .hours-field {
+    width: 56px;
+    flex-shrink: 0;
+  }
+
+  .view--calculator .stage-card .stage-stat {
+    flex: 1;
+    min-width: 0;
+    text-align: left;
+    padding: 4px 8px;
+  }
+
+  .view--calculator .stage-card .icon-button--remove {
+    flex-shrink: 0;
+    margin-left: auto;
+  }
+
   /* ── Bottom actions block on mobile ── */
   .cv-result-actions {
     flex-direction: column;
@@ -6600,6 +6722,16 @@ body[data-view="contract"]::after {
   gap: 7px;
 }
 
+.view--contract .signature-legal-note {
+  border-color: color-mix(in srgb, var(--cv-line) 76%, transparent);
+  background: color-mix(in srgb, var(--cv-surface) 92%, var(--cv-text) 8%);
+  color: var(--cv-muted);
+}
+
+.view--contract .signature-legal-note strong {
+  color: var(--cv-text);
+}
+
 .view--contract .optional-list {
   gap: 6px;
 }
@@ -6793,7 +6925,6 @@ body[data-view="contract"]::after {
     display: block !important;
   }
 
-  .contract-workspace[data-mode="fill"][data-mobile-doc="doc"] .mobile-contract-back,
   .contract-workspace[data-mode="fill"][data-mobile-doc="steps"] .mobile-contract-cta {
     display: flex !important;
   }
@@ -7183,15 +7314,24 @@ body[data-view="contract"]::after {
     font-weight: 500;
   }
 
+  /* Шаги договора: убираем детские иконки */
+  .mobile-contract-step__icon {
+    display: none;
+  }
+
+  /* Кнопка «← Изменить данные» вверху скрыта — она в баре снизу */
+  .mobile-contract-back {
+    display: none !important;
+  }
+
   .mobile-contract-actions {
     display: grid;
-    gap: 10px;
+    gap: 8px;
     position: fixed;
     right: 14px;
     bottom: calc(10px + env(safe-area-inset-bottom));
     left: 14px;
     z-index: 80;
-    margin-top: 0;
     padding: 10px;
     border: 1px solid transparent;
     border-radius: 28px;
@@ -7201,45 +7341,24 @@ body[data-view="contract"]::after {
     -webkit-backdrop-filter: blur(22px);
   }
 
-  .mobile-contract-actions__top,
-  .mobile-contract-actions__main {
+  .mobile-contract-actions__secondary {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    align-items: center;
+    grid-template-columns: 1fr 1fr;
     gap: 8px;
-  }
-
-  .mobile-contract-undo,
-  .mobile-contract-expl-toggle {
-    min-height: 42px;
-    border: 1px solid var(--cv-line);
-    border-radius: 999px;
-    background: rgba(31, 29, 24, 0.04);
-    color: var(--cv-text);
-    justify-content: center;
-  }
-
-  .mobile-contract-undo {
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: 600;
-  }
-
-  .mobile-contract-undo:disabled {
-    cursor: default;
-    color: rgba(31, 29, 24, 0.34);
-    opacity: 0.66;
-  }
-
-  .mobile-contract-expl-toggle {
-    padding: 0 12px;
-    font-size: 13px;
   }
 
   .mobile-contract-actions .button {
     width: 100%;
     min-height: 50px;
     border-radius: 999px;
+  }
+
+  .mobile-contract-actions .button--ghost {
+    min-height: 44px;
+    font-size: 13px;
+    border: 1px solid var(--cv-line);
+    background: rgba(31, 29, 24, 0.04);
+    color: var(--cv-text);
   }
 
   .view--contract .document-toolbar,

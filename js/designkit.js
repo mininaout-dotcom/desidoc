@@ -1342,6 +1342,14 @@ function saveProfile() {
   modal.close();
 }
 
+function bindProfileModalBackdropClose() {
+  const modal = document.querySelector("[data-profile-modal]");
+  if (!modal) return;
+  modal.addEventListener("click", (event) => {
+    if (event.target === modal) modal.close();
+  });
+}
+
 function renderGreeting() {
   const el = document.querySelector("[data-home-greeting]");
   if (!el) return;
@@ -2937,6 +2945,7 @@ function renderMobileContractSheetContent() {
         <input type="checkbox" data-signature-pdf-toggle>
         <span>Включить подпись в PDF</span>
       </label>
+      <p class="signature-legal-note"><strong>Важно:</strong> подпись будет использоваться только как изображение в документах и не является электронной подписью.</p>
     </div>
   `;
 }
@@ -3015,7 +3024,7 @@ function renderMobileContractUI({ forceSheet = false } = {}) {
   }
 
   if (cta) {
-    cta.disabled = completedRequiredSteps !== requiredSteps.length;
+    cta.disabled = false;
     cta.textContent = contractState.docType === "addendum" ? "Показать допсоглашение" : "Показать договор";
   }
 
@@ -3067,9 +3076,6 @@ function closeMobileContractSheet() {
 }
 
 function showMobileContractDoc() {
-  const requiredSteps = getMobileContractSteps().filter((step) => step.required);
-  const ready = requiredSteps.every((step) => getMobileContractStepState(step).requiredComplete);
-  if (!ready) return;
   mobileContractDocVisible = true;
   closeMobileContractSheet();
   renderMobileContractUI({ forceSheet: true });
@@ -3320,6 +3326,7 @@ function renderAddendumSidebar() {
           <input type="checkbox" data-signature-pdf-toggle>
           <span>Включить подпись в PDF</span>
         </label>
+        <p class="signature-legal-note"><strong>Важно:</strong> подпись будет использоваться только как изображение в документах и не является электронной подписью.</p>
       </div>
     </details>
 
@@ -4344,6 +4351,18 @@ function bindEvents() {
       hideMobileContractDoc();
       return;
     }
+    if (action === "reset-contract-data") {
+      if (!confirm("Сбросить данные клиента?")) return;
+      const defaults = createDefaultContractDraft();
+      contractState.fields = { ...defaults.fields };
+      contractState.addendumFields = { ...defaults.addendumFields };
+      contractState.hiddenClauses = {};
+      contractState.textOverrides = {};
+      renderContractWorkspace();
+      hideMobileContractDoc();
+      scheduleContractSave();
+      return;
+    }
     if (action === "delete-contract-clause") {
       deleteContractClause(actionTarget.dataset.clauseKey);
       return;
@@ -4811,6 +4830,7 @@ function init() {
   renderContractWorkspace();
   bindEvents();
   bindFeedbackPromptModal();
+  bindProfileModalBackdropClose();
   initMetrikaPrivacyGuards();
   initCookieBanner();
   updateEmptyHint();
