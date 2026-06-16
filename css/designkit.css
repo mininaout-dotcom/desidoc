@@ -1440,8 +1440,11 @@ h2 {
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   background: var(--surface);
+  background-clip: padding-box;
   box-shadow: var(--shadow);
   backdrop-filter: blur(24px);
+  overflow: hidden;
+  isolation: isolate;
 }
 
 .setup-card {
@@ -2339,7 +2342,9 @@ h2 {
   border: 1px solid var(--line);
   border-radius: 34px;
   background: var(--surface-strong);
+  background-clip: padding-box;
   box-shadow: var(--shadow);
+  isolation: isolate;
 }
 
 .document-coverline {
@@ -2609,8 +2614,11 @@ h2 {
   border: 1px solid var(--line);
   border-radius: 20px;
   background: color-mix(in srgb, var(--surface) 92%, transparent);
+  background-clip: padding-box;
   box-shadow: 0 18px 52px rgba(42, 35, 25, 0.08);
   backdrop-filter: blur(18px);
+  overflow: hidden;
+  isolation: isolate;
 }
 
 .document-toolbar > span {
@@ -2702,9 +2710,13 @@ h2 {
   padding: 12px 12px 12px 20px;
   border: 1px solid var(--line);
   border-radius: 999px;
+  clip-path: inset(0 round 999px);
   background: var(--surface);
+  background-clip: padding-box;
   box-shadow: var(--shadow);
   backdrop-filter: blur(24px);
+  overflow: hidden;
+  isolation: isolate;
 }
 
 .sticky-summary strong {
@@ -4490,6 +4502,7 @@ body[data-view="calculator"]::after {
   border: 1px solid transparent;
   border-radius: var(--cv-radius);
   corner-shape: superellipse(5); /* iOS-style smoothing (~84% Figma); ignored where unsupported */
+  clip-path: inset(0 round var(--cv-radius));
   box-shadow: 0 4px 40px rgba(0, 0, 0, 0.10), 0 1px 4px rgba(0, 0, 0, 0.06);
   color: var(--cv-text);
 }
@@ -6342,8 +6355,10 @@ body[data-view="contract"]::after {
 .view--contract .document-toolbar {
   border: 1px solid transparent;
   background: var(--cv-glass);
+  background-clip: padding-box;
   color: var(--cv-text);
   box-shadow: 0 4px 40px rgba(0, 0, 0, 0.10), 0 1px 4px rgba(0, 0, 0, 0.06);
+  isolation: isolate;
 }
 
 /* iOS-style corner smoothing (~84% Figma) on the big cards — ignored where unsupported */
@@ -6356,8 +6371,6 @@ body[data-view="contract"]::after {
 [data-theme="dark"] .view--contract .document-canvas,
 [data-theme="dark"] .view--contract .document-toolbar {
   border-color: var(--cv-line);
-  backdrop-filter: blur(var(--ddoc-blur-glass)) saturate(1.3);
-  -webkit-backdrop-filter: blur(var(--ddoc-blur-glass)) saturate(1.3);
   box-shadow: 0 4px 40px rgba(0, 0, 0, 0.30), 0 1px 4px rgba(0, 0, 0, 0.20);
 }
 
@@ -6370,7 +6383,19 @@ body[data-view="contract"]::after {
   overflow: auto;
   padding: 39px 40px 28px;
   border-radius: var(--cv-radius);
-  scrollbar-width: thin;
+  scrollbar-width: none;
+}
+
+.view--contract .contract-outline,
+.view--contract .document-toolbar {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.view--contract .contract-outline::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 .view--contract .outline-group {
@@ -6466,7 +6491,7 @@ body[data-view="contract"]::after {
   display: none;
 }
 
-.view--contract .document-section-nav__toggle,
+.view--contract .document-section-nav__label,
 .view--contract .document-section-nav__top {
   min-height: 32px;
   flex: 0 0 auto;
@@ -6474,42 +6499,36 @@ body[data-view="contract"]::after {
   border-radius: 999px;
   background: var(--cv-surface);
   color: var(--cv-text);
-  cursor: pointer;
   font-size: 11px;
   font-weight: 600;
   line-height: 1;
 }
 
-.view--contract .document-section-nav__toggle {
+.view--contract .document-section-nav__label {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 0 11px 0 12px;
-}
-
-.view--contract .document-section-nav__chevron {
-  transition: transform 180ms ease;
-}
-
-.view--contract .document-section-nav.is-collapsed .document-section-nav__chevron {
-  transform: rotate(180deg);
+  justify-content: flex-start;
+  padding: 0 12px;
 }
 
 .view--contract .document-section-nav__list {
   display: flex;
   gap: 6px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
-.view--contract .document-section-nav.is-collapsed .document-section-nav__list {
+.view--contract .document-section-nav__list::-webkit-scrollbar {
   display: none;
+  width: 0;
+  height: 0;
 }
 
 .view--contract .document-section-nav__top {
   padding: 0 12px;
+  cursor: pointer;
 }
 
-.view--contract .document-section-nav__toggle:hover,
 .view--contract .document-section-nav__top:hover {
   border-color: color-mix(in srgb, var(--cv-text) 18%, transparent);
   background: var(--cv-hover-bg);
@@ -6518,10 +6537,6 @@ body[data-view="contract"]::after {
 @media (min-width: 1081px) {
   .view--contract .document-canvas:has(.document-section-nav) {
     padding-right: calc(clamp(28px, 3.4vw, 48px) + 152px);
-  }
-
-  .view--contract .document-canvas:has(.document-section-nav.is-collapsed) {
-    padding-right: calc(clamp(28px, 3.4vw, 48px) + 104px);
   }
 
   .view--contract .document-section-nav {
@@ -6543,22 +6558,13 @@ body[data-view="contract"]::after {
     overflow: hidden;
   }
 
-  .view--contract .document-section-nav.is-collapsed {
-    width: 88px;
-    margin-right: -104px;
-  }
-
   .view--contract .document-section-nav__list {
     display: grid;
     gap: 6px;
     max-height: calc(100vh - 250px);
     overflow: auto;
     padding-right: 1px;
-    scrollbar-width: thin;
-  }
-
-  .view--contract .document-section-nav.is-collapsed .document-section-nav__list {
-    display: none;
+    scrollbar-width: none;
   }
 }
 
@@ -6592,8 +6598,7 @@ body[data-view="contract"]::after {
     padding-right: clamp(28px, 3.4vw, 48px);
   }
 
-  .view--contract .document-canvas:has(.document-section-nav--inline),
-  .view--contract .document-canvas:has(.document-section-nav--inline.is-collapsed) {
+  .view--contract .document-canvas:has(.document-section-nav--inline) {
     padding-right: clamp(28px, 3.4vw, 48px);
   }
 
@@ -6631,11 +6636,7 @@ body[data-view="contract"]::after {
     max-height: calc(100vh - 254px);
     overflow: auto;
     padding-right: 1px;
-    scrollbar-width: thin;
-  }
-
-  .view--contract .document-section-nav--floating.is-collapsed .document-section-nav__list {
-    display: none;
+    scrollbar-width: none;
   }
 
   .view--contract .document-section-nav--floating .outline-link {
@@ -7144,6 +7145,8 @@ body[data-view="contract"]::after {
   margin: 0 0 76px;
   padding: clamp(28px, 3.4vw, 48px);
   border-radius: var(--cv-radius);
+  clip-path: inset(0 round var(--cv-radius));
+  overflow: hidden;
 }
 
 .view--contract .document-coverline {
@@ -7224,8 +7227,6 @@ body[data-view="contract"]::after {
   margin: -54px 0 0 auto;
   border-radius: 999px;
   background: color-mix(in srgb, var(--cv-glass) 88%, transparent);
-  backdrop-filter: blur(var(--ddoc-blur-glass));
-  -webkit-backdrop-filter: blur(var(--ddoc-blur-glass));
 }
 
 .view--contract .document-toolbar > span {
@@ -7795,7 +7796,7 @@ body[data-view="contract"]::after {
   }
 
   .mobile-contract-actions .document-section-nav--mobile-actions .outline-link,
-  .mobile-contract-actions .document-section-nav--mobile-actions .document-section-nav__toggle,
+  .mobile-contract-actions .document-section-nav--mobile-actions .document-section-nav__label,
   .mobile-contract-actions .document-section-nav--mobile-actions .document-section-nav__top {
     min-width: max-content;
     min-height: 36px;
