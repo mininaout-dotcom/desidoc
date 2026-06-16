@@ -19,7 +19,7 @@
   <meta property="og:image:height" content="630">
   <meta property="og:locale" content="ru_RU">
   <meta name="twitter:card" content="summary_large_image">
-  <link rel="stylesheet" href="css/designkit.css?v=118">
+  <link rel="stylesheet" href="css/designkit.css?v=119">
 </head>
 <body data-view="home">
   <div class="app" data-view="home">
@@ -111,12 +111,12 @@
               </article>
 
               <article class="deedoc-card deedoc-card--paper" data-action="show-soon" data-label="Клиентский проект" tabindex="0" role="button" aria-label="Добавить клиентский проект">
-                <div class="deedoc-card__content deedoc-card__content--project">
+                <div>
                   <span class="deedoc-card__badge">Скоро</span>
                   <h2>Клиентский<br>проект</h2>
                   <p>Веди весь документооборот проекта в одном месте</p>
                 </div>
-                <button class="deedoc-card__button" type="button" data-action="show-soon" data-label="Клиентский проект" data-icon="project">Создать проект</button>
+                <button class="deedoc-card__button" type="button" data-action="show-soon" data-label="Клиентский проект" data-icon="project">Скоро</button>
               </article>
             </div>
             </div>
@@ -558,7 +558,7 @@
               <details class="outline-group contract-signature-panel outline-group--collapsible" data-step="3" data-signature-panel>
                 <summary class="outline-title outline-title--toggle"><span class="step-badge">3</span>Добавь подпись</summary>
                 <div class="outline-group-body">
-                  <p class="contract-data-hint">Сфотографируйте подпись на белом листе — уберём фон и сделаем синей автоматически. Подпись будет использоваться только как изображение в документах и не является электронной подписью.</p>
+                  <p class="contract-data-hint">Сфотографируйте подпись на белом листе — уберём фон и сделаем синей автоматически.</p>
                   <div class="signature-preview" data-signature-preview></div>
                   <input class="visually-hidden" type="file" accept="image/*" data-signature-file>
                   <div class="signature-actions">
@@ -569,6 +569,7 @@
                     <input type="checkbox" data-signature-pdf-toggle>
                     <span>Включить подпись в PDF</span>
                   </label>
+                  <p class="signature-legal-note">Подпись используется только как изображение в документах и не является электронной подписью.</p>
                 </div>
               </details>
 
@@ -831,6 +832,6 @@
   <script src="assets/vendor/html2canvas.min.js"></script>
   <script src="assets/vendor/jspdf.umd.min.js"></script>
   <script src="assets/vendor/html-to-image.js"></script>
-  <script src="js/designkit.js?v=69"></script>
+  <script src="js/designkit.js?v=70"></script>
 </body>
 </html>

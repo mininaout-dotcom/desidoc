@@ -1561,7 +1561,7 @@ function renderExportOptions() {
 }
 
 function getPdfRenderScale() {
-  return Math.min(3, Math.max(2.5, window.devicePixelRatio || 1));
+  return Math.min(4, Math.max(3, window.devicePixelRatio || 1));
 }
 
 function saveTallPngAsPdf(dataUrl, { jsPDF, filename, margin = PDF_PAGE_MARGIN_MM, onDone, onError }) {
@@ -1720,13 +1720,14 @@ function renderEstimatePdf({ jsPDF, fonts, filename, title, number, projectName,
   const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
   registerPdfFonts(doc, fonts);
   const pageWpt = doc.internal.pageSize.getWidth();
-  const pageHpt = doc.internal.pageSize.getHeight();
   const SHEET_W = 794, SHEET_H = 1123;
   const k = pageWpt / SHEET_W;             // px → pt
   const BLACK = [5, 5, 5], GRAY = [139, 139, 139];
   const padX = 32, contentR = SHEET_W - padX;     // 32 … 762
 
   let y = 0; // курсор в px макета
+  const pageTop = 40;
+  const pageBottom = SHEET_H - 56;
 
   const font = (px, weight) => { doc.setFont("Onest", weight === "bold" ? "bold" : "normal"); doc.setFontSize(px * k); };
   const color = (c) => doc.setTextColor(c[0], c[1], c[2]);
@@ -1734,8 +1735,14 @@ function renderEstimatePdf({ jsPDF, fonts, filename, title, number, projectName,
   const T = (s, xpx, ypx, align) => doc.text(pdfText(s), xpx * k, ypx * k, align ? { align } : undefined);
   const rule = (x1, x2, ypx, wpx, c) => { doc.setDrawColor((c || BLACK)[0], (c || BLACK)[1], (c || BLACK)[2]); doc.setLineWidth(wpx * k); doc.line(x1 * k, ypx * k, x2 * k, ypx * k); };
   const wrap = (s, wpx, px, weight) => { font(px, weight); return doc.splitTextToSize(pdfText(s), wpx * k).map((l) => l); };
-  const pageBottom = SHEET_H - 40;
-  const ensure = (need) => { if (y + need > pageBottom) { doc.addPage(); y = 40; } };
+  const startNewPage = () => { doc.addPage(); y = pageTop; };
+  const ensure = (need) => {
+    if (y + need > pageBottom) {
+      startNewPage();
+      return true;
+    }
+    return false;
+  };
 
   // ── Верхняя линия + герой ─────────────────────────────────
   rule(padX, contentR, 28, 2);
@@ -1793,8 +1800,7 @@ function renderEstimatePdf({ jsPDF, fonts, filename, title, number, projectName,
     const nameLines = wrap(row.name, descW, 14, "bold");
     const descLines = row.desc ? wrap(row.desc, Math.min(descW, 380), 10.5, "normal") : [];
     const rowH = 9 + nameLines.length * 14.7 + (descLines.length ? 4 + descLines.length * 13.4 : 0) + 10;
-    ensure(rowH);
-    if (y < 41) { drawTableHead(); }
+    if (ensure(rowH + 2)) drawTableHead();
     const top = y + 9; // td padding-top
     font(11, "normal"); color(BLACK); T(row.idx, numX, top + 9);
     font(14, "bold"); color(BLACK); space(-0.6);
@@ -1808,9 +1814,13 @@ function renderEstimatePdf({ jsPDF, fonts, filename, title, number, projectName,
   });
 
   // ── Итоги (справа, ширина 282px) ──────────────────────────
+  const footerWidth = chip ? 470 : contentR - padX;
+  const footerLines = wrap(footer, footerWidth, 10, "normal");
+  const footerHeight = 12 + footerLines.length * 13 + (chip ? 24 : 0) + 8;
+  const summaryHeight = 18 + summary.reduce((acc, item) => acc + (item.total ? 44 : 20), 0) + 16;
+  ensure(46 + summaryHeight + 48 + footerHeight);
   y += 46;
   const sumL = contentR - 282;
-  ensure(summary.length * 26 + 30);
   rule(sumL, contentR, y, 1.5);
   summary.forEach((s) => {
     if (s.total) {
@@ -1829,14 +1839,12 @@ function renderEstimatePdf({ jsPDF, fonts, filename, title, number, projectName,
 
   // ── Подвал ────────────────────────────────────────────────
   y += 48;
-  ensure(40);
+  ensure(footerHeight);
   rule(padX, contentR, y, 1.5);
   y += 12;
   font(10, "normal"); color(GRAY); space(0);
-  const fLines = wrap(footer, chip ? 470 : contentR - padX, 10, "normal");
-  font(10, "normal"); color(GRAY);
   let fy = y;
-  fLines.forEach((l) => { T(l, padX, fy + 8); fy += 13; });
+  footerLines.forEach((l) => { T(l, padX, fy + 8); fy += 13; });
   if (chip) {
     const label = pdfText(chip).toUpperCase();
     font(9, "bold"); space(0.54);
@@ -1858,7 +1866,7 @@ function renderContractPdf(root, { jsPDF, fonts, filename, onDone }) {
   registerPdfFonts(doc, fonts);
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
-  const M = { l: 54, r: 54, t: 54, b: 56 };
+  const M = { l: 54, r: 54, t: 54, b: 68 };
   const leftW = 132, gap = 16, rightX = M.l + leftW + gap, rightW = pageW - M.r - rightX;
   const pageBottom = pageH - M.b, maxBlock = pageBottom - M.t;
   const BLACK = [17, 17, 17], GRAY = [140, 140, 140];
@@ -1866,17 +1874,48 @@ function renderContractPdf(root, { jsPDF, fonts, filename, onDone }) {
 
   const setF = (px, weight, c) => { doc.setFont("Onest", weight === "bold" ? "bold" : "normal"); doc.setFontSize(px); if (c) doc.setTextColor(c[0], c[1], c[2]); };
   const txt = (s) => pdfText((s || "").replace(/\s+/g, " ").trim());
-
-  // Рисует блок строк в колонке x; целый блок переносится на новую страницу, если не влезает.
-  const drawBlock = (lines, x, lh) => {
-    const h = lines.length * lh;
-    if (y + h > pageBottom && h <= maxBlock) { doc.addPage(); y = M.t; }
-    lines.forEach((l) => { y += lh; doc.text(l, x, y); });
+  const startNewPage = () => {
+    doc.addPage();
+    y = M.t;
+  };
+  const ensureSpace = (need) => {
+    if (y + need > pageBottom && need <= maxBlock) {
+      startNewPage();
+      return true;
+    }
+    return false;
+  };
+  const drawLines = (lines, x, lh) => {
+    lines.forEach((line) => {
+      if (y + lh > pageBottom) startNewPage();
+      y += lh;
+      doc.text(line, x, y);
+    });
+  };
+  const getTextSpec = (type, isClauseTitle = false) => {
+    if (isClauseTitle || type === "h3") return { size: 9.8, font: "bold", lh: 12.6, color: BLACK, after: 2 };
+    if (type === "label") return { size: 8.6, font: "normal", lh: 11.4, color: GRAY, after: 4 };
+    return { size: 9.5, font: "normal", lh: 13.4, color: BLACK, after: 5 };
+  };
+  const prepareImage = (el) => {
+    const natW = el.naturalWidth || el.width || 160;
+    const natH = el.naturalHeight || el.height || 60;
+    let width = Math.min(150, rightW * 0.5);
+    let height = width * (natH / natW);
+    if (height > 64) {
+      height = 64;
+      width = height * (natW / natH);
+    }
+    return { width, height, total: height + 8 };
   };
 
   // — Заголовок —
   const titleEl = root.querySelector(".document-title");
-  if (titleEl) { setF(17, "bold", BLACK); drawBlock(doc.splitTextToSize(txt(titleEl.textContent), pageW - M.l - M.r), M.l, 22); }
+  if (titleEl) {
+    const titleLines = doc.splitTextToSize(txt(titleEl.textContent), pageW - M.l - M.r);
+    setF(17, "bold", BLACK);
+    drawLines(titleLines, M.l, 22);
+  }
   const metaEl = root.querySelector(".document-meta");
   if (metaEl) { setF(9, "normal", GRAY); y += 16; doc.text(txt(metaEl.textContent), M.l, y); }
   y += 12;
@@ -1884,8 +1923,34 @@ function renderContractPdf(root, { jsPDF, fonts, filename, onDone }) {
   // — Секции: слева h2, справа пункты —
   root.querySelectorAll(".document-section").forEach((sec) => {
     const h2 = sec.querySelector("h2");
-    const clauses = Array.from(sec.querySelectorAll(".contract-clause"));
-    if (y + 56 > pageBottom) { doc.addPage(); y = M.t; }
+    const leftTitleLines = doc.splitTextToSize(txt(h2 ? h2.textContent : ""), leftW);
+    const clauses = Array.from(sec.querySelectorAll(".contract-clause")).map((clause) => {
+      const clauseTitle = clause.querySelector(".clause-title");
+      const clauseTitleText = clauseTitle ? txt(clauseTitle.textContent).replace(/^(\d+\.\d+)(?=\S)/, "$1 ") : "";
+      const clauseTitleLines = clauseTitleText ? doc.splitTextToSize(clauseTitleText, rightW) : [];
+      const body = clause.querySelector(".contract-clause__body") || clause;
+      const blocks = collectPdfBlocks(body).map((block) => {
+        if (block.type === "img") {
+          return { kind: "img", el: block.el, ...prepareImage(block.el) };
+        }
+        const spec = getTextSpec(block.type);
+        const lines = doc.splitTextToSize(pdfText(block.text), rightW);
+        return {
+          kind: "text",
+          lines,
+          spec,
+          total: lines.length * spec.lh + spec.after,
+        };
+      });
+      const firstBlock = blocks[0];
+      const leadHeight =
+        (clauseTitleLines.length ? clauseTitleLines.length * 12.6 + 2 : 0) +
+        (firstBlock ? firstBlock.total : 0) +
+        8;
+      return { clauseTitleLines, blocks, leadHeight };
+    });
+    const sectionLeadHeight = 30 + Math.max(leftTitleLines.length * 13, clauses[0]?.leadHeight || 0);
+    ensureSpace(sectionLeadHeight);
     y += 16;
     doc.setDrawColor(212, 212, 212); doc.setLineWidth(0.6); doc.line(M.l, y, pageW - M.r, y);
     y += 14;
@@ -1894,35 +1959,43 @@ function renderContractPdf(root, { jsPDF, fonts, filename, onDone }) {
     // h2 в левой колонке
     setF(11, "bold", BLACK);
     let hy = top;
-    doc.splitTextToSize(txt(h2 ? h2.textContent : ""), leftW).forEach((l) => { hy += 13; doc.text(l, M.l, hy); });
+    leftTitleLines.forEach((line) => {
+      hy += 13;
+      doc.text(line, M.l, hy);
+    });
     const leftBottom = hy;
 
     // пункты в правой колонке
     y = top;
-    clauses.forEach((cl) => {
-      const ctEl = cl.querySelector(".clause-title");
-      if (ctEl) { const ctText = txt(ctEl.textContent).replace(/^(\d+\.\d+)(?=\S)/, "$1 "); setF(9.8, "bold", BLACK); drawBlock(doc.splitTextToSize(ctText, rightW), rightX, 12.6); y += 2; }
-      const body = cl.querySelector(".contract-clause__body") || cl;
-      collectPdfBlocks(body).forEach((b) => {
-        if (b.type === "img") {
+    clauses.forEach((clause, clauseIndex) => {
+      if (clauseIndex > 0) ensureSpace(clause.leadHeight);
+      if (clause.clauseTitleLines.length) {
+        setF(9.8, "bold", BLACK);
+        drawLines(clause.clauseTitleLines, rightX, 12.6);
+        y += 2;
+      }
+      clause.blocks.forEach((block, blockIndex) => {
+        if (block.kind === "img") {
+          const needed = blockIndex === 0 ? block.total + 10 : block.total;
+          if (y + needed > pageBottom && needed <= maxBlock) startNewPage();
           try {
-            const src = b.el.tagName === "CANVAS" ? b.el.toDataURL("image/png") : b.el.src;
-            const nW = b.el.naturalWidth || b.el.width || 160, nH = b.el.naturalHeight || b.el.height || 60;
-            let w = Math.min(150, rightW * 0.5), h = w * (nH / nW);
-            if (h > 64) { h = 64; w = h * (nW / nH); }
-            if (y + h + 6 > pageBottom) { doc.addPage(); y = M.t; }
-            doc.addImage(src, "PNG", rightX, y + 4, w, h); y += h + 8;
+            const src = block.el.tagName === "CANVAS" ? block.el.toDataURL("image/png") : block.el.src;
+            doc.addImage(src, "PNG", rightX, y + 4, block.width, block.height);
+            y += block.total;
           } catch (e) { /* пропускаем битую картинку */ }
           return;
         }
-        setF(9.5, "normal", BLACK);
-        drawBlock(doc.splitTextToSize(pdfText(b.text), rightW), rightX, 13.4);
-        y += 5;
+        const spec = block.spec;
+        const needed = blockIndex === 0 ? block.total + 6 : block.total;
+        if (y + needed > pageBottom && needed <= maxBlock) startNewPage();
+        setF(spec.size, spec.font, spec.color);
+        drawLines(block.lines, rightX, spec.lh);
+        y += spec.after;
       });
       y += 4;
     });
 
-    y = Math.max(y, leftBottom) + 8;
+    y = Math.max(y, leftBottom) + 10;
   });
 
   doc.save(filename);
@@ -2508,7 +2581,7 @@ function createDefaultContractDraft() {
   const savedSignature = state.profile?.signatureDataUrl || "";
   return {
     templateKey: "design",
-    mode: "pick",
+    mode: "fill",
     docType: "contract",
     showExplanations: true,
     fields: {
@@ -2579,7 +2652,7 @@ function normalizeContractDraft(saved) {
     ...defaults,
     ...draft,
     templateKey: CONTRACT_TEMPLATES[draft.templateKey] ? draft.templateKey : defaults.templateKey,
-    mode: draft.mode === "fill" || draft.mode === "pick" ? draft.mode : defaults.mode,
+    mode: "fill",
     docType: draft.docType === "addendum" ? "addendum" : "contract",
     showExplanations: draft.showExplanations ?? defaults.showExplanations,
     fields: { ...defaults.fields, ...(draft.fields || {}) },
@@ -2655,7 +2728,7 @@ function renderContractProgress() {
   progress.classList.toggle("is-complete", filled === CONTRACT_REQUIRED_FIELDS.length);
   if (!summary) return;
   const panel = document.querySelector("[data-contract-fields-panel]");
-  if (panel) panel.open = missing.length > 0;
+  if (panel && missing.length) panel.open = true;
   if (!missing.length) {
     summary.innerHTML = `<p class="contract-required-summary__ok">Все обязательные поля заполнены. Можно скачивать PDF.</p>`;
     if (!isRenderingMobileContractUI && !(document.activeElement && document.activeElement.closest?.("[data-mobile-contract-sheet]"))) {
@@ -2929,7 +3002,7 @@ function renderAddendumProgress() {
     progress.classList.toggle("is-complete", filled === ADDENDUM_REQUIRED_FIELDS.length);
   }
   const panel = document.querySelector("[data-addendum-fields-panel]");
-  if (panel) panel.open = missing.length > 0;
+  if (panel && missing.length) panel.open = true;
   if (!summary) return;
   if (!missing.length) {
     summary.innerHTML = `<p class="contract-required-summary__ok">Все обязательные поля заполнены. Можно скачивать PDF.</p>`;
@@ -3417,7 +3490,7 @@ function renderMobileContractSheetContent() {
 
   body.innerHTML = `
     <div class="mobile-contract-sheet__section">
-      <p class="mobile-contract-sheet__hint">Подпись опциональна. Если загрузите её один раз, можно вставлять в PDF автоматически как изображение.</p>
+      <p class="mobile-contract-sheet__hint">Подпись опциональна. Если загрузите её один раз, можно вставлять в PDF автоматически.</p>
       <div class="signature-preview" data-signature-preview></div>
       <div class="signature-actions">
         <button class="button button--ghost button--wide" type="button" data-action="upload-signature">Загрузить подпись</button>
@@ -3427,7 +3500,7 @@ function renderMobileContractSheetContent() {
         <input type="checkbox" data-signature-pdf-toggle>
         <span>Включить подпись в PDF</span>
       </label>
-      <p class="signature-legal-note"><strong>Важно:</strong> подпись будет использоваться только как изображение в документах и не является электронной подписью.</p>
+      <p class="signature-legal-note">Подпись используется только как изображение в документах и не является электронной подписью.</p>
     </div>
   `;
 }
@@ -3597,52 +3670,7 @@ function undoLastContractClauseDelete() {
   scheduleContractSave();
 }
 
-function renderContractChooser() {
-  const chooser = document.querySelector("[data-contract-chooser]");
-  if (!chooser) return;
-  chooser.innerHTML = `
-    <div class="contract-chooser__inner">
-      <h2 class="contract-chooser__title">Выбери договор под задачу</h2>
-      <p class="contract-chooser__intro">1. Заполните «Мои данные». 2. Выберите документ. 3. Проверьте поля и скачайте PDF. Все данные сохраняются только в вашем браузере.</p>
-      <div class="contract-chooser__cards">
-
-        <button class="chooser-card" type="button" data-chooser-card="design">
-          <div class="chooser-card__badge">Первый шаг</div>
-          <div class="chooser-card__icon">📋</div>
-          <div class="chooser-card__title">Рамочный договор</div>
-          <div class="chooser-card__desc">Подписывается один раз на год. Покрывает любые задачи — логотип, сайт, презентацию.</div>
-          <div class="chooser-card__check" aria-hidden="true"></div>
-        </button>
-
-        <button class="chooser-card" type="button" data-chooser-card="addendum">
-          <div class="chooser-card__badge chooser-card__badge--muted">Уже есть договор</div>
-          <div class="chooser-card__icon">📎</div>
-          <div class="chooser-card__title">Допсоглашение</div>
-          <div class="chooser-card__desc">Фиксирует ТЗ, сроки и стоимость конкретного проекта. Оформляется к рамочному.</div>
-          <div class="chooser-card__check" aria-hidden="true"></div>
-        </button>
-
-      </div>
-      <button class="chooser-cta" type="button" id="chooserCta" data-action="confirm-chooser" disabled>
-        Создать документ →
-      </button>
-    </div>
-  `;
-
-  chooser.querySelectorAll(".chooser-card").forEach((card) => {
-    card.addEventListener("click", () => {
-      chooser.querySelectorAll(".chooser-card").forEach((c) => {
-        c.classList.remove("is-selected");
-        c.querySelector(".chooser-card__check").textContent = "";
-      });
-      card.classList.add("is-selected");
-      card.querySelector(".chooser-card__check").textContent = "✓";
-      const cta = chooser.querySelector("#chooserCta");
-      cta.disabled = false;
-      cta.dataset.cardType = card.dataset.chooserCard;
-    });
-  });
-}
+function renderContractChooser() {}
 
 // ── Addendum helpers ──────────────────────────────────────────
 
@@ -3797,7 +3825,7 @@ function renderAddendumSidebar() {
     <details class="outline-group contract-signature-panel outline-group--collapsible" data-signature-panel>
       <summary class="outline-title outline-title--toggle"><span class="step-badge">3</span>Добавь подпись</summary>
       <div class="outline-group-body">
-        <p class="contract-data-hint">Подпись вставляется в PDF только как изображение и не является электронной подписью.</p>
+        <p class="contract-data-hint">Сфотографируйте подпись на белом листе — уберём фон и сделаем синей автоматически.</p>
         <div class="signature-preview" data-signature-preview></div>
         <input class="visually-hidden" type="file" accept="image/*" data-signature-file>
         <div class="signature-actions">
@@ -3808,7 +3836,7 @@ function renderAddendumSidebar() {
           <input type="checkbox" data-signature-pdf-toggle>
           <span>Включить подпись в PDF</span>
         </label>
-        <p class="signature-legal-note"><strong>Важно:</strong> подпись будет использоваться только как изображение в документах и не является электронной подписью.</p>
+        <p class="signature-legal-note">Подпись используется только как изображение в документах и не является электронной подписью.</p>
       </div>
     </details>
 
@@ -3961,24 +3989,13 @@ function renderAddendumDocument() {
 
 function renderContractWorkspace() {
   const workspace = document.querySelector(".contract-workspace");
-  renderContractChooser();
   if (workspace) {
-    workspace.dataset.mode = contractState.mode || "pick";
+    workspace.dataset.mode = "fill";
     workspace.dataset.docType = contractState.docType || "contract";
     workspace.dataset.mobileDoc = mobileContractDocVisible ? "doc" : "steps";
   }
   applyContractAutoDefaults();
   mobileContractSheetSignature = "";
-
-  if (contractState.mode === "pick") {
-    renderContractTemplateStrip();
-    renderMobileContractUI({ forceSheet: true });
-    updateAutosaveStatus("Выберите документ");
-    requestAnimationFrame(() => {
-      syncContractOutlineVisibility();
-    });
-    return;
-  }
 
   renderContractTemplateStrip();
 
@@ -4250,7 +4267,7 @@ function renderContractDocument() {
     return renderDocumentSection("signatures", "Подписи", [
       {
         title: "Реквизиты и подписи сторон",
-        note: "Изображение подписи вставляется только по отдельному согласию пользователя. Это не КЭП и файл можно скопировать из PDF.",
+        note: "",
         body: `
           <div class="requisites-grid">
             <div class="requisite-card">
@@ -4727,7 +4744,7 @@ function bindEvents() {
       event.preventDefault();
       const nextRoute = routeTarget.dataset.route;
       if (nextRoute === "contract" && state.view === "home") {
-        contractState.mode = "pick";
+        contractState.mode = "fill";
         contractState.docType = "contract";
         mobileContractDocVisible = false;
         mobileContractSheetKey = "";
@@ -5049,7 +5066,8 @@ function bindEvents() {
       }
     }
     if (action === "back-to-chooser") {
-      contractState.mode = "pick";
+      contractState.mode = "fill";
+      contractState.docType = "contract";
       mobileContractDocVisible = false;
       mobileContractSheetKey = "";
       scheduleContractSave();
@@ -5320,7 +5338,7 @@ function bindEvents() {
     if (!routeCard || !["Enter", " "].includes(event.key)) return;
     event.preventDefault();
     if (routeCard.dataset.route === "contract" && state.view === "home") {
-      contractState.mode = "pick";
+      contractState.mode = "fill";
       contractState.docType = "contract";
       mobileContractDocVisible = false;
       mobileContractSheetKey = "";
