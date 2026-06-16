@@ -145,7 +145,7 @@ const state = {
 
 let draggedStageIndex = null;
 let contractSaveTimer = null;
-let contractObserver = null;
+let contractScrollSpyCleanup = null;
 let clientReplyParseTimer = null;
 let mobileCalcSheetKey = "";
 let mobileContractSheetKey = "";
@@ -155,7 +155,6 @@ let mobileContractSheetSignature = "";
 let mobileContractClientReplyDraft = "";
 let isRenderingMobileContractUI = false;
 let lastDeletedContractClause = null;
-let contractOutlineCollapsed = false;
 let contractOutlineVisibilityFrame = 0;
 
 const CONTRACT_SECTIONS = [
@@ -2884,10 +2883,7 @@ function renderContractOutline() {
   }
   const sections = (contractState.templateKey === "design" ? CONTRACT_SECTIONS_DESIGN : CONTRACT_SECTIONS);
   const markup = `
-    <button class="document-section-nav__toggle" type="button" data-action="toggle-contract-outline" aria-expanded="${String(!contractOutlineCollapsed)}">
-      <span>Разделы</span>
-      <span class="document-section-nav__chevron" aria-hidden="true">⌃</span>
-    </button>
+    <div class="document-section-nav__label">Разделы</div>
     <div class="document-section-nav__list">
       ${sections.map(([id, label], i) => `
     <button class="outline-link" type="button" data-scroll-section="${id}"><span class="outline-link__num">${i + 1}.</span>${label}</button>
@@ -2896,7 +2892,6 @@ function renderContractOutline() {
     <button class="document-section-nav__top" type="button" data-action="scroll-contract-top">↑ Наверх</button>
   `;
   outlines.forEach((outline) => {
-    outline.classList.toggle("is-collapsed", contractOutlineCollapsed);
     outline.innerHTML = markup;
   });
 }
@@ -4595,15 +4590,38 @@ function validateContractFields() {
 function setupContractScrollSpy() {
   const links = [...document.querySelectorAll("[data-scroll-section]")];
   const sections = [...document.querySelectorAll("[data-contract-section]")];
-  if (contractObserver) contractObserver.disconnect();
-  contractObserver = null;
+  if (contractScrollSpyCleanup) { contractScrollSpyCleanup(); contractScrollSpyCleanup = null; }
   if (!links.length || !sections.length) return;
-  contractObserver = new IntersectionObserver((entries) => {
-    const visible = entries.filter((entry) => entry.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-    if (!visible) return;
-    links.forEach((link) => link.classList.toggle("is-active", link.dataset.scrollSection === visible.target.id));
-  }, { rootMargin: "-20% 0px -68% 0px", threshold: [0.1, 0.25, 0.5] });
-  sections.forEach((section) => contractObserver.observe(section));
+
+  let activeId = null;
+  let ticking = false;
+
+  const update = () => {
+    ticking = false;
+    if (typeof state !== "undefined" && state.view !== "contract") return;
+    // Линия чтения ~28% высоты экрана (под фиксированной шапкой). Активен последний
+    // раздел, чья верхняя граница уже прошла эту линию (разделы идут по порядку).
+    const line = Math.max(150, window.innerHeight * 0.28);
+    let currentId = sections[0].id;
+    for (const section of sections) {
+      if (section.getBoundingClientRect().top - line <= 0) currentId = section.id;
+      else break;
+    }
+    if (currentId !== activeId) {
+      activeId = currentId;
+      links.forEach((link) => link.classList.toggle("is-active", link.dataset.scrollSection === currentId));
+    }
+  };
+
+  const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } };
+  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", onScroll, { passive: true });
+  update();
+
+  contractScrollSpyCleanup = () => {
+    window.removeEventListener("scroll", onScroll);
+    window.removeEventListener("resize", onScroll);
+  };
 }
 
 function printContract(onDone) {
@@ -4814,12 +4832,6 @@ function bindEvents() {
 
     const action = actionTarget.dataset.action;
     if (action === "toggle-theme") setTheme(state.theme === "dark" ? "light" : "dark");
-    if (action === "toggle-contract-outline") {
-      contractOutlineCollapsed = !contractOutlineCollapsed;
-      renderContractOutline();
-      scheduleContractOutlineVisibilitySync();
-      return;
-    }
     if (action === "scroll-contract-top") {
       document.querySelector("[data-contract-canvas]")?.scrollIntoView({ behavior: "smooth", block: "start" });
       return;
