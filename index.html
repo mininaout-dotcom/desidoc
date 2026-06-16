@@ -19,7 +19,7 @@
   <meta property="og:image:height" content="630">
   <meta property="og:locale" content="ru_RU">
   <meta name="twitter:card" content="summary_large_image">
-  <link rel="stylesheet" href="css/designkit.css?v=116">
+  <link rel="stylesheet" href="css/designkit.css?v=118">
 </head>
 <body data-view="home">
   <div class="app" data-view="home">
@@ -96,8 +96,6 @@
           <section class="deedoc-hero" aria-labelledby="home-title">
             <div class="deedoc-hero__inner">
             <h1 id="home-title" data-home-greeting>Привет!<br>С чего начнем работу?</h1>
-            <p class="deedoc-hero__sub">Сначала заполните «Мои данные», затем выберите документ или смету. Всё сохраняется только в вашем браузере.</p>
-
             <div class="deedoc-actions" aria-label="Рабочие сценарии">
               <article class="deedoc-card deedoc-card--quick" data-route="calculator" tabindex="0" role="button" aria-label="Быстро рассчитать смету">
                 <div class="deedoc-card__plus">+</div>
@@ -107,18 +105,18 @@
               <article class="deedoc-card deedoc-card--paper" data-route="contract" tabindex="0" role="button" aria-label="Оформить договор">
                 <div>
                   <h2>Оформить<br>договор</h2>
-                  <p>Выбери шаблон договора и создай документ всего за пару минут</p>
+                  <p>Заполни шаблон договора и создай документ всего за пару минут</p>
                 </div>
                 <button class="deedoc-card__button" type="button" data-route="contract" data-icon="document">Создать документ</button>
               </article>
 
               <article class="deedoc-card deedoc-card--paper" data-action="show-soon" data-label="Клиентский проект" tabindex="0" role="button" aria-label="Добавить клиентский проект">
-                <div>
+                <div class="deedoc-card__content deedoc-card__content--project">
                   <span class="deedoc-card__badge">Скоро</span>
                   <h2>Клиентский<br>проект</h2>
                   <p>Веди весь документооборот проекта в одном месте</p>
                 </div>
-                <button class="deedoc-card__button" type="button" data-action="show-soon" data-label="Клиентский проект" data-icon="project">Скоро</button>
+                <button class="deedoc-card__button" type="button" data-action="show-soon" data-label="Клиентский проект" data-icon="project">Создать проект</button>
               </article>
             </div>
             </div>
@@ -473,9 +471,6 @@
           <h1 class="visually-hidden" id="contract-title">Документы</h1>
           <header class="contract-header contract-hero"></header>
 
-          <!-- Document type chooser (shown before editor) -->
-          <div class="contract-chooser" data-contract-chooser></div>
-
           <section class="mobile-contract-flow" data-mobile-contract-flow hidden>
             <div class="mobile-contract-card">
               <div class="mobile-contract-template-strip" data-contract-template-strip aria-label="Тип документа"></div>
@@ -563,7 +558,7 @@
               <details class="outline-group contract-signature-panel outline-group--collapsible" data-step="3" data-signature-panel>
                 <summary class="outline-title outline-title--toggle"><span class="step-badge">3</span>Добавь подпись</summary>
                 <div class="outline-group-body">
-                  <p class="contract-data-hint">Сфотографируйте подпись на белом листе — уберём фон и сделаем синей автоматически. В PDF она будет вставлена только как изображение.</p>
+                  <p class="contract-data-hint">Сфотографируйте подпись на белом листе — уберём фон и сделаем синей автоматически. Подпись будет использоваться только как изображение в документах и не является электронной подписью.</p>
                   <div class="signature-preview" data-signature-preview></div>
                   <input class="visually-hidden" type="file" accept="image/*" data-signature-file>
                   <div class="signature-actions">
@@ -574,7 +569,6 @@
                     <input type="checkbox" data-signature-pdf-toggle>
                     <span>Включить подпись в PDF</span>
                   </label>
-                  <p class="signature-legal-note"><strong>Важно:</strong> подпись будет использоваться только как изображение в документах и не является электронной подписью.</p>
                 </div>
               </details>
 
@@ -617,7 +611,6 @@
 
           <footer class="document-toolbar">
             <span class="autosave-status" data-autosave-status>Сохранено</span>
-            <p class="document-toolbar__legal">Подпись в PDF вставляется только как изображение и не является электронной подписью.</p>
             <div class="document-toolbar__actions">
               <label class="expl-toggle">
                 <input type="checkbox" data-contract-explanation-toggle>
@@ -745,7 +738,7 @@
 
       <label class="modal__consent">
         <input type="checkbox" data-profile-consent>
-        <span>Я принимаю <a class="link-btn" href="personal-data-consent.html">Согласие на обработку персональных данных</a> для заполнения моих данных</span>
+        <span>Я принимаю <a class="link-btn" href="personal-data-consent.html">Согласие на обработку персональных данных</a></span>
       </label>
 
       <div class="modal__actions">
@@ -838,6 +831,6 @@
   <script src="assets/vendor/html2canvas.min.js"></script>
   <script src="assets/vendor/jspdf.umd.min.js"></script>
   <script src="assets/vendor/html-to-image.js"></script>
-  <script src="js/designkit.js?v=67"></script>
+  <script src="js/designkit.js?v=69"></script>
 </body>
 </html>
