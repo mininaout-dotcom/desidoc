@@ -118,59 +118,93 @@
   margin-top: 14px;
 }
 
+/* Базовый стиль (в т.ч. touch): простая статичная подчёркнутая ссылка,
+   без hover-зависимой стрелки и дёргающихся трансформаций */
 .legal-footer__nav a {
   position: relative;
   display: inline-flex;
   align-items: center;
   gap: 0.32em;
   color: var(--muted, #8a8178);
-  text-decoration: none;
-  transition: color 180ms ease, transform 180ms ease;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, currentColor 40%, transparent);
+  text-underline-offset: 3px;
+  transition: color 180ms ease;
 }
 
-.legal-footer__nav a::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -0.18em;
-  height: 1px;
-  background: currentColor;
-  transform: scaleX(0);
-  transform-origin: right;
-  opacity: 0.85;
-  transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.legal-footer__nav a::after {
-  content: "↗";
-  display: inline-block;
-  font-size: 0.86em;
-  line-height: 1;
-  transform: translate(-0.18em, 0.12em);
-  opacity: 0;
-  transition: opacity 220ms ease, transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.legal-footer__nav a:hover,
 .legal-footer__nav a:focus-visible {
   color: var(--text, #2a2420);
-  transform: translateY(-1px);
+  text-decoration-color: currentColor;
 }
 
-.legal-footer__nav a:hover::before,
-.legal-footer__nav a:focus-visible::before {
-  transform: scaleX(1);
-  transform-origin: left;
-}
+/* Анимированное подчёркивание + стрелка — только на устройствах с hover */
+@media (hover: hover) {
+  .legal-footer__nav a {
+    text-decoration: none;
+    transition: color 180ms ease, transform 180ms ease;
+  }
 
-.legal-footer__nav a:hover::after,
-.legal-footer__nav a:focus-visible::after {
-  opacity: 1;
-  transform: translate(0, 0);
+  .legal-footer__nav a::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -0.18em;
+    height: 1px;
+    background: currentColor;
+    transform: scaleX(0);
+    transform-origin: right;
+    opacity: 0.85;
+    transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .legal-footer__nav a::after {
+    content: "↗";
+    display: inline-block;
+    font-size: 0.86em;
+    line-height: 1;
+    transform: translate(-0.18em, 0.12em);
+    opacity: 0;
+    transition: opacity 220ms ease, transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .legal-footer__nav a:hover,
+  .legal-footer__nav a:focus-visible {
+    color: var(--text, #2a2420);
+    transform: translateY(-1px);
+  }
+
+  .legal-footer__nav a:hover::before,
+  .legal-footer__nav a:focus-visible::before {
+    transform: scaleX(1);
+    transform-origin: left;
+  }
+
+  .legal-footer__nav a:hover::after,
+  .legal-footer__nav a:focus-visible::after {
+    opacity: 1;
+    transform: translate(0, 0);
+  }
 }
 
 @media (max-width: 600px) {
   .legal-shell { padding: 0 18px; }
   .legal-doc h2 { font-size: 18px; }
+
+  .legal-footer {
+    padding: 22px 0 calc(40px + env(safe-area-inset-bottom));
+    font-size: 12.5px;
+  }
+
+  /* Каждая правовая ссылка — отдельной строкой во всю ширину, крупнее тап-таргет */
+  .legal-footer__nav {
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 16px;
+  }
+
+  .legal-footer__nav a {
+    width: fit-content;
+    padding: 2px 0;
+  }
 }

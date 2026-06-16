@@ -1051,19 +1051,7 @@ textarea:focus-visible {
   opacity: 0.88;
 }
 
-.deedoc-card__button::before {
-  content: "";
-  width: 16px;
-  height: 16px;
-  display: inline-grid;
-  place-items: center;
-  flex: 0 0 auto;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: 16px 16px;
-  background-image: url("data:image/svg+xml,%3Csvg%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22none%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Ccircle%20cx%3D%228%22%20cy%3D%228%22%20r%3D%226.5%22%20stroke%3D%22rgba(200%2C196%2C196%2C0.8)%22%20stroke-width%3D%221.2%22/%3E%3Cpath%20d%3D%22M8%205.5V10.5M5.5%208H10.5%22%20stroke%3D%22rgba(200%2C196%2C196%2C0.8)%22%20stroke-width%3D%221.2%22%20stroke-linecap%3D%22round%22/%3E%3C/svg%3E");
-}
-
+.deedoc-card__button::before,
 .deedoc-card__button::after {
   display: none;
 }
@@ -3653,8 +3641,13 @@ h2 {
     min-height: 100svh;
     height: auto;
     grid-template-rows: auto 1fr auto;
-    padding: 33px 10px;
-    background-position: 48% center;
+    padding: 33px 24px;
+  }
+
+  /* Фокус фоновой картинки задаём на реальном слое с изображением,
+     иначе на узком портрете виден только размытый центр («обрезано») */
+  .deedoc-home__bg-layer[data-layer="sky"] {
+    background-position: 50% 32%;
   }
 
   /* ── Header compact on mobile ─────────────── */
@@ -3760,7 +3753,7 @@ h2 {
   .deedoc-actions {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
+    gap: 12px;
     margin: 0;
   }
 
@@ -3776,8 +3769,8 @@ h2 {
   .deedoc-card--quick {
     grid-column: 1 / -1;
     width: 100%;
-    min-height: 160px;
-    border-radius: 32px;
+    min-height: 184px;
+    border-radius: 40px;
   }
 
   /* Плюсик на мобилке улетает — скрываем */
@@ -3787,35 +3780,37 @@ h2 {
 
   /* Выравниваем текст карточки смет по центру */
   .deedoc-card.deedoc-card--quick p {
-    font-size: 16px;
+    font-size: 17px;
     font-weight: 500;
     line-height: 1.2;
   }
 
   /* Satellite cards */
   .deedoc-card--paper {
-    min-height: 220px;
-    padding: 22px 20px 22px 22px;
-    border-radius: 32px;
+    min-height: 234px;
+    padding: 24px 22px;
+    border-radius: 40px;
   }
 
   .deedoc-card__button {
     width: 100%;
-    min-height: 42px;
-    height: 42px;
-    border-radius: 18px;
-    font-size: 13px;
+    min-height: 48px;
+    height: 48px;
+    border-radius: 999px;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
   }
 
   .deedoc-card h2 {
-    font-size: 18px;
+    font-size: 19px;
     margin-bottom: 8px;
   }
 
   .deedoc-card p {
-    font-size: 12px;
+    font-size: 13px;
     line-height: 1.4;
-    margin-bottom: 14px;
+    margin-bottom: 16px;
   }
 
   .deedoc-home__footer {
@@ -6939,6 +6934,8 @@ body[data-view="contract"]::after {
 
   .contract-workspace[data-mode="fill"][data-mobile-doc="doc"] .contract-canvas-area {
     display: flex;
+    /* запас снизу под фиксированный бар действий (PDF + вторичные кнопки) */
+    padding-bottom: calc(150px + env(safe-area-inset-bottom));
   }
 
   .mobile-contract-flow {
@@ -7314,7 +7311,16 @@ body[data-view="contract"]::after {
     font-weight: 500;
   }
 
-  /* Шаги договора: убираем детские иконки */
+  /* Шаги договора: убираем детские иконки и перестраиваем сетку,
+     чтобы стрелка осталась прижатой к правому краю */
+  .mobile-contract-step {
+    grid-template-columns: minmax(0, 1fr) 16px;
+  }
+
+  .mobile-contract-step__arrow {
+    justify-self: end;
+  }
+
   .mobile-contract-step__icon {
     display: none;
   }
