@@ -1582,6 +1582,267 @@ function saveTallPngAsPdf(dataUrl, { jsPDF, filename, margin = PDF_PAGE_MARGIN_M
   image.src = dataUrl;
 }
 
+/* ============================================================
+   Векторный (текстовый) PDF — выделяемый текст, без пикселей
+   при зуме. Шрифт PT Sans (кириллица) подгружается по требованию.
+   ============================================================ */
+
+const PDF_FONT_URLS = {
+  normal: "assets/fonts/ptsans/PTSans-Regular.ttf",
+  bold: "assets/fonts/ptsans/PTSans-Bold.ttf",
+};
+let _pdfFontCache = null;
+
+function arrayBufferToBase64(buffer) {
+  let binary = "";
+  const bytes = new Uint8Array(buffer);
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+  }
+  return btoa(binary);
+}
+
+function loadPdfFonts() {
+  if (_pdfFontCache) return Promise.resolve(_pdfFontCache);
+  const fetchB64 = (url) => fetch(url).then((r) => {
+    if (!r.ok) throw new Error("font fetch failed: " + url);
+    return r.arrayBuffer();
+  }).then(arrayBufferToBase64);
+  return Promise.all([fetchB64(PDF_FONT_URLS.normal), fetchB64(PDF_FONT_URLS.bold)])
+    .then(([normal, bold]) => { _pdfFontCache = { normal, bold }; return _pdfFontCache; });
+}
+
+function registerPdfFonts(doc, fonts) {
+  doc.addFileToVFS("PTSans-Regular.ttf", fonts.normal);
+  doc.addFont("PTSans-Regular.ttf", "PTSans", "normal");
+  doc.addFileToVFS("PTSans-Bold.ttf", fonts.bold);
+  doc.addFont("PTSans-Bold.ttf", "PTSans", "bold");
+  doc.setFont("PTSans", "normal");
+}
+
+// Заменяем экзотические пробелы/дефисы, которых нет в сабсете шрифта
+function pdfText(value) {
+  return String(value == null ? "" : value)
+    .replace(/[    ⁠]/g, " ")
+    .replace(/[‑]/g, "-");
+}
+
+const PDF_INLINE_TAGS = new Set(["SPAN", "STRONG", "B", "EM", "I", "A", "BR", "SUP", "SUB", "SMALL", "U", "MARK", "CODE", "LABEL", "TIME"]);
+
+function pdfBlockStyle(el) {
+  const cls = el.classList;
+  if (cls.contains("document-title") || el.tagName === "H1") return "title";
+  if (el.tagName === "H2") return "h2";
+  if (cls.contains("clause-title") || el.tagName === "H3" || el.tagName === "H4") return "h3";
+  if (cls.contains("document-meta") || cls.contains("sign-line") || cls.contains("pdf-meta-label") || cls.contains("pdf-doc-label")) return "label";
+  return "body";
+}
+
+function collectPdfBlocks(root) {
+  const blocks = [];
+  const hasBlockChild = (el) => Array.from(el.children).some((c) => !PDF_INLINE_TAGS.has(c.tagName));
+  const walk = (el) => {
+    if (el.nodeType !== 1) return;
+    if (el.getClientRects && getComputedStyle(el).display === "none") return;
+    if (el.tagName === "IMG" || el.tagName === "CANVAS") { blocks.push({ type: "img", el }); return; }
+    if (hasBlockChild(el)) { Array.from(el.children).forEach(walk); return; }
+    const text = (el.textContent || "").replace(/\s+/g, " ").trim();
+    if (text) blocks.push({ type: pdfBlockStyle(el), text });
+  };
+  walk(root);
+  return blocks;
+}
+
+const PDF_BLOCK_STYLES = {
+  title: { size: 17, font: "bold", lh: 1.25, before: 0, after: 16, align: "center", color: [17, 17, 17] },
+  h2: { size: 12.5, font: "bold", lh: 1.3, before: 17, after: 6, color: [20, 20, 20] },
+  h3: { size: 10.5, font: "bold", lh: 1.3, before: 10, after: 3, color: [28, 28, 28] },
+  body: { size: 10, font: "normal", lh: 1.42, before: 0, after: 7, color: [34, 34, 34] },
+  label: { size: 8.6, font: "normal", lh: 1.3, before: 0, after: 5, color: [140, 140, 140] },
+};
+
+function renderPdfFromBlocks(blocks, { jsPDF, fonts, filename, onDone }) {
+  const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
+  registerPdfFonts(doc, fonts);
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const M = { l: 56, r: 56, t: 58, b: 58 };
+  const cw = pageW - M.l - M.r;
+  let y = M.t;
+  const newPage = (need) => { if (y + need > pageH - M.b) { doc.addPage(); y = M.t; } };
+
+  blocks.forEach((b) => {
+    if (b.type === "img") {
+      try {
+        const src = b.el.tagName === "CANVAS" ? b.el.toDataURL("image/png") : b.el.src;
+        const natW = b.el.naturalWidth || b.el.width || 160;
+        const natH = b.el.naturalHeight || b.el.height || 60;
+        let w = Math.min(150, cw * 0.42);
+        let h = w * (natH / natW);
+        if (h > 70) { h = 70; w = h * (natW / natH); }
+        newPage(h + 6);
+        doc.addImage(src, "PNG", M.l, y, w, h);
+        y += h + 8;
+      } catch (e) { /* skip broken image */ }
+      return;
+    }
+    const st = PDF_BLOCK_STYLES[b.type] || PDF_BLOCK_STYLES.body;
+    y += st.before;
+    doc.setFont("PTSans", st.font);
+    doc.setFontSize(st.size);
+    doc.setTextColor(st.color[0], st.color[1], st.color[2]);
+    const lineH = st.size * st.lh;
+    doc.splitTextToSize(pdfText(b.text), cw).forEach((line) => {
+      newPage(lineH);
+      if (st.align === "center") doc.text(line, pageW / 2, y + st.size * 0.82, { align: "center" });
+      else doc.text(line, M.l, y + st.size * 0.82);
+      y += lineH;
+    });
+    y += st.after;
+  });
+
+  doc.save(filename);
+  if (onDone) onDone();
+}
+
+// Векторная (текстовая) смета в том же «швейцарском» дизайне, что и растровая.
+// Координаты заданы в px макета (ширина листа 794px) и масштабируются в pt листа A4.
+function renderEstimatePdf({ jsPDF, fonts, filename, title, number, projectName, total, kicker, meta, rows, summary, footer, chip, onDone }) {
+  const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
+  registerPdfFonts(doc, fonts);
+  const pageWpt = doc.internal.pageSize.getWidth();
+  const pageHpt = doc.internal.pageSize.getHeight();
+  const SHEET_W = 794, SHEET_H = 1123;
+  const k = pageWpt / SHEET_W;             // px → pt
+  const BLACK = [5, 5, 5], GRAY = [139, 139, 139];
+  const padX = 32, contentR = SHEET_W - padX;     // 32 … 762
+
+  let y = 0; // курсор в px макета
+
+  const font = (px, weight) => { doc.setFont("PTSans", weight === "bold" ? "bold" : "normal"); doc.setFontSize(px * k); };
+  const color = (c) => doc.setTextColor(c[0], c[1], c[2]);
+  const space = (emPx) => doc.setCharSpace((emPx || 0) * k);
+  const T = (s, xpx, ypx, align) => doc.text(pdfText(s), xpx * k, ypx * k, align ? { align } : undefined);
+  const rule = (x1, x2, ypx, wpx, c) => { doc.setDrawColor((c || BLACK)[0], (c || BLACK)[1], (c || BLACK)[2]); doc.setLineWidth(wpx * k); doc.line(x1 * k, ypx * k, x2 * k, ypx * k); };
+  const wrap = (s, wpx, px, weight) => { font(px, weight); return doc.splitTextToSize(pdfText(s), wpx * k).map((l) => l); };
+  const pageBottom = SHEET_H - 40;
+  const ensure = (need) => { if (y + need > pageBottom) { doc.addPage(); y = 40; } };
+
+  // ── Верхняя линия + герой ─────────────────────────────────
+  rule(padX, contentR, 28, 2);
+  y = 50;
+  font(10, "normal"); color(BLACK); space(0.8); T(kicker || "DesiDoc / Estimate", padX, y + 10); space(0);
+  font(22, "bold"); color(BLACK); space(-0.9); T(number, contentR, y + 18, "right"); space(0);
+  font(100, "bold"); color(BLACK); space(-10.5); T(title, padX - 4, y + 14 + 78); space(0);
+  y = y + 14 + 86 + 30;   // конец героя + margin
+
+  // ── Проект + Итого ────────────────────────────────────────
+  const introTop = y;
+  font(10, "normal"); color(BLACK); space(0.8); T("ПРОЕКТ", padX, introTop + 9); space(0);
+  const projLines = wrap(projectName, 460, 30, "bold");
+  font(30, "bold"); color(BLACK); space(-1.95);
+  let py = introTop + 9 + 14;
+  projLines.forEach((l) => { T(l, padX, py + 23); py += 29.4; });
+  space(0);
+  const projBottom = py;
+  // Итого (справа, выровнено по низу блока проекта)
+  font(10, "normal"); color(GRAY); space(0.8); T("ИТОГО", contentR, projBottom - 30 - 8, "right"); space(0);
+  font(30, "bold"); color(BLACK); space(-2.25); T(total, contentR, projBottom - 2, "right"); space(0);
+  const introBottom = projBottom + 16;
+  rule(padX, contentR, introBottom, 1.5);
+  y = introBottom + 24;
+
+  // ── Мета (Исполнитель / Дата / Ставка) ────────────────────
+  const metaTop = y;
+  const cW = (contentR - padX), c1 = padX, c2 = padX + cW * (1.45 / 3.45), c3 = padX + cW * (2.45 / 3.45);
+  [[c1, meta[0]], [c2, meta[1]], [c3, meta[2]]].forEach(([x, m]) => {
+    if (!m) return;
+    font(10, "normal"); color(BLACK); space(0.8); T((m.label || "").toUpperCase(), x, metaTop + 9); space(0);
+    font(14, "bold"); color(BLACK); space(-0.6); T(m.value, x, metaTop + 9 + 9 + 11); space(0);
+    if (m.note) { font(10, "normal"); color(GRAY); T(m.note, x, metaTop + 9 + 9 + 11 + 5 + 9); }
+  });
+  const metaBottom = metaTop + 9 + 9 + 11 + 5 + 9 + 14;
+  rule(padX, contentR, metaBottom, 1);
+  y = metaBottom + 28;
+
+  // ── Таблица ───────────────────────────────────────────────
+  const numX = padX, descX = padX + 58;
+  const costRX = contentR, hoursColLeft = contentR - 160.6, hoursRX = hoursColLeft - 6;
+  const descW = hoursColLeft - descX - 12;
+  const drawTableHead = () => {
+    rule(padX, contentR, y, 1.5);
+    font(10, "normal"); color(BLACK); space(0.8);
+    T("№", numX, y + 9 + 8); T("ОПИСАНИЕ", descX, y + 9 + 8);
+    T("ЧАСЫ", hoursRX, y + 9 + 8, "right"); T("СУММА", costRX, y + 9 + 8, "right");
+    space(0);
+    y = y + 9 + 8 + 9;
+    rule(padX, contentR, y, 1.5);
+  };
+  drawTableHead();
+
+  rows.forEach((row) => {
+    const nameLines = wrap(row.name, descW, 14, "bold");
+    const descLines = row.desc ? wrap(row.desc, Math.min(descW, 380), 10.5, "normal") : [];
+    const rowH = 9 + nameLines.length * 14.7 + (descLines.length ? 4 + descLines.length * 13.4 : 0) + 10;
+    ensure(rowH);
+    if (y < 41) { drawTableHead(); }
+    const top = y + 9; // td padding-top
+    font(11, "normal"); color(BLACK); T(row.idx, numX, top + 9);
+    font(14, "bold"); color(BLACK); space(-0.6);
+    T(row.hours, hoursRX, top + 11, "right"); T(row.cost, costRX, top + 11, "right"); space(0);
+    let ly = top;
+    font(14, "bold"); color(BLACK); space(-0.6);
+    nameLines.forEach((l) => { T(l, descX, ly + 11); ly += 14.7; }); space(0);
+    if (descLines.length) { ly += 4; font(10.5, "normal"); color(GRAY); descLines.forEach((l) => { T(l, descX, ly + 8); ly += 13.4; }); }
+    y = top + (rowH - 9);
+    rule(padX, contentR, y, 1);
+  });
+
+  // ── Итоги (справа, ширина 282px) ──────────────────────────
+  y += 46;
+  const sumL = contentR - 282;
+  ensure(summary.length * 26 + 30);
+  rule(sumL, contentR, y, 1.5);
+  summary.forEach((s) => {
+    if (s.total) {
+      y += 13;
+      font(13, "normal"); color(BLACK); space(0.78); T("ВСЕГО", sumL, y + 11); space(0);
+      font(24, "bold"); color(BLACK); space(-1.56); T(s.value, contentR, y + 13, "right"); space(0);
+      y += 18;
+      rule(sumL, contentR, y, 1.5);
+    } else {
+      y += 8;
+      font(12, "normal"); color(BLACK); space(-0.3); T(s.label, sumL, y + 9); T(s.value, contentR, y + 9, "right"); space(0);
+      y += 9;
+      rule(sumL, contentR, y, 1);
+    }
+  });
+
+  // ── Подвал ────────────────────────────────────────────────
+  y += 48;
+  ensure(40);
+  rule(padX, contentR, y, 1.5);
+  y += 12;
+  font(10, "normal"); color(GRAY); space(0);
+  const fLines = wrap(footer, chip ? 470 : contentR - padX, 10, "normal");
+  font(10, "normal"); color(GRAY);
+  let fy = y;
+  fLines.forEach((l) => { T(l, padX, fy + 8); fy += 13; });
+  if (chip) {
+    const label = pdfText(chip).toUpperCase();
+    font(9, "bold"); space(0.54);
+    const tw = doc.getTextWidth(label) / k;       // px
+    const chipW = tw + 18, chipH = 22, chipX = contentR - chipW, chipY = y - 4;
+    doc.setDrawColor(5, 5, 5); doc.setLineWidth(1 * k);
+    doc.roundedRect(chipX * k, chipY * k, chipW * k, chipH * k, 11 * k, 11 * k);
+    color(BLACK); T(label, chipX + 9, chipY + 15); space(0);
+  }
+
+  doc.save(filename);
+  if (onDone) onDone();
+}
+
 function printEstimate() {
   if (!state.stages.length) {
     state.rate = getActiveRate();
@@ -1723,12 +1984,59 @@ function printEstimate() {
     });
   };
 
-  if (window.htmlToImage) {
-    window.htmlToImage.toPng(page, { pixelRatio: getPdfRenderScale(), backgroundColor: "#ffffff", cacheBust: true }).then(savePdf).catch(() => { window.print(); cleanupSheet(); });
-    return;
-  }
-  window.html2canvas(page, { scale: getPdfRenderScale(), useCORS: true, backgroundColor: "#ffffff", logging: false })
-    .then((canvas) => savePdf(canvas.toDataURL("image/png"))).catch(() => { window.print(); cleanupSheet(); });
+  const rasterFallback = () => {
+    if (window.htmlToImage) {
+      window.htmlToImage.toPng(page, { pixelRatio: getPdfRenderScale(), backgroundColor: "#ffffff", cacheBust: true }).then(savePdf).catch(() => { window.print(); cleanupSheet(); });
+      return;
+    }
+    if (window.html2canvas) {
+      window.html2canvas(page, { scale: getPdfRenderScale(), useCORS: true, backgroundColor: "#ffffff", logging: false })
+        .then((canvas) => savePdf(canvas.toDataURL("image/png"))).catch(() => { window.print(); cleanupSheet(); });
+      return;
+    }
+    window.print();
+    cleanupSheet();
+  };
+
+  // Структурированные данные для векторного (текстового) PDF
+  const pdfRows = state.stages.map((stage, index) => ({
+    idx: String(index + 1).padStart(2, "0"),
+    name: stage.title,
+    desc: stage.description,
+    hours: String(stage.hours),
+    cost: money(getStageCost(stage)),
+  }));
+  state.expenses.forEach((expense, index) => pdfRows.push({
+    idx: "E" + (index + 1), name: expense.title, desc: "Дополнительный расход", hours: "—", cost: money(expense.amount),
+  }));
+  if (state.mods.has("urgent")) pdfRows.push({ idx: "U", name: "Срочность +30%", desc: "Финальная опция перед экспортом PDF", hours: "—", cost: money(getUrgencyAmount()) });
+
+  const pdfSummary = [{ label: "Работы", value: money(getBaseStagesTotal()) }];
+  if (state.mods.has("urgent")) pdfSummary.push({ label: "Срочность", value: money(getUrgencyAmount()) });
+  if (state.expenses.length) pdfSummary.push({ label: "Расходы", value: money(getExpensesTotal()) });
+  pdfSummary.push({ label: "Налог " + formatNumber.format(getTaxRate()) + "%", value: money(getTaxAmount()) });
+  pdfSummary.push({ label: "Всего", value: money(getTotal()), total: true });
+
+  loadPdfFonts().then((fonts) => {
+    renderEstimatePdf({
+      jsPDF, fonts, filename,
+      title: "СМЕТА",
+      number: "#" + estimateNumber,
+      kicker: "DesiDoc / Estimate",
+      projectName: estimateName,
+      total: money(getTotal()),
+      chip: state.mods.has("urgent") ? "Срочность +30%" : "",
+      meta: [
+        { label: "Исполнитель", value: profileName, note: profileContact || "" },
+        { label: "Дата", value: todayShort, note: "Актуальна до " + validUntilText },
+        { label: "Ставка", value: money(state.rate) + " / час", note: getTotalHours() + " ч работы" },
+      ],
+      rows: pdfRows,
+      summary: pdfSummary,
+      footer: "Оценка действует 14 дней. Итоговые сроки и состав работ фиксируются в договоре или допсоглашении.",
+      onDone: () => { cleanupSheet(); notifyPdfDownloadSuccess(); },
+    });
+  }).catch((err) => { console.warn("Векторный PDF не удался, растровый запасной вариант:", err); rasterFallback(); });
 }
 
 function flashButton(selector, label) {
@@ -4254,25 +4562,33 @@ function printContract(onDone) {
     tmp.src = img.src;
   }));
 
-  // Use html-to-image (SVG foreignObject — handles color-mix & P3 natively)
-  if (window.htmlToImage) {
-    Promise.all(sigPromises).then(() => {
+  const rasterFallback = () => {
+    if (window.htmlToImage) {
       window.htmlToImage.toPng(page, { pixelRatio: getPdfRenderScale(), backgroundColor: "#ffffff", cacheBust: true })
         .then(renderToPdf)
         .catch(err => { console.error("html-to-image error:", err); window.print(); cleanup(); });
-    });
-    return;
-  }
+      return;
+    }
+    if (window.html2canvas) {
+      window.html2canvas(page, { scale: getPdfRenderScale(), useCORS: true, backgroundColor: "#ffffff", logging: false })
+        .then(canvas => renderToPdf(canvas.toDataURL("image/png")))
+        .catch(err => { console.error("html2canvas error:", err); window.print(); cleanup(); });
+      return;
+    }
+    window.print(); cleanup();
+  };
 
-  // Fallback: html2canvas
-  if (window.html2canvas) {
-    window.html2canvas(page, { scale: getPdfRenderScale(), useCORS: true, backgroundColor: "#ffffff", logging: false })
-      .then(canvas => renderToPdf(canvas.toDataURL("image/png")))
-      .catch(err => { console.error("html2canvas error:", err); window.print(); cleanup(); });
-    return;
-  }
-
-  window.print(); cleanup();
+  // Векторный (текстовый) PDF: выделяемый текст, без пикселей при зуме.
+  Promise.all(sigPromises)
+    .then(() => loadPdfFonts())
+    .then((fonts) => {
+      const blocks = collectPdfBlocks(page);
+      renderPdfFromBlocks(blocks, {
+        jsPDF, fonts, filename,
+        onDone: () => { cleanup(); notifyPdfDownloadSuccess(); },
+      });
+    })
+    .catch((err) => { console.warn("Векторный PDF не удался, растровый запасной вариант:", err); rasterFallback(); });
 }
 
 function clearDragClasses() {
