@@ -1051,12 +1051,6 @@ textarea:focus-visible {
   transition: color 0.9s ease;
 }
 
-.deedoc-card__content {
-  display: grid;
-  gap: 10px;
-  align-content: start;
-}
-
 .deedoc-card__badge {
   display: inline-flex;
   align-items: center;
@@ -1070,18 +1064,6 @@ textarea:focus-visible {
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-}
-
-.deedoc-card__content--project {
-  position: relative;
-  padding-right: 86px;
-}
-
-.deedoc-card__content--project .deedoc-card__badge {
-  position: absolute;
-  top: 0;
-  right: 0;
-  margin-bottom: 0;
 }
 
 .deedoc-card__button {
