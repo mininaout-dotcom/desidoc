@@ -474,6 +474,7 @@ textarea:focus-visible {
 .deedoc-home {
   --home-margin: 33px;
   --home-gutter: 18px;
+  --home-scrim: #d8b1a3;
   position: relative;
   min-height: 100vh;
   min-height: 100svh;
@@ -563,6 +564,7 @@ textarea:focus-visible {
 
 /* Dark theme */
 [data-theme="dark"] .deedoc-home {
+  --home-scrim: #171612;
   --ddoc-color-card-solid: rgba(255, 255, 255, 0.09);
   --ddoc-color-glass-card: rgba(255, 255, 255, 0.09);
   --ddoc-color-card-border: rgba(255, 255, 255, 0.12);
@@ -2150,7 +2152,6 @@ h2 {
   font-weight: 650;
 }
 
-.contract-outline nav,
 .optional-list {
   display: grid;
   gap: 5px;
@@ -3149,11 +3150,14 @@ h2 {
 .print-sheet .pdf-page--swiss {
   position: relative;
   min-height: 1123px;
-  padding: 28px 32px 30px;
+  padding: 28px 32px 72px;
   background: #fff;
   color: #050505;
   font-family: var(--font);
   letter-spacing: -0.035em;
+  box-sizing: border-box;
+  overflow-wrap: anywhere;
+  text-rendering: geometricPrecision;
 }
 
 .print-sheet .pdf-page--swiss::before {
@@ -3233,6 +3237,8 @@ h2 {
   font-weight: 500;
   line-height: 0.98;
   letter-spacing: -0.065em;
+  hyphens: auto;
+  overflow-wrap: anywhere;
 }
 
 .print-sheet .pdf-swiss-total-card {
@@ -3283,6 +3289,8 @@ h2 {
   font-size: 14px;
   font-weight: 500;
   line-height: 1.05;
+  hyphens: auto;
+  overflow-wrap: anywhere;
 }
 
 .print-sheet .pdf-meta-note {
@@ -3299,6 +3307,7 @@ h2 {
   margin: 0 0 28px;
   border-collapse: collapse;
   border-top: 1.5px solid #050505;
+  table-layout: fixed;
 }
 
 .print-sheet .pdf-page--swiss .pdf-table thead tr {
@@ -3342,6 +3351,8 @@ h2 {
   font-weight: 500;
   line-height: 1.05;
   letter-spacing: -0.045em;
+  hyphens: auto;
+  overflow-wrap: anywhere;
 }
 
 .print-sheet .pdf-page--swiss .pdf-stage-desc {
@@ -3351,6 +3362,8 @@ h2 {
   font-weight: 400;
   line-height: 1.28;
   letter-spacing: -0.015em;
+  hyphens: auto;
+  overflow-wrap: anywhere;
 }
 
 .print-sheet .pdf-page--swiss .pdf-hours,
@@ -3460,7 +3473,6 @@ h2 {
     position: static;
   }
 
-  .contract-outline nav,
   .optional-list {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -3583,7 +3595,6 @@ h2 {
     max-height: none;
   }
 
-  .contract-outline nav,
   .optional-list {
     grid-template-columns: 1fr 1fr;
   }
@@ -3648,6 +3659,25 @@ h2 {
      иначе на узком портрете виден только размытый центр («обрезано») */
   .deedoc-home__bg-layer[data-layer="sky"] {
     background-position: 50% 32%;
+  }
+
+  /* Градиентная «шторка»: низ фото плавно уходит в тон страницы,
+     карточки лежат на цвете, а не на обрезанном фото */
+  .deedoc-home::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 58%;
+    z-index: -1;
+    pointer-events: none;
+    background: linear-gradient(
+      180deg,
+      transparent 0%,
+      color-mix(in srgb, var(--home-scrim) 55%, transparent) 48%,
+      var(--home-scrim) 100%
+    );
   }
 
   /* ── Header compact on mobile ─────────────── */
@@ -3749,27 +3779,26 @@ h2 {
     box-sizing: border-box;
   }
 
-  /* Mobile card layout: СМЕТА spans both columns, satellites side by side */
+  /* Mobile card layout: все карточки в один столбец во всю ширину */
   .deedoc-actions {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr;
     gap: 12px;
     margin: 0;
   }
 
   .deedoc-card {
     width: auto;
-    min-height: 220px;
+    min-height: 0;
     max-width: none;
     flex: unset;
-    border-radius: var(--ddoc-radius-card);
+    border-radius: 40px;
   }
 
-  /* СМЕТА card — spans both columns */
+  /* СМЕТА card — во всю ширину сверху */
   .deedoc-card--quick {
-    grid-column: 1 / -1;
     width: 100%;
-    min-height: 184px;
+    min-height: 168px;
     border-radius: 40px;
   }
 
@@ -3785,11 +3814,15 @@ h2 {
     line-height: 1.2;
   }
 
-  /* Satellite cards */
+  /* Карточки «Договор / Проект» — во всю ширину, кнопка снизу */
   .deedoc-card--paper {
-    min-height: 234px;
-    padding: 24px 22px;
+    min-height: 0;
+    padding: 24px 24px 22px;
     border-radius: 40px;
+  }
+
+  .deedoc-card--paper p {
+    max-width: 36ch;
   }
 
   .deedoc-card__button {
@@ -4332,11 +4365,10 @@ body[data-view="calculator"]::after {
   --cv-empty-fig:   rgba(31, 29, 24, 0.08);
   --cv-radius: 69px;
   --cv-field-h: 51px;
-  --cv-page-left: 104px;
-  --cv-page-right: 33px;
+  --cv-page-x: clamp(24px, 5vw, 104px);
   --cv-shell-width: 1214px;
   --cv-setup-card-min-h: 596px;
-  padding: 158px var(--cv-page-right) 120px var(--cv-page-left);
+  padding: 158px var(--cv-page-x) 120px;
 }
 
 [data-theme="dark"] .view--calculator {
@@ -4364,7 +4396,7 @@ body[data-view="calculator"]::after {
 .view--calculator .calculator-shell {
   padding-top: 0;
   width: min(var(--cv-shell-width), 100%);
-  margin-left: 0;
+  margin-left: auto;
   margin-right: auto;
 }
 
@@ -5128,7 +5160,7 @@ body.mobile-contract-sheet-open {
 }
 
 .view--calculator .stage-card {
-  grid-template-columns: 36px minmax(0, 1fr) 54px 86px 22px;
+  grid-template-columns: 48px minmax(0, 1fr) 56px minmax(92px, auto) 24px;
   gap: 8px;
   align-items: center;
   padding: 7px 8px;
@@ -5141,15 +5173,19 @@ body.mobile-contract-sheet-open {
 }
 
 .view--calculator .stage-order {
-  display: flex;
+  display: grid;
+  grid-template-columns: 18px minmax(22px, auto);
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   min-width: 0;
 }
 
 .view--calculator .stage-order > span {
+  min-width: 22px;
   font-size: 9px;
   letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .view--calculator .drag-handle {
@@ -5841,7 +5877,7 @@ body.mobile-contract-sheet-open {
 
   /* Calculator stage cards: stack side below body */
   .view--calculator .stage-card {
-    grid-template-columns: 30px 1fr;
+    grid-template-columns: 48px minmax(0, 1fr);
     grid-template-areas:
       "order body"
       ".     side";
@@ -6096,10 +6132,9 @@ body[data-view="contract"]::after {
   --cv-eyebrow: rgba(255, 255, 255, 0.44);
   --cv-radius: 69px;
   --cv-field-h: 51px;
-  --cv-page-left: 104px;
-  --cv-page-right: 33px;
+  --cv-page-x: clamp(24px, 5vw, 104px);
   --cv-shell-width: 1214px;
-  padding: 118px var(--cv-page-right) 28px var(--cv-page-left);
+  padding: 118px var(--cv-page-x) 28px;
 }
 
 /* Sidebar has white background — eyebrow must be dark in light mode */
@@ -6134,7 +6169,7 @@ body[data-view="contract"]::after {
 .view--contract .contract-workspace {
   width: var(--cv-shell-width);
   max-width: 100%;
-  margin: 0 auto 0 0;
+  margin: 0 auto;
   padding: 0;
 }
 
@@ -6206,6 +6241,7 @@ body[data-view="contract"]::after {
 
 [data-theme="dark"] .view--contract .contract-outline,
 [data-theme="dark"] .view--contract .document-canvas,
+[data-theme="dark"] .view--contract .document-section-nav,
 [data-theme="dark"] .view--contract .document-toolbar {
   border-color: var(--cv-line);
   backdrop-filter: blur(var(--ddoc-blur-glass)) saturate(1.3);
@@ -6284,6 +6320,29 @@ body[data-view="contract"]::after {
 /* Top bar with doc-type toggle — inside canvas column */
 .view--contract .contract-top-bar {
   padding: 0 0 14px;
+}
+
+.view--contract .document-section-nav {
+  position: sticky;
+  top: 20px;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 14px;
+  padding: 10px;
+  border: 1px solid transparent;
+  border-radius: 28px;
+  background: var(--cv-glass);
+  box-shadow: 0 3px 24px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.view--contract .document-section-nav:empty {
+  display: none;
+}
+
+.view--contract .contract-workspace[data-doc-type="addendum"] .document-section-nav {
+  display: none;
 }
 
 /* Strip: toggle слева по центру, reset справа */
@@ -6703,6 +6762,13 @@ body[data-view="contract"]::after {
   padding: 0 10px;
   text-align: center;
   justify-content: center;
+}
+
+.view--contract .document-section-nav .outline-link {
+  width: auto;
+  flex: 0 0 auto;
+  padding: 0 12px;
+  white-space: nowrap;
 }
 
 .view--contract .signature-preview {
@@ -7360,10 +7426,11 @@ body[data-view="contract"]::after {
   }
 
   .mobile-contract-actions .button--ghost {
-    min-height: 44px;
-    font-size: 13px;
-    border: 1px solid var(--cv-line);
-    background: rgba(31, 29, 24, 0.04);
+    min-height: 46px;
+    font-size: 14px;
+    font-weight: 500;
+    border: 1px solid color-mix(in srgb, var(--cv-line) 65%, var(--cv-text));
+    background: rgba(31, 29, 24, 0.06);
     color: var(--cv-text);
   }
 
@@ -7374,11 +7441,28 @@ body[data-view="contract"]::after {
     align-items: stretch;
   }
 
+  .view--contract .document-section-nav {
+    position: static;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    margin-bottom: 4px;
+    padding: 8px;
+    border-radius: 22px;
+    scrollbar-width: none;
+  }
+
+  .view--contract .document-section-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .view--contract .document-section-nav .outline-link {
+    min-width: max-content;
+  }
+
   .view--contract .document-canvas {
     border-radius: 30px;
   }
 
-  .view--contract .contract-outline nav,
   .view--contract .optional-list {
     grid-template-columns: 1fr;
   }
