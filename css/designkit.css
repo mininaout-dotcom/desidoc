@@ -4517,6 +4517,24 @@ body[data-view="calculator"]::after {
   margin-right: auto;
 }
 
+@media (min-width: 1280px) and (min-height: 860px) {
+  .view--calculator {
+    padding-top: 132px;
+    padding-bottom: 132px;
+  }
+
+  .view--calculator .calculator-shell {
+    max-width: 1360px;
+    min-height: calc(100svh - 264px);
+    display: grid;
+    align-content: center;
+  }
+
+  .view--calculator .builder-grid {
+    align-items: center;
+  }
+}
+
 /* ── White panels (light) / glass panels (dark) ──────────── */
 
 .view--calculator .setup-card,
