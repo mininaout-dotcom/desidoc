@@ -6384,11 +6384,6 @@ body[data-view="contract"]::after {
   isolation: isolate;
 }
 
-/* iOS-style corner smoothing (~84% Figma) on the big cards — ignored where unsupported */
-.view--contract .contract-outline {
-  corner-shape: superellipse(5);
-}
-
 [data-theme="dark"] .view--contract .contract-outline,
 [data-theme="dark"] .view--contract .document-canvas,
 [data-theme="dark"] .view--contract .document-toolbar {
