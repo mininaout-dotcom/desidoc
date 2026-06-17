@@ -241,6 +241,8 @@ const CONTRACT_FIELD_GROUPS = [
 
 const ADDENDUM_REQUIRED_FIELDS = [
   "number",
+  "city",
+  "date",
   "contractNumber",
   "contractDate",
   "clientName",
@@ -256,6 +258,8 @@ const ADDENDUM_REQUIRED_FIELDS = [
 
 const ADDENDUM_FIELD_LABELS = {
   number: "Номер допсоглашения",
+  city: "Город",
+  date: "Дата допсоглашения",
   contractNumber: "Номер договора",
   contractDate: "Дата договора",
   clientName: "Заказчик",
@@ -268,6 +272,14 @@ const ADDENDUM_FIELD_LABELS = {
   contactName: "Контактное лицо",
   contactInfo: "Контакты",
 };
+
+const DEFAULT_ADDENDUM_PAYMENT_TERMS = "50% предоплата и 50% после подписания акта";
+const ADDENDUM_PAYMENT_TERMS = [
+  { label: "50 / 50", value: DEFAULT_ADDENDUM_PAYMENT_TERMS },
+  { label: "100% предоплата", value: "100% предоплата до начала работ" },
+  { label: "100% постоплата", value: "100% оплата после подписания акта" },
+  { label: "30 / 70", value: "30% предоплата и 70% после подписания акта" },
+];
 
 const CONTRACT_REQUIRED_FIELDS = ["number", "city", "date", "clientName", "clientInn", "contractorName", "contractorInn", "bank", "days"];
 
@@ -1974,12 +1986,33 @@ function renderContractPdf(root, { jsPDF, fonts, filename, docType = "contract",
   const titleEl = root.querySelector(".document-title");
   if (titleEl) {
     setF(17, "bold", BLACK);
-    const titleLines = doc.splitTextToSize(txt(titleEl.textContent), pageW - M.l - M.r);
-    drawLines(titleLines, M.l, 22);
+    const titlePartNodes = titleEl.querySelectorAll(".document-title__kind, .document-title__rest, .document-title__date");
+    const titleParts = titlePartNodes.length
+      ? Array.from(titlePartNodes).map((node) => txt(node.textContent)).filter(Boolean)
+      : [txt(titleEl.textContent)];
+    titleParts.forEach((part, partIndex) => {
+      const lines = doc.splitTextToSize(part, pageW - M.l - M.r);
+      lines.forEach((line) => {
+        if (y + 22 > pageBottom) startNewPage();
+        y += 22;
+        doc.text(line, pageW / 2, y, { align: "center" });
+      });
+      if (partIndex === 0 && titleParts.length > 1) y += 1;
+    });
   }
   const metaEl = root.querySelector(".document-meta");
-  if (metaEl) { setF(9, "normal", GRAY); y += 16; doc.text(txt(metaEl.textContent), M.l, y); }
-  y += 12;
+  if (metaEl) {
+    const metaItems = Array.from(metaEl.children).map((node) => txt(node.textContent)).filter(Boolean);
+    setF(9, "normal", GRAY);
+    y += 18;
+    if (metaItems.length >= 2) {
+      doc.text(metaItems[0], M.l, y);
+      doc.text(metaItems[1], pageW - M.r, y, { align: "right" });
+    } else {
+      doc.text(txt(metaEl.textContent), M.l, y);
+    }
+  }
+  y += 16;
 
   // — Секции: слева h2, справа пункты —
   const colGap = 16;
@@ -2020,8 +2053,11 @@ function renderContractPdf(root, { jsPDF, fonts, filename, docType = "contract",
 
       const firstBlock = blocks ? blocks[0] : null;
       // Держим вместе только заголовок пункта и пару первых строк (без больших пустот)
+      const columnsTopGap = columns ? 18 : 0;
       const firstKeep = firstBlock
-        ? (firstBlock.kind === "img" ? firstBlock.total : Math.min(rules.keepLeadLines, firstBlock.lines.length) * firstBlock.spec.lh + firstBlock.spec.after)
+        ? (firstBlock.kind === "img"
+          ? firstBlock.total
+          : Math.min(Math.max(rules.keepLeadLines + 1, rules.orphanLines || 2), firstBlock.lines.length) * firstBlock.spec.lh + firstBlock.spec.after)
         : (columns ? 44 : 0);
       const titleHeight = clauseTitleLines.length ? clauseTitleLines.length * 12.6 + 2 : 0;
       const firstBodyHeight = columns
@@ -2033,10 +2069,15 @@ function renderContractPdf(root, { jsPDF, fonts, filename, docType = "contract",
               ? firstBlock.total + 6
               : firstKeep + 6))
           : 0);
-      const leadHeight = titleHeight + firstKeep + 8;
-      return { clauseTitleLines, blocks, columns, leadHeight, titleHeight, firstBodyHeight };
+      const leadHeight = titleHeight + columnsTopGap + firstKeep + 8;
+      return { clauseTitleLines, blocks, columns, columnsTopGap, leadHeight, titleHeight, firstBodyHeight };
     });
-    const sectionLeadHeight = rules.sectionLeadGap + Math.max(leftTitleLines.length * 13, clauses[0]?.leadHeight || 0);
+    const firstClause = clauses[0];
+    const sectionFrameHeight = 30;
+    const firstClauseStartHeight = firstClause
+      ? firstClause.titleHeight + firstClause.columnsTopGap + firstClause.firstBodyHeight + 12
+      : 0;
+    const sectionLeadHeight = sectionFrameHeight + Math.max(leftTitleLines.length * 13, firstClauseStartHeight);
     ensureSpace(sectionLeadHeight);
     y += 16;
     doc.setDrawColor(212, 212, 212); doc.setLineWidth(0.6); doc.line(M.l, y, pageW - M.r, y);
@@ -2052,7 +2093,7 @@ function renderContractPdf(root, { jsPDF, fonts, filename, docType = "contract",
     y = top;
     clauses.forEach((clause, clauseIndex) => {
       if (clauseIndex > 0) ensureSpace(clause.leadHeight);
-      const clauseStartHeight = clause.titleHeight + clause.firstBodyHeight + 4;
+      const clauseStartHeight = clause.titleHeight + clause.columnsTopGap + clause.firstBodyHeight + 12;
       if (clause.clauseTitleLines.length && y + clauseStartHeight > pageBottom && clauseStartHeight <= maxBlock) {
         startNewPage();
       }
@@ -2063,6 +2104,7 @@ function renderContractPdf(root, { jsPDF, fonts, filename, docType = "contract",
       }
 
       if (clause.columns) {
+        y += clause.columnsTopGap;
         const blockH = Math.max(...clause.columns.map((c) => c.height));
         if (y + blockH > pageBottom && blockH <= maxBlock) startNewPage();
         const startY = y;
@@ -2545,6 +2587,20 @@ function parseClientReply(text) {
   };
 }
 
+const CLIENT_REPLY_LABELS = {
+  clientName: "ФИО / название",
+  clientInn: "ИНН",
+  clientAddress: "адрес",
+  responsible: "ответственное лицо",
+  responsibleContact: "контакты",
+};
+
+function getParsedClientReplyLabels(parsed) {
+  return Object.entries(parsed)
+    .filter(([, value]) => String(value || "").trim())
+    .map(([key]) => CLIENT_REPLY_LABELS[key] || key);
+}
+
 function setClientReplyStatus(message, isError = false) {
   document.querySelectorAll("[data-client-reply-status]").forEach((status) => {
     status.textContent = message;
@@ -2554,20 +2610,12 @@ function setClientReplyStatus(message, isError = false) {
 
 function applyClientReplyText(text, { silent = false } = {}) {
   const parsed = parseClientReply(text);
-  const labels = [];
-  const labelMap = {
-    clientName: "ФИО / название",
-    clientInn: "ИНН",
-    clientAddress: "адрес",
-    responsible: "ответственное лицо",
-    responsibleContact: "контакты",
-  };
+  const labels = getParsedClientReplyLabels(parsed);
 
   Object.entries(parsed).forEach(([key, value]) => {
     const normalized = String(value || "").trim();
     if (!normalized) return;
     contractState.fields[key] = normalized;
-    labels.push(labelMap[key] || key);
   });
 
   if (!labels.length) {
@@ -2745,9 +2793,9 @@ function createDefaultContractDraft() {
       taskRequirements: "",
       deadline: "",
       price: "",
-      paymentTerms: "",
+      paymentTerms: DEFAULT_ADDENDUM_PAYMENT_TERMS,
       revisionsPerStage: "2",
-      revisionRate: "",
+      revisionRate: state.profile?.hourly || "",
       includeRightsTransfer: true,
       otherConditions: "",
       contactName: "",
@@ -2811,7 +2859,19 @@ function saveProfileSignature() {
 
 function contractField(key, placeholder) {
   const value = contractState.fields[key] || "";
-  return `<span class="inline-field" contenteditable="true" spellcheck="false" data-contract-field="${key}" data-placeholder="${escapeHtml(placeholder)}">${escapeHtml(value || placeholder)}</span>`;
+  return `<span class="inline-field" contenteditable="true" spellcheck="false" data-contract-field="${key}" data-placeholder="${escapeHtml(placeholder)}">${escapeHtml(value)}</span>`;
+}
+
+function normalizeInlineFieldValue(value, placeholder = "") {
+  let normalized = String(value || "").trim();
+  const normalizedPlaceholder = String(placeholder || "").trim();
+  if (!normalized) return "";
+  const isUnderlinePlaceholder = /^_+$/.test(normalizedPlaceholder) || /_{2,}/.test(normalizedPlaceholder);
+  if (isUnderlinePlaceholder && normalized === normalizedPlaceholder) return "";
+  if (isUnderlinePlaceholder && normalized.endsWith(normalizedPlaceholder)) {
+    normalized = normalized.slice(0, -normalizedPlaceholder.length).trim();
+  }
+  return normalized.replace(/[_\s]{2,}$/g, "").trim();
 }
 
 function isUnderscorePlaceholder(value) {
@@ -2923,7 +2983,7 @@ function syncContractControls(key) {
 
 function syncContractFieldDom(key, sourceNode = null) {
   document.querySelectorAll(`[data-contract-field="${key}"]`).forEach((node) => {
-    if (node !== sourceNode) node.textContent = contractState.fields[key] || node.dataset.placeholder || "";
+    if (node !== sourceNode) node.textContent = contractState.fields[key] || "";
   });
 }
 
@@ -3188,9 +3248,10 @@ function ensureCurrentDocumentReadyForPdf() {
   }
   const labels = missing.map(getCurrentDocumentFieldLabel);
   const documentName = contractState.docType === "addendum" ? "допсоглашения" : "договора";
-  const shortList = labels.slice(0, 3).join(", ");
-  const suffix = labels.length > 3 ? ` и ещё ${labels.length - 3}` : "";
-  updateAutosaveStatus(`Осталось заполнить: ${shortList}${suffix}`);
+  updateAutosaveStatus(
+    `Осталось заполнить: ${labels.length} ${getMobileContractFieldWord(labels.length)}`,
+    `Осталось заполнить: ${labels.join(", ")}`
+  );
   setClientReplyStatus(`Перед скачиванием PDF заполните обязательные поля ${documentName}: ${labels.join(", ")}.`, true);
   focusCurrentDocumentField(missing[0]);
   return false;
@@ -3229,6 +3290,17 @@ function syncAddendumFromContract({ force = false } = {}) {
     addendum.contactInfo = fields.responsibleContact;
   }
 
+  const revisionRate = String(fields.hourly || state.profile?.hourly || "").trim();
+  const currentRevisionRate = String(addendum.revisionRate || "").trim();
+  const canAutoFillRevisionRate = shouldAutoFillAddendumField(currentRevisionRate) || currentRevisionRate === "2 500";
+  if ((force || canAutoFillRevisionRate) && revisionRate) {
+    addendum.revisionRate = revisionRate;
+  }
+
+  if (force || shouldAutoFillAddendumField(addendum.paymentTerms)) {
+    addendum.paymentTerms = DEFAULT_ADDENDUM_PAYMENT_TERMS;
+  }
+
   if (force || shouldAutoFillAddendumField(addendum.date)) {
     addendum.date = formatContractDate();
   }
@@ -3254,8 +3326,8 @@ function getMobileContractSteps() {
         key: "document",
         title: "Документ",
         required: true,
-        allKeys: ["number", "contractNumber", "contractDate"],
-        requiredKeys: ["number", "contractNumber", "contractDate"],
+        allKeys: ["number", "city", "date", "contractNumber", "contractDate"],
+        requiredKeys: ["number", "city", "date", "contractNumber", "contractDate"],
         filled: isAddendumFieldFilled,
       },
       {
@@ -3278,7 +3350,7 @@ function getMobileContractSteps() {
         key: "requirements",
         title: "ТЗ и условия",
         required: true,
-        allKeys: ["taskRequirements"],
+        allKeys: ["taskRequirements", "revisionsPerStage", "revisionRate"],
         requiredKeys: ["taskRequirements"],
         filled: isAddendumFieldFilled,
       },
@@ -3463,6 +3535,8 @@ function renderMobileContractSheetContent() {
         <div class="mobile-contract-sheet__section">
           <p class="mobile-contract-sheet__hint">Проверьте номер документа и привязку к рамочному договору.</p>
           ${renderMobileContractControl("Номер допсоглашения", "number", "1", { kind: "addendum", value: contractState.addendumFields.number })}
+          ${renderMobileContractControl("Город", "city", "Москва", { kind: "addendum", value: contractState.addendumFields.city })}
+          ${renderMobileContractControl("Дата допсоглашения", "date", formatContractDate(), { kind: "addendum", value: contractState.addendumFields.date })}
           ${renderMobileContractControl("Номер договора", "contractNumber", "___", { kind: "addendum", value: contractState.addendumFields.contractNumber })}
           ${renderMobileContractControl("Дата договора", "contractDate", formatContractDate(), { kind: "addendum", value: contractState.addendumFields.contractDate })}
         </div>
@@ -3488,7 +3562,8 @@ function renderMobileContractSheetContent() {
           ${renderMobileContractControl("Предмет задания", "taskDescription", "Разработка логотипа", { kind: "addendum", value: contractState.addendumFields.taskDescription })}
           ${renderMobileContractControl("Срок выполнения", "deadline", "до 30.06.2026 или 14 дней", { kind: "addendum", value: contractState.addendumFields.deadline })}
           ${renderMobileContractControl("Стоимость", "price", "50 000 ₽", { kind: "addendum", value: contractState.addendumFields.price })}
-          ${renderMobileContractControl("Порядок оплаты", "paymentTerms", "50% аванс и 50% после акта", { kind: "addendum", value: contractState.addendumFields.paymentTerms })}
+          ${renderMobileContractControl("Порядок оплаты", "paymentTerms", DEFAULT_ADDENDUM_PAYMENT_TERMS, { kind: "addendum", value: contractState.addendumFields.paymentTerms })}
+          ${renderAddendumPaymentTermChips(contractState.addendumFields.paymentTerms)}
         </div>
       `;
       return;
@@ -3504,6 +3579,8 @@ function renderMobileContractSheetContent() {
             multiline: true,
             rows: 9,
           })}
+          ${renderMobileContractControl("Бесплатных правок на этап", "revisionsPerStage", "2", { kind: "addendum", value: contractState.addendumFields.revisionsPerStage })}
+          ${renderMobileContractControl("Тариф доп. правок, ₽/ч", "revisionRate", "2 500", { kind: "addendum", value: contractState.addendumFields.revisionRate })}
         </div>
       `;
       return;
@@ -3791,10 +3868,11 @@ function renderContractChooser() {}
 
 function addendumField(key, placeholder, tag = "span") {
   const value = contractState.addendumFields[key] || "";
+  const fieldClass = `inline-field${["date", "contractDate", "deadline"].includes(key) ? " inline-field--nowrap" : ""}`;
   if (tag === "div") {
-    return `<div class="inline-field inline-field--block" contenteditable="true" spellcheck="false" data-addendum-field="${key}" data-placeholder="${escapeHtml(placeholder)}">${escapeHtml(value || placeholder)}</div>`;
+    return `<div class="${fieldClass} inline-field--block" contenteditable="true" spellcheck="false" data-addendum-field="${key}" data-placeholder="${escapeHtml(placeholder)}">${escapeHtml(value)}</div>`;
   }
-  return `<span class="inline-field" contenteditable="true" spellcheck="false" data-addendum-field="${key}" data-placeholder="${escapeHtml(placeholder)}">${escapeHtml(value || placeholder)}</span>`;
+  return `<span class="${fieldClass}" contenteditable="true" spellcheck="false" data-addendum-field="${key}" data-placeholder="${escapeHtml(placeholder)}">${escapeHtml(value)}</span>`;
 }
 
 function addendumNote(text) {
@@ -3802,11 +3880,23 @@ function addendumNote(text) {
   return `<div class="contract-note">${escapeHtml(text)}</div>`;
 }
 
+function renderAddendumPaymentTermChips(activeValue = contractState.addendumFields.paymentTerms) {
+  const current = String(activeValue || "").trim();
+  return `
+    <div class="addendum-payment-chips" role="list" aria-label="Варианты порядка оплаты">
+      ${ADDENDUM_PAYMENT_TERMS.map((term) => `
+        <button class="addendum-payment-chip ${current === term.value ? "is-active" : ""}" type="button" data-action="set-addendum-payment" data-payment-term-value="${escapeHtml(term.value)}" aria-pressed="${current === term.value ? "true" : "false"}">
+          ${escapeHtml(term.label)}
+        </button>
+      `).join("")}
+    </div>
+  `;
+}
+
 function syncAddendumField(key) {
   document.querySelectorAll(`[data-addendum-field="${key}"]`).forEach((el) => {
     const val = contractState.addendumFields[key] || "";
-    const ph = el.dataset.placeholder || "";
-    if (el.textContent !== (val || ph)) el.textContent = val || ph;
+    if (el.textContent !== val) el.textContent = val;
   });
 }
 
@@ -3820,6 +3910,14 @@ function renderAddendumControls() {
       <label class="contract-control">
         <span>Номер допсоглашения</span>
         <input type="text" autocomplete="off" data-addendum-control="number" value="${escapeHtml(f.number || "")}" placeholder="1">
+      </label>
+      <label class="contract-control">
+        <span>Город</span>
+        <input type="text" autocomplete="off" data-addendum-control="city" value="${escapeHtml(f.city || "")}" placeholder="Москва">
+      </label>
+      <label class="contract-control">
+        <span>Дата допсоглашения</span>
+        <input type="text" autocomplete="off" data-addendum-control="date" value="${escapeHtml(f.date || "")}" placeholder="${formatContractDate()}">
       </label>
       <label class="contract-control">
         <span>Номер договора</span>
@@ -3857,8 +3955,9 @@ function renderAddendumControls() {
       </label>
       <label class="contract-control">
         <span>Порядок оплаты</span>
-        <input type="text" autocomplete="off" data-addendum-control="paymentTerms" value="${escapeHtml(f.paymentTerms || "")}" placeholder="50% аванс и 50% после акта">
+        <input type="text" autocomplete="off" data-addendum-control="paymentTerms" value="${escapeHtml(f.paymentTerms || "")}" placeholder="${escapeHtml(DEFAULT_ADDENDUM_PAYMENT_TERMS)}">
       </label>
+      ${renderAddendumPaymentTermChips(f.paymentTerms)}
     </details>
     <details class="contract-form__group">
       <summary>Контактное лицо</summary>
@@ -3987,11 +4086,18 @@ function renderAddendumDocument() {
     ? `<img class="signature-image" src="${escapeHtml(sig.dataUrl)}" alt="Подпись исполнителя">`
     : "";
 
-  const paymentText = f.paymentTerms || "50% аванс и 50% после акта";
-
   canvas.innerHTML = `
     <div class="contract-doc addendum-doc" data-section="addendum-top">
-      <h1 class="document-title">Дополнительное соглашение № ${addendumField("number", "___")}<br><span class="document-title__sub">к Договору возмездного оказания услуг № ${addendumField("contractNumber", "___")} от ${addendumField("contractDate", "___")}</span></h1>
+      <h1 class="document-title">
+        <span class="document-title__kind">Дополнительное соглашение № ${addendumField("number", "___")}</span>
+        <span class="document-title__rest">к Договору возмездного оказания услуг № ${addendumField("contractNumber", "___")}</span>
+        <span class="document-title__date">от ${addendumField("contractDate", "___")}</span>
+      </h1>
+
+      <div class="document-meta">
+        <span class="document-meta__city">${addendumField("city", "Москва")}</span>
+        <span class="document-meta__date">${addendumField("date", formatContractDate())}</span>
+      </div>
 
       <div class="addendum-parties-table">
         <div class="addendum-party-row">
@@ -4035,7 +4141,7 @@ function renderAddendumDocument() {
         <h2><span class="section-num">4.</span> Стоимость работ и порядок оплаты</h2>
         ${renderAddendumClause("payment", `
           <p>Стоимость работ составляет: ${addendumField("price", "сумма в рублях")}.</p>
-          <p>Порядок оплаты: ${addendumField("paymentTerms", "50% аванс и 50% после акта")}.</p>
+          <p>Порядок оплаты: ${addendumField("paymentTerms", DEFAULT_ADDENDUM_PAYMENT_TERMS)}.</p>
         `)}
       </section>
 
@@ -4368,12 +4474,16 @@ function renderContractDocument() {
     },
   ];
 
+  const contractTitleRest = template.title.replace(/^Договор\s*/i, "").trim();
   const docHeader = `
     <nav class="document-section-nav document-section-nav--inline" data-contract-outline aria-label="Навигация по разделам договора"></nav>
-    <h1 class="document-title">${escapeHtml(template.title)} № ${contractField("number", "___")}</h1>
+    <h1 class="document-title">
+      <span class="document-title__kind">Договор</span>
+      <span class="document-title__rest">${escapeHtml(contractTitleRest)} № ${contractField("number", "___")}</span>
+    </h1>
     <div class="document-meta">
-      <span>${contractField("city", "Город")}</span>
-      <span>${contractField("date", "дата")}</span>
+      <span class="document-meta__city">${contractField("city", "Город")}</span>
+      <span class="document-meta__date">${contractField("date", "дата")}</span>
     </div>
     ${contractNote("Серые пояснения помогают быстро проверить смысл пунктов. В PDF для клиента попадёт только текст договора. Отключить можно тумблером «Пояснения» в панели под документом.")}
   `;
@@ -4683,9 +4793,14 @@ function scheduleContractSave() {
   }, 500);
 }
 
-function updateAutosaveStatus(label) {
+function updateAutosaveStatus(label, title = "") {
   document.querySelectorAll("[data-autosave-status]").forEach((status) => {
     status.textContent = label;
+    if (title) {
+      status.title = title;
+    } else {
+      status.removeAttribute("title");
+    }
   });
 }
 
@@ -4790,12 +4905,18 @@ function printContract(onDone) {
       .pdf-clean-body .optional-section__actions, .pdf-clean-body .contract-clause-delete { display: none !important; }
       .pdf-clean-body [contenteditable] { outline: none !important; }
       .pdf-clean-body .contract-signature-img, .pdf-clean-body .signature-image { max-width: 160px; max-height: 60px; }
+      .pdf-clean-body .document-title { text-align: center; margin: 0 0 18px; line-height: 1.12; }
+      .pdf-clean-body .document-title__kind, .pdf-clean-body .document-title__rest, .pdf-clean-body .document-title__date { display: block; }
+      .pdf-clean-body .document-title__kind, .pdf-clean-body .document-title__date, .pdf-clean-body .inline-field--nowrap { white-space: nowrap !important; }
+      .pdf-clean-body .document-meta { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); margin-bottom: 24px; color: #555; }
+      .pdf-clean-body .document-meta__date { text-align: right; }
       .pdf-clean-body .document-section { display: grid; grid-template-columns: 150px minmax(0, 1fr); column-gap: 28px; row-gap: 8px; align-items: start; padding: 20px 0; border-top: 1px solid #ddd; break-inside: avoid; }
       .pdf-clean-body .document-section:first-of-type { border-top: 0; }
       .pdf-clean-body .document-section h2 { grid-column: 1; margin: 0; font-size: 13px; line-height: 1.24; letter-spacing: -0.02em; }
       .pdf-clean-body .document-section > :not(h2) { grid-column: 2; min-width: 0; }
       .pdf-clean-body .contract-clause { padding-right: 0; }
       .pdf-clean-body .contract-clause + .contract-clause { padding-top: 14px; border-top: 1px solid #e2e2e2; }
+      .pdf-clean-body .requisites-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 18px; }
     </style>
     <div class="pdf-clean-body">${clone.innerHTML}</div>
   `;
@@ -5129,6 +5250,15 @@ function bindEvents() {
     if (action === "show-addendum-doc") {
       openAddendumDocument();
     }
+    if (action === "set-addendum-payment") {
+      contractState.addendumFields.paymentTerms = actionTarget.dataset.paymentTermValue || DEFAULT_ADDENDUM_PAYMENT_TERMS;
+      renderAddendumControls();
+      renderAddendumDocument();
+      renderAddendumProgress();
+      renderMobileContractUI({ forceSheet: true });
+      scheduleContractSave();
+      return;
+    }
     if (action === "upload-signature") {
       document.querySelector("[data-signature-file]")?.click();
     }
@@ -5256,7 +5386,9 @@ function bindEvents() {
 
     if (input.matches("[data-addendum-field]")) {
       const key = input.dataset.addendumField;
-      contractState.addendumFields[key] = input.textContent.trim();
+      const normalized = normalizeInlineFieldValue(input.textContent, input.dataset.placeholder);
+      contractState.addendumFields[key] = normalized;
+      if (input.textContent.trim() !== normalized) input.textContent = normalized;
       renderAddendumProgress();
       renderMobileContractUI();
       scheduleContractSave();
@@ -5275,7 +5407,9 @@ function bindEvents() {
 
     if (input.matches("[data-contract-field]")) {
       const key = input.dataset.contractField;
-      contractState.fields[key] = input.textContent.trim();
+      const normalized = normalizeInlineFieldValue(input.textContent, input.dataset.placeholder);
+      contractState.fields[key] = normalized;
+      if (input.textContent.trim() !== normalized) input.textContent = normalized;
       syncContractControls(key);
       syncContractFieldDom(key, input);
       validateContractFields();
@@ -5295,8 +5429,13 @@ function bindEvents() {
       mobileContractClientReplyDraft = input.value;
       clearTimeout(clientReplyParseTimer);
       clientReplyParseTimer = setTimeout(() => {
-        applyClientReplyText(input.value, { silent: true });
-      }, 450);
+        const labels = getParsedClientReplyLabels(parseClientReply(input.value));
+        if (labels.length) {
+          setClientReplyStatus(`Нашла: ${labels.join(", ")}. Поставьте галочку и нажмите «Заполнить из ответа».`);
+        } else {
+          setClientReplyStatus("Вставьте ответ клиента — данные попадут в договор только после галочки и кнопки.");
+        }
+      }, 250);
       return;
     }
 
