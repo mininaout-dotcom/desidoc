@@ -1816,22 +1816,22 @@ function renderEstimatePdf({ jsPDF, fonts, filename, title, number, projectName,
   const footerWidth = chip ? 470 : contentR - padX;
   const footerLines = wrap(footer, footerWidth, 10, "normal");
   const footerHeight = 12 + footerLines.length * 13 + (chip ? 24 : 0) + 8;
-  const summaryHeight = 18 + summary.reduce((acc, item) => acc + (item.total ? 44 : 20), 0) + 16;
+  const summaryHeight = summary.reduce((acc, item) => acc + (item.total ? 42 : 26), 0) + 24;
   ensure(46 + summaryHeight + 48 + footerHeight);
   y += 46;
   const sumL = contentR - 282;
   rule(sumL, contentR, y, 1.5);
   summary.forEach((s) => {
     if (s.total) {
-      y += 13;
-      font(13, "normal"); color(BLACK); space(0.78); T("ВСЕГО", sumL, y + 11); space(0);
-      font(24, "bold"); color(BLACK); space(-1.56); T(s.value, contentR, y + 13, "right"); space(0);
-      y += 18;
+      const baseline = y + 30;
+      font(13, "normal"); color(BLACK); space(0.78); T("ВСЕГО", sumL, baseline - 6); space(0);
+      font(24, "bold"); color(BLACK); space(-1.56); T(s.value, contentR, baseline, "right"); space(0);
+      y = baseline + 12;
       rule(sumL, contentR, y, 1.5);
     } else {
-      y += 8;
-      font(12, "normal"); color(BLACK); space(-0.3); T(s.label, sumL, y + 9); T(s.value, contentR, y + 9, "right"); space(0);
-      y += 9;
+      const baseline = y + 18;
+      font(12, "normal"); color(BLACK); space(-0.3); T(s.label, sumL, baseline); T(s.value, contentR, baseline, "right"); space(0);
+      y = baseline + 8;
       rule(sumL, contentR, y, 1);
     }
   });
@@ -1896,10 +1896,10 @@ function renderContractPdf(root, { jsPDF, fonts, filename, onDone }) {
     if (type === "label") return { size: 8.6, font: "normal", lh: 11.4, color: GRAY, after: 4 };
     return { size: 9.5, font: "normal", lh: 13.4, color: BLACK, after: 5 };
   };
-  const prepareImage = (el) => {
+  const prepareImage = (el, maxW = rightW) => {
     const natW = el.naturalWidth || el.width || 160;
     const natH = el.naturalHeight || el.height || 60;
-    let width = Math.min(150, rightW * 0.5);
+    let width = Math.min(150, maxW);
     let height = width * (natH / natW);
     if (height > 64) {
       height = 64;
@@ -1920,6 +1920,16 @@ function renderContractPdf(root, { jsPDF, fonts, filename, onDone }) {
   y += 12;
 
   // — Секции: слева h2, справа пункты —
+  const colGap = 16;
+  const reqColW = (rightW - colGap) / 2;
+  const buildBlocks = (container, width) => collectPdfBlocks(container).map((block) => {
+    if (block.type === "img") return { kind: "img", el: block.el, ...prepareImage(block.el, width) };
+    const spec = getTextSpec(block.type);
+    setF(spec.size, spec.font);
+    const lines = doc.splitTextToSize(pdfText(block.text), width);
+    return { kind: "text", lines, spec, total: lines.length * spec.lh + spec.after };
+  });
+
   root.querySelectorAll(".document-section").forEach((sec) => {
     const h2 = sec.querySelector("h2");
     setF(11, "bold");
@@ -1930,44 +1940,43 @@ function renderContractPdf(root, { jsPDF, fonts, filename, onDone }) {
       setF(9.8, "bold");
       const clauseTitleLines = clauseTitleText ? doc.splitTextToSize(clauseTitleText, rightW) : [];
       const body = clause.querySelector(".contract-clause__body") || clause;
-      const blocks = collectPdfBlocks(body).map((block) => {
-        if (block.type === "img") {
-          return { kind: "img", el: block.el, ...prepareImage(block.el) };
-        }
-        const spec = getTextSpec(block.type);
-        setF(spec.size, spec.font);
-        const lines = doc.splitTextToSize(pdfText(block.text), rightW);
-        return {
-          kind: "text",
-          lines,
-          spec,
-          total: lines.length * spec.lh + spec.after,
-        };
-      });
-      const firstBlock = blocks[0];
-      const leadHeight =
-        (clauseTitleLines.length ? clauseTitleLines.length * 12.6 + 2 : 0) +
-        (firstBlock ? firstBlock.total : 0) +
-        8;
-      return { clauseTitleLines, blocks, leadHeight };
+
+      // Реквизиты и подписи — две колонки (Заказчик слева, Исполнитель справа)
+      const grid = body.querySelector(".requisites-grid");
+      let columns = null, blocks = null;
+      if (grid) {
+        columns = Array.from(grid.querySelectorAll(".requisite-card")).map((card) => {
+          const colBlocks = buildBlocks(card, reqColW);
+          if (colBlocks[0] && colBlocks[0].kind === "text") {
+            colBlocks[0] = { ...colBlocks[0], spec: { ...colBlocks[0].spec, font: "bold" } };
+          }
+          return { blocks: colBlocks, height: colBlocks.reduce((a, b) => a + b.total, 0) };
+        });
+      } else {
+        blocks = buildBlocks(body, rightW);
+      }
+
+      const firstBlock = blocks ? blocks[0] : null;
+      // Держим вместе только заголовок пункта и пару первых строк (без больших пустот)
+      const firstKeep = firstBlock
+        ? (firstBlock.kind === "img" ? firstBlock.total : Math.min(2, firstBlock.lines.length) * firstBlock.spec.lh + firstBlock.spec.after)
+        : (columns ? 44 : 0);
+      const leadHeight = (clauseTitleLines.length ? clauseTitleLines.length * 12.6 + 2 : 0) + firstKeep + 8;
+      return { clauseTitleLines, blocks, columns, leadHeight };
     });
-    const sectionLeadHeight = 30 + Math.max(leftTitleLines.length * 13, clauses[0]?.leadHeight || 0);
+    const sectionLeadHeight = 28 + Math.max(leftTitleLines.length * 13, clauses[0]?.leadHeight || 0);
     ensureSpace(sectionLeadHeight);
     y += 16;
     doc.setDrawColor(212, 212, 212); doc.setLineWidth(0.6); doc.line(M.l, y, pageW - M.r, y);
     y += 14;
 
     const top = y;
-    // h2 в левой колонке
     setF(11, "bold", BLACK);
     let hy = top;
-    leftTitleLines.forEach((line) => {
-      hy += 13;
-      doc.text(line, M.l, hy);
-    });
+    leftTitleLines.forEach((line) => { hy += 13; doc.text(line, M.l, hy); });
     const leftBottom = hy;
+    const headerPage = doc.getNumberOfPages();
 
-    // пункты в правой колонке
     y = top;
     clauses.forEach((clause, clauseIndex) => {
       if (clauseIndex > 0) ensureSpace(clause.leadHeight);
@@ -1976,6 +1985,34 @@ function renderContractPdf(root, { jsPDF, fonts, filename, onDone }) {
         drawLines(clause.clauseTitleLines, rightX, 12.6);
         y += 2;
       }
+
+      if (clause.columns) {
+        const blockH = Math.max(...clause.columns.map((c) => c.height));
+        if (y + blockH > pageBottom && blockH <= maxBlock) startNewPage();
+        const startY = y;
+        let maxY = startY;
+        clause.columns.forEach((col, ci) => {
+          const cx = rightX + ci * (reqColW + colGap);
+          let cy = startY;
+          col.blocks.forEach((block) => {
+            if (block.kind === "img") {
+              try {
+                const src = block.el.tagName === "CANVAS" ? block.el.toDataURL("image/png") : block.el.src;
+                doc.addImage(src, "PNG", cx, cy + 4, block.width, block.height);
+              } catch (e) { /* пропускаем битую картинку */ }
+              cy += block.total;
+            } else {
+              setF(block.spec.size, block.spec.font, block.spec.color);
+              block.lines.forEach((line) => { cy += block.spec.lh; doc.text(line, cx, cy); });
+              cy += block.spec.after;
+            }
+          });
+          if (cy > maxY) maxY = cy;
+        });
+        y = maxY + 4;
+        return;
+      }
+
       clause.blocks.forEach((block, blockIndex) => {
         if (block.kind === "img") {
           const needed = blockIndex === 0 ? block.total + 10 : block.total;
@@ -1997,7 +2034,9 @@ function renderContractPdf(root, { jsPDF, fonts, filename, onDone }) {
       y += 4;
     });
 
-    y = Math.max(y, leftBottom) + 10;
+    // Если пункты ушли на новую страницу, leftBottom относится к прошлой —
+    // не учитываем его, иначе курсор прыгает вниз и плодит пустые страницы.
+    y = (doc.getNumberOfPages() === headerPage ? Math.max(y, leftBottom) : y) + 10;
   });
 
   const totalPages = doc.getNumberOfPages();
