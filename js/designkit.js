@@ -2116,13 +2116,6 @@ function renderContractPdf(root, { jsPDF, fonts, filename, docType = "contract",
     y = (doc.getNumberOfPages() === headerPage ? Math.max(y, leftBottom) : y) + 10;
   });
 
-  const totalPages = doc.getNumberOfPages();
-  for (let i = 1; i <= totalPages; i++) {
-    doc.setPage(i);
-    setF(8, "normal", GRAY);
-    doc.text(`${i} / ${totalPages}`, pageW / 2, pageH - 32, { align: "center" });
-  }
-
   doc.save(filename);
   if (onDone) onDone();
 }

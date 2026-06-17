@@ -3981,7 +3981,7 @@ h2 {
     line-height: 34px;
   }
 
-  .deedoc-home__footer p {
+  .deedoc-home__footer > p:not(.deedoc-home__footer-legal) {
     font-size: 16px;
     padding-left: 60px;
     white-space: normal;
@@ -8497,8 +8497,13 @@ body[data-view="calculator"] [data-brief-ai-modal] textarea:focus-visible {
   }
 
   .deedoc-home__footer-legal {
+    width: 100%;
+    max-width: none;
+    padding-left: 0;
+    box-sizing: border-box;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     gap: 10px;
     margin-top: 2px !important;
     text-align: center;
@@ -8509,14 +8514,15 @@ body[data-view="calculator"] [data-brief-ai-modal] textarea:focus-visible {
   }
 
   .deedoc-home__footer-legal .link-btn {
-    display: block;
-    width: 100%;
-    max-width: 100%;
+    display: inline-block;
+    width: fit-content;
+    max-width: min(100%, 18.5rem);
     margin: 0 auto;
     color: inherit;
     text-decoration: none;
     text-align: center;
     line-height: 1.3;
+    white-space: normal;
   }
 
   .deedoc-home__footer-legal .link-btn::after {
