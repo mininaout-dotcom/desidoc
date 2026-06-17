@@ -1461,6 +1461,12 @@ function notifyPdfDownloadSuccess() {
   setTimeout(showFeedbackPrompt, 220);
 }
 
+function notifyPdfDownloadFailure(message) {
+  const safeMessage = message || "Не удалось безопасно собрать PDF. Попробуйте сократить документ или повторить экспорт позже.";
+  console.error(safeMessage);
+  window.alert(safeMessage);
+}
+
 function startFeedbackSurvey() {
   const modal = document.querySelector("[data-feedback-modal]");
   feedbackPromptCloseHandled = true;
@@ -1563,6 +1569,30 @@ function getPdfRenderScale() {
   return Math.min(4, Math.max(3, window.devicePixelRatio || 1));
 }
 
+const MAX_RASTER_FALLBACK_PAGES = 40;
+
+const PDF_LAYOUT_RULES = {
+  estimate: {
+    bottomSafePx: 26,
+  },
+  contract: {
+    bottomSafePt: 24,
+    widowLines: 2,
+    orphanLines: 2,
+    keepLeadLines: 2,
+    keepWholeParagraphLines: 5,
+    sectionLeadGap: 28,
+  },
+  addendum: {
+    bottomSafePt: 32,
+    widowLines: 2,
+    orphanLines: 2,
+    keepLeadLines: 3,
+    keepWholeParagraphLines: 7,
+    sectionLeadGap: 34,
+  },
+};
+
 function saveTallPngAsPdf(dataUrl, { jsPDF, filename, margin = PDF_PAGE_MARGIN_MM, onDone, onError }) {
   const image = new Image();
   image.onload = () => {
@@ -1572,20 +1602,24 @@ function saveTallPngAsPdf(dataUrl, { jsPDF, filename, margin = PDF_PAGE_MARGIN_M
     const contentWidth = pageWidth - margin.left - margin.right;
     const contentHeight = pageHeight - margin.top - margin.bottom;
     const renderedImageHeight = (image.naturalHeight * contentWidth) / image.naturalWidth;
-    let consumedHeight = 0;
+    if (!Number.isFinite(renderedImageHeight) || renderedImageHeight <= 0 || !Number.isFinite(contentHeight) || contentHeight <= 0) {
+      if (onError) onError(new Error("PDF raster fallback received invalid image dimensions."));
+      return;
+    }
 
-    // Аварийный путь: жёстко ограничиваем число страниц, чтобы сломанный
-    // (слишком высокий) снимок не превратился в PDF на сотни страниц / десятки МБ.
-    const MAX_RASTER_PAGES = 40;
-    let pageCount = 0;
-    while (consumedHeight < renderedImageHeight - 0.2 && pageCount < MAX_RASTER_PAGES) {
+    const estimatedPages = Math.ceil(renderedImageHeight / contentHeight);
+    if (estimatedPages > MAX_RASTER_FALLBACK_PAGES) {
+      if (onError) {
+        onError(new Error(`PDF raster fallback aborted: estimated ${estimatedPages} pages exceeds safe limit ${MAX_RASTER_FALLBACK_PAGES}.`));
+      }
+      return;
+    }
+
+    let consumedHeight = 0;
+    while (consumedHeight < renderedImageHeight - 0.2) {
       if (consumedHeight > 0) pdf.addPage();
       pdf.addImage(dataUrl, "PNG", margin.left, margin.top - consumedHeight, contentWidth, renderedImageHeight);
       consumedHeight += contentHeight;
-      pageCount += 1;
-    }
-    if (pageCount >= MAX_RASTER_PAGES) {
-      console.warn("Растровый PDF обрезан до " + MAX_RASTER_PAGES + " страниц — исходный снимок аномально высокий.");
     }
 
     pdf.save(filename);
@@ -1726,6 +1760,7 @@ function renderPdfFromBlocks(blocks, { jsPDF, fonts, filename, onDone }) {
 function renderEstimatePdf({ jsPDF, fonts, filename, title, number, projectName, total, kicker, meta, rows, summary, footer, chip, onDone }) {
   const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
   registerPdfFonts(doc, fonts);
+  const rules = PDF_LAYOUT_RULES.estimate;
   const pageWpt = doc.internal.pageSize.getWidth();
   const SHEET_W = 794, SHEET_H = 1123;
   const k = pageWpt / SHEET_W;             // px → pt
@@ -1734,7 +1769,7 @@ function renderEstimatePdf({ jsPDF, fonts, filename, title, number, projectName,
 
   let y = 0; // курсор в px макета
   const pageTop = 40;
-  const pageBottom = SHEET_H - 56;
+  const pageBottom = SHEET_H - 56 - rules.bottomSafePx;
 
   const font = (px, weight) => { doc.setFont("Onest", weight === "bold" ? "bold" : "normal"); doc.setFontSize(px * k); };
   const color = (c) => doc.setTextColor(c[0], c[1], c[2]);
@@ -1867,15 +1902,16 @@ function renderEstimatePdf({ jsPDF, fonts, filename, title, number, projectName,
 }
 
 // Векторный договор/допсоглашение: два столбца — слева пункт (номер + название),
-// справа текст. Абзацы и пункты переносятся на новую страницу целиком.
-function renderContractPdf(root, { jsPDF, fonts, filename, onDone }) {
+// справа текст. Правила пагинации выбираются по типу документа.
+function renderContractPdf(root, { jsPDF, fonts, filename, docType = "contract", onDone }) {
   const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
   registerPdfFonts(doc, fonts);
+  const rules = PDF_LAYOUT_RULES[docType] || PDF_LAYOUT_RULES.contract;
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
   const M = { l: 54, r: 54, t: 54, b: 68 };
   const leftW = 132, gap = 16, rightX = M.l + leftW + gap, rightW = pageW - M.r - rightX;
-  const pageBottom = pageH - M.b, maxBlock = pageBottom - M.t;
+  const pageBottom = pageH - M.b - rules.bottomSafePt, maxBlock = pageBottom - M.t;
   const BLACK = [17, 17, 17], GRAY = [140, 140, 140];
   let y = M.t;
 
@@ -1901,16 +1937,17 @@ function renderContractPdf(root, { jsPDF, fonts, filename, onDone }) {
       });
       return;
     }
-    // Контроль «висячих» строк: не оставлять и не переносить меньше 2 строк абзаца.
-    const MIN = 2;
+    // Контроль «висячих» строк: не оставлять и не переносить меньше заданного минимума строк.
+    const widowMin = rules.widowLines || 2;
+    const orphanMin = rules.orphanLines || widowMin;
     let i = 0;
     while (i < lines.length) {
       let fit = Math.floor((pageBottom - y) / lh);
       if (fit < 1) { startNewPage(); fit = Math.floor((pageBottom - y) / lh); }
       const rem = lines.length - i;
       let take = Math.min(fit, rem);
-      if (rem - take > 0 && rem - take < MIN) take = Math.max(1, rem - MIN); // не оставить вдову сверху
-      if (i === 0 && rem > MIN && take < MIN) { startNewPage(); continue; }   // не осиротить начало абзаца снизу
+      if (rem - take > 0 && rem - take < widowMin) take = Math.max(1, rem - widowMin);
+      if (i === 0 && rem > orphanMin && take < orphanMin) { startNewPage(); continue; }
       for (let k = 0; k < take; k++) { y += lh; doc.text(lines[i + k], x, y); }
       i += take;
       if (i < lines.length) startNewPage();
@@ -1984,12 +2021,12 @@ function renderContractPdf(root, { jsPDF, fonts, filename, onDone }) {
       const firstBlock = blocks ? blocks[0] : null;
       // Держим вместе только заголовок пункта и пару первых строк (без больших пустот)
       const firstKeep = firstBlock
-        ? (firstBlock.kind === "img" ? firstBlock.total : Math.min(2, firstBlock.lines.length) * firstBlock.spec.lh + firstBlock.spec.after)
+        ? (firstBlock.kind === "img" ? firstBlock.total : Math.min(rules.keepLeadLines, firstBlock.lines.length) * firstBlock.spec.lh + firstBlock.spec.after)
         : (columns ? 44 : 0);
       const leadHeight = (clauseTitleLines.length ? clauseTitleLines.length * 12.6 + 2 : 0) + firstKeep + 8;
       return { clauseTitleLines, blocks, columns, leadHeight };
     });
-    const sectionLeadHeight = 28 + Math.max(leftTitleLines.length * 13, clauses[0]?.leadHeight || 0);
+    const sectionLeadHeight = rules.sectionLeadGap + Math.max(leftTitleLines.length * 13, clauses[0]?.leadHeight || 0);
     ensureSpace(sectionLeadHeight);
     y += 16;
     doc.setDrawColor(212, 212, 212); doc.setLineWidth(0.6); doc.line(M.l, y, pageW - M.r, y);
@@ -2051,9 +2088,10 @@ function renderContractPdf(root, { jsPDF, fonts, filename, onDone }) {
         }
         const spec = block.spec;
         const needed = blockIndex === 0 ? block.total + 6 : block.total;
+        const keepWholeTextBlock = block.lines.length <= rules.keepWholeParagraphLines && needed <= maxBlock;
         if (y + needed > pageBottom && needed <= maxBlock) startNewPage();
         setF(spec.size, spec.font, spec.color);
-        drawLines(block.lines, rightX, spec.lh, true);
+        drawLines(block.lines, rightX, spec.lh, !keepWholeTextBlock);
         y += spec.after;
       });
       y += 4;
@@ -2209,9 +2247,10 @@ function printEstimate() {
         cleanupSheet();
         notifyPdfDownloadSuccess();
       },
-      onError: () => {
-        window.print();
+      onError: (err) => {
         cleanupSheet();
+        console.warn("Estimate PDF fallback failed:", err);
+        notifyPdfDownloadFailure("Не удалось безопасно собрать PDF сметы. Текстовый рендер недоступен, а запасной растровый вариант превысил безопасный лимит страниц.");
       },
     });
   };
@@ -4737,7 +4776,7 @@ function printContract(onDone) {
   sheet.innerHTML = `
     <style>
       .pdf-clean-body { width: 794px; min-height: 1123px; padding: 64px 76px 108px; background: #fff; color: #111; box-sizing: border-box; font-family: "Onest", Arial, sans-serif; font-size: 13px; line-height: 1.5; text-rendering: geometricPrecision; }
-      .pdf-clean-body, .pdf-clean-body * { box-sizing: border-box; hyphens: auto; overflow-wrap: anywhere; word-break: normal; }
+      .pdf-clean-body, .pdf-clean-body * { box-sizing: border-box; hyphens: auto; overflow-wrap: break-word; word-break: normal; }
       .pdf-clean-body p { line-height: 1.5; }
       .pdf-clean-body .inline-field, .pdf-clean-body .inline-field--block { max-width: 100%; white-space: normal !important; border: none !important; background: none !important; padding: 0 !important; border-radius: 0 !important; }
       .pdf-clean-body .document-note { display: none !important; }
@@ -4770,9 +4809,10 @@ function printContract(onDone) {
         cleanup();
         notifyPdfDownloadSuccess();
       },
-      onError: () => {
-        window.print();
+      onError: (err) => {
         cleanup();
+        console.warn("Contract PDF fallback failed:", err);
+        notifyPdfDownloadFailure("Не удалось безопасно собрать PDF документа. Текстовый рендер недоступен, а запасной растровый вариант превысил безопасный лимит страниц.");
       },
     });
   };
@@ -4817,6 +4857,7 @@ function printContract(onDone) {
     .then((fonts) => {
       renderContractPdf(page, {
         jsPDF, fonts, filename,
+        docType: isAddendum ? "addendum" : "contract",
         onDone: () => { cleanup(); notifyPdfDownloadSuccess(); },
       });
     })
