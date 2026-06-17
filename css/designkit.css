@@ -146,6 +146,8 @@
 
 :root {
   color-scheme: light;
+  --ddoc-bg-day: url("../assets/deedoc-landscape.webp");
+  --ddoc-bg-night: url("../assets/backgrounds/deedoc-landscape-night.webp");
   --bg: #f7f4ef;
   --surface: rgba(255, 255, 255, 0.76);
   --surface-strong: #ffffff;
@@ -250,7 +252,7 @@ html {
 html:has(body[data-view="home"]) {
   background:
     linear-gradient(180deg, rgba(34, 28, 25, 0.08), rgba(34, 28, 25, 0.12)),
-    url("../assets/deedoc-landscape.png") center / cover no-repeat,
+    var(--ddoc-bg-day) center / cover no-repeat,
     #d8b1a3;
 }
 
@@ -275,7 +277,7 @@ body {
 body[data-view="home"] {
   background:
     linear-gradient(180deg, rgba(34, 28, 25, 0.08), rgba(34, 28, 25, 0.12)),
-    url("../assets/deedoc-landscape.png") center / cover no-repeat,
+    var(--ddoc-bg-day) center / cover no-repeat,
     #d8b1a3;
 }
 
@@ -452,7 +454,7 @@ textarea:focus-visible {
   overflow: hidden;
   background:
     linear-gradient(180deg, rgba(34, 28, 25, 0.08), rgba(34, 28, 25, 0.12)),
-    url("../assets/deedoc-landscape.png") center / cover no-repeat,
+    var(--ddoc-bg-day) center / cover no-repeat,
     #d8b1a3;
 }
 
@@ -510,7 +512,7 @@ textarea:focus-visible {
 .deedoc-home__bg-layer[data-layer="sky"] {
   background-image:
     linear-gradient(180deg, rgba(34, 28, 25, 0.08), rgba(34, 28, 25, 0.12)),
-    url("../assets/deedoc-landscape.png");
+    var(--ddoc-bg-day);
   background-color: #d8b1a3;
   z-index: 1;
   /* swap to layer file once ready: url("../assets/backgrounds/deedoc-bg-sky.png") */
@@ -542,7 +544,7 @@ textarea:focus-visible {
 .deedoc-home__bg-layer[data-layer="sky"]::after {
   background:
     linear-gradient(180deg, rgba(2, 2, 1, 0.18), rgba(2, 2, 1, 0.32)),
-    url("../assets/backgrounds/deedoc-landscape-night.png") center / cover no-repeat,
+    var(--ddoc-bg-night) center / cover no-repeat,
     #08070f;
   /* swap to: url("../assets/backgrounds/deedoc-bg-night-sky.png") */
 }
@@ -4430,7 +4432,7 @@ body[data-view="calculator"]::before {
   inset: -40px;
   z-index: -1;
   background:
-    url("../assets/deedoc-landscape.png") center / cover no-repeat,
+    var(--ddoc-bg-day) center / cover no-repeat,
     #d8b1a3;
   transform: translate3d(var(--cv-px, 0px), var(--cv-py, 0px), 0);
   will-change: transform;
@@ -4444,7 +4446,7 @@ body[data-view="calculator"]::after {
   z-index: -1;
   background:
     linear-gradient(180deg, rgba(2, 2, 1, 0.22), rgba(2, 2, 1, 0.68)),
-    url("../assets/backgrounds/deedoc-landscape-night.png") center / cover no-repeat,
+    var(--ddoc-bg-night) center / cover no-repeat,
     #08070f;
   opacity: 0;
   transform: translate3d(var(--cv-px, 0px), var(--cv-py, 0px), 0);
@@ -5277,6 +5279,7 @@ body.mobile-contract-sheet-open {
 .view--calculator .cv-result-header {
   align-items: center;
   gap: 18px;
+  padding-top: 8px;
   padding-bottom: 14px;
 }
 
@@ -5683,38 +5686,54 @@ body.mobile-contract-sheet-open {
   }
 
   .app[data-view="calculator"][data-estimate="empty"] .view--calculator .estimate-card {
-    min-height: clamp(430px, calc(100svh - 268px), 560px);
+    display: grid;
+    grid-template-rows: minmax(0, 1fr);
+    height: clamp(430px, calc(100svh - 268px), 560px);
+    min-height: 0;
   }
 
   .view--calculator .estimate-card .estimate-empty {
-    min-height: calc(100% - 0px);
-    height: 100%;
+    align-self: stretch;
+    justify-self: stretch;
+    min-height: 0;
+    height: auto;
     padding: 42px 20px;
     border-radius: 26px;
     gap: 14px;
   }
 
   .view--calculator .cv-empty-icon {
-    margin-bottom: 10px;
-    font-size: clamp(82px, 20vw, 112px);
+    position: relative;
+    left: auto;
+    top: auto;
+    margin-bottom: 0;
+    font-size: clamp(72px, 18vw, 96px);
+    transform: none;
+    animation: none;
   }
 
   .view--calculator .cv-empty-icon::before {
-    inset: -28px;
+    inset: -30px;
   }
 
   .view--calculator .cv-empty-text h2 {
-    max-width: 310px;
-    margin-bottom: 10px;
-    font-size: 28px;
+    max-width: 330px;
+    margin-bottom: 12px;
+    font-size: clamp(26px, 7.1vw, 28px);
     font-weight: 500;
-    line-height: 1.04;
+    line-height: 1.06;
   }
 
   .view--calculator .cv-empty-text p:not(.eyebrow) {
     max-width: 300px;
     font-size: 16px;
     line-height: 1.32;
+  }
+
+  @media (max-width: 370px) {
+    .view--calculator .cv-empty-icon {
+      font-size: clamp(68px, 17vw, 88px);
+    }
   }
 
   .mobile-calc-sheet[hidden],
@@ -6247,7 +6266,7 @@ body[data-view="contract"]::before {
   inset: -40px;
   z-index: -1;
   background:
-    url("../assets/deedoc-landscape.png") center / cover no-repeat,
+    var(--ddoc-bg-day) center / cover no-repeat,
     #d8b1a3;
   transform: translate3d(var(--cv-px, 0px), var(--cv-py, 0px), 0);
   will-change: transform;
@@ -6260,7 +6279,7 @@ body[data-view="contract"]::after {
   z-index: -1;
   background:
     linear-gradient(180deg, rgba(2, 2, 1, 0.22), rgba(2, 2, 1, 0.70)),
-    url("../assets/backgrounds/deedoc-landscape-night.png") center / cover no-repeat,
+    var(--ddoc-bg-night) center / cover no-repeat,
     #08070f;
   opacity: 0;
   transform: translate3d(var(--cv-px, 0px), var(--cv-py, 0px), 0);
