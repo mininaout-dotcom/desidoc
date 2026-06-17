@@ -1574,10 +1574,18 @@ function saveTallPngAsPdf(dataUrl, { jsPDF, filename, margin = PDF_PAGE_MARGIN_M
     const renderedImageHeight = (image.naturalHeight * contentWidth) / image.naturalWidth;
     let consumedHeight = 0;
 
-    while (consumedHeight < renderedImageHeight - 0.2) {
+    // Аварийный путь: жёстко ограничиваем число страниц, чтобы сломанный
+    // (слишком высокий) снимок не превратился в PDF на сотни страниц / десятки МБ.
+    const MAX_RASTER_PAGES = 40;
+    let pageCount = 0;
+    while (consumedHeight < renderedImageHeight - 0.2 && pageCount < MAX_RASTER_PAGES) {
       if (consumedHeight > 0) pdf.addPage();
       pdf.addImage(dataUrl, "PNG", margin.left, margin.top - consumedHeight, contentWidth, renderedImageHeight);
       consumedHeight += contentHeight;
+      pageCount += 1;
+    }
+    if (pageCount >= MAX_RASTER_PAGES) {
+      console.warn("Растровый PDF обрезан до " + MAX_RASTER_PAGES + " страниц — исходный снимок аномально высокий.");
     }
 
     pdf.save(filename);
