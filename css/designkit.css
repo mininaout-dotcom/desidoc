@@ -1920,6 +1920,29 @@ h2 {
   padding: 0 11px;
 }
 
+.hours-stepper {
+  display: inline-grid;
+  grid-template-columns: auto minmax(0, auto) auto;
+  align-items: center;
+  gap: 6px;
+}
+
+.hours-stepper__btn {
+  width: 30px;
+  height: 30px;
+  display: none;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--surface-strong);
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  font-size: 17px;
+  font-weight: 650;
+  line-height: 1;
+}
+
 .hours-field input {
   min-width: 0;
   border: 0;
@@ -2717,7 +2740,8 @@ h2 {
 .addendum-payment-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px 6px;
+  margin-top: 4px;
 }
 
 .addendum-payment-chip {
@@ -5393,8 +5417,8 @@ body.mobile-contract-sheet-open {
   gap: 6px;
 }
 
-.view--calculator .stage-card {
-  grid-template-columns: 60px minmax(0, 1fr) 60px minmax(110px, auto) 24px;
+  .view--calculator .stage-card {
+    grid-template-columns: 60px minmax(0, 1fr) minmax(116px, auto) minmax(110px, auto) 24px;
   gap: 8px;
   align-items: center;
   padding: 7px 8px;
@@ -5462,13 +5486,28 @@ body.mobile-contract-sheet-open {
   line-height: 1.28;
 }
 
-.view--calculator .hours-field {
-  width: 54px;
-  min-height: 30px;
-  gap: 3px;
-  padding: 0 7px;
-  border-radius: 10px;
-}
+  .view--calculator .hours-field {
+    width: 48px;
+    min-height: 30px;
+    gap: 3px;
+    padding: 0 6px;
+    border-radius: 10px;
+  }
+
+  .view--calculator .hours-stepper {
+    gap: 4px;
+    justify-self: end;
+  }
+
+  .view--calculator .hours-stepper__btn {
+    width: 28px;
+    height: 28px;
+    display: grid;
+    border-color: transparent;
+    background: var(--cv-surface);
+    color: var(--cv-text);
+    box-shadow: 0 8px 18px rgba(56, 34, 24, 0.08);
+  }
 
 .view--calculator .hours-field input {
   text-align: center;
@@ -7524,6 +7563,47 @@ body[data-view="contract"]::after {
     display: none;
   }
 
+  .mobile-fill-page-chips {
+    width: 100%;
+    display: flex;
+    gap: 6px;
+    padding: 2px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .mobile-fill-page-chips::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mobile-fill-page-chip {
+    min-width: max-content;
+    min-height: 38px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    background: var(--ddoc-mobile-chip);
+    color: var(--cv-text);
+    padding: 0 12px;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 650;
+  }
+
+  .mobile-fill-page-chip span {
+    color: var(--cv-muted);
+    font-size: 10px;
+    letter-spacing: 0.06em;
+  }
+
+  .mobile-fill-page-chip.is-active {
+    background: color-mix(in srgb, var(--accent) 10%, white);
+    color: var(--accent);
+    box-shadow: 0 10px 24px rgba(94, 56, 39, 0.12);
+  }
+
   .mobile-contract-card__head {
     display: grid;
     gap: 14px;
@@ -8477,6 +8557,16 @@ body[data-view="calculator"] [data-brief-ai-modal] textarea:focus-visible {
 @media (max-width: 760px) {
   .deedoc-home {
     padding: 26px 18px 30px;
+    background: transparent;
+  }
+
+  .deedoc-home__bg {
+    inset: 0;
+  }
+
+  .deedoc-home__bg-layer {
+    inset: 0;
+    background-size: cover;
   }
 
   .deedoc-home__nav-spacer {
@@ -8488,13 +8578,7 @@ body[data-view="calculator"] [data-brief-ai-modal] textarea:focus-visible {
   }
 
   .deedoc-home::after {
-    height: 36%;
-    background: linear-gradient(
-      180deg,
-      transparent 8%,
-      color-mix(in srgb, var(--home-scrim) 18%, transparent) 70%,
-      color-mix(in srgb, var(--home-scrim) 76%, white 24%) 100%
-    );
+    display: none;
   }
 
   .deedoc-home__top--global {
@@ -8747,12 +8831,12 @@ body[data-view="calculator"] [data-brief-ai-modal] textarea:focus-visible {
     padding: 14px 16px calc(16px + env(safe-area-inset-bottom));
     border: 0;
     border-top: 1px solid color-mix(in srgb, var(--line) 62%, white);
-    border-radius: 30px 30px 0 0;
+    border-radius: var(--ddoc-mobile-card-radius) var(--ddoc-mobile-card-radius) 0 0;
     clip-path: none;
-    background: #fff;
+    background: var(--ddoc-mobile-glass);
     box-shadow: 0 -18px 40px rgba(37, 23, 18, 0.12);
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
+    backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px);
     gap: 14px;
     align-items: stretch;
   }
@@ -8793,11 +8877,11 @@ body[data-view="calculator"] [data-brief-ai-modal] textarea:focus-visible {
     padding: 14px 16px calc(16px + env(safe-area-inset-bottom));
     border: 0;
     border-top: 1px solid color-mix(in srgb, var(--line) 62%, white);
-    border-radius: 30px 30px 0 0;
-    background: #fff;
+    border-radius: var(--ddoc-mobile-card-radius) var(--ddoc-mobile-card-radius) 0 0;
+    background: var(--ddoc-mobile-glass);
     box-shadow: 0 -18px 40px rgba(37, 23, 18, 0.12);
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
+    backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px);
   }
 
   .mobile-contract-actions .button {
@@ -8810,11 +8894,54 @@ body[data-view="calculator"] [data-brief-ai-modal] textarea:focus-visible {
   }
 
   .mobile-contract-actions .document-section-nav--mobile-actions {
-    padding: 0;
+    min-height: 44px;
+    padding: 2px 0 6px;
+    overflow-x: auto;
+    overflow-y: visible;
+  }
+
+  .mobile-contract-actions .document-section-nav--mobile-actions .document-section-nav__list {
+    padding: 2px 0 6px;
   }
 
   .view--contract .contract-side-rail,
   .view--contract .document-section-nav--floating {
     display: none !important;
+  }
+
+  body[data-view="contract"],
+  .app[data-view="contract"],
+  .view--contract {
+    overflow-x: hidden;
+  }
+
+  body[data-view="contract"] .deedoc-home__top--global.is-scrolled {
+    border-bottom: 0;
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .view--contract .contract-canvas-area,
+  .view--contract .document-canvas {
+    max-width: 100%;
+  }
+
+  .view--contract .contract-top-bar .reset-btn {
+    display: none;
+  }
+
+  .view--contract .document-meta {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: baseline;
+    gap: 12px;
+  }
+
+  .view--contract .document-meta__city {
+    text-align: left;
+  }
+
+  .view--contract .document-meta__date {
+    text-align: right;
   }
 }

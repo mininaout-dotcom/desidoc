@@ -107,6 +107,7 @@ const FEEDBACK_COMPLETED_KEY = "desidoc_feedback_completed";
 const FEEDBACK_SNOOZED_UNTIL_KEY = "desidoc_feedback_snoozed_until";
 const FEEDBACK_SNOOZE_DELAY = 7 * 24 * 60 * 60 * 1000;
 const PDF_PAGE_MARGIN_MM = Object.freeze({ top: 8, right: 8, bottom: 16, left: 8 });
+const CONTRACT_PDF_DISCLAIMER = "Документ носит ознакомительный характер. Перед использованием проконсультируйтесь со своим юристом.";
 const YANDEX_METRIKA_ID = 109865409;
 const YANDEX_METRIKA_SCRIPT_URL = `https://mc.yandex.ru/metrika/tag.js?id=${YANDEX_METRIKA_ID}`;
 const savedProfile = loadProfile();
@@ -1215,10 +1216,14 @@ function renderEstimate() {
           ${stage.note ? `<p class="stage-note">${escapeHtml(stage.note)}</p>` : ""}
         </div>
         <div class="stage-card__side">
-          <label class="hours-field">
-            <input type="number" min="0" step="1" value="${stage.hours}" data-stage-field="hours" data-index="${index}" aria-label="Часы этапа ${index + 1}">
-            <span>ч</span>
-          </label>
+          <div class="hours-stepper" aria-label="Часы этапа ${index + 1}">
+            <button class="hours-stepper__btn" type="button" data-action="adjust-stage-hours" data-index="${index}" data-delta="-1" aria-label="Уменьшить часы этапа ${index + 1}">−</button>
+            <label class="hours-field">
+              <input type="number" min="0" step="1" value="${stage.hours}" data-stage-field="hours" data-index="${index}" aria-label="Часы этапа ${index + 1}">
+              <span>ч</span>
+            </label>
+            <button class="hours-stepper__btn" type="button" data-action="adjust-stage-hours" data-index="${index}" data-delta="1" aria-label="Увеличить часы этапа ${index + 1}">+</button>
+          </div>
           <div class="stage-stat"><strong data-stage-cost="${index}">${money(getStageCost(stage))}</strong></div>
         </div>
         <button class="icon-button icon-button--remove" type="button" data-action="remove-stage" data-index="${index}" aria-label="Удалить этап">×</button>
@@ -2934,7 +2939,7 @@ function renderContractTemplateStrip() {
   const strips = document.querySelectorAll("[data-contract-template-strip]");
   if (!strips.length) return;
   const isAddendum = contractState.docType === "addendum";
-  const markup = `
+  const docTypeMarkup = `
     <div class="doc-type-toggle">
       <button class="doc-type-toggle__btn ${!isAddendum ? "is-active" : ""}" type="button" data-action="show-contract-doc"><span class="doc-type-toggle__step">01</span>Договор</button>
       <button class="doc-type-toggle__btn ${isAddendum ? "is-active" : ""}" type="button" data-action="show-addendum-doc"><span class="doc-type-toggle__step">02</span>Допсоглашение</button>
@@ -2942,7 +2947,23 @@ function renderContractTemplateStrip() {
     <button class="reset-btn" type="button" data-action="reset-all-data" title="Сбросить все данные">↺ Сбросить</button>
   `;
   strips.forEach((strip) => {
-    strip.innerHTML = markup;
+    const shouldRenderMobileSteps = strip.classList.contains("mobile-contract-template-strip")
+      && isMobileContractUI()
+      && !mobileContractDocVisible;
+    if (shouldRenderMobileSteps) {
+      const steps = getMobileContractSteps();
+      strip.innerHTML = `
+        <div class="mobile-fill-page-chips" aria-label="Страницы заполнения">
+          ${steps.map((step, index) => `
+            <button class="mobile-fill-page-chip ${step.key === mobileContractSheetKey ? "is-active" : ""}" type="button" data-action="open-mobile-contract-sheet" data-mobile-contract-step="${step.key}">
+              <span>${String(index + 1).padStart(2, "0")}</span>${escapeHtml(step.title)}
+            </button>
+          `).join("")}
+        </div>
+      `;
+      return;
+    }
+    strip.innerHTML = docTypeMarkup;
   });
 }
 
@@ -2952,6 +2973,16 @@ function openAddendumDocument() {
   contractState.mode = "fill";
   mobileContractDocVisible = false;
   mobileContractSheetKey = "";
+  scheduleContractSave();
+  renderContractWorkspace();
+}
+
+function resetContractDocuments() {
+  const fresh = createDefaultContractDraft();
+  Object.assign(contractState, fresh);
+  mobileContractDocVisible = false;
+  mobileContractSheetKey = "";
+  mobileContractClientImportOpen = false;
   scheduleContractSave();
   renderContractWorkspace();
 }
@@ -3736,6 +3767,8 @@ function renderMobileContractUI({ forceSheet = false } = {}) {
     return;
   }
 
+  renderContractTemplateStrip();
+
   if (flow) flow.hidden = mobileContractDocVisible;
   if (backButton) backButton.hidden = !mobileContractDocVisible;
   if (actionBar) actionBar.hidden = !mobileContractDocVisible;
@@ -3806,10 +3839,6 @@ function renderMobileContractUI({ forceSheet = false } = {}) {
 }
 
 function openMobileContractSheet(key) {
-  if (mobileContractSheetKey === key && !mobileContractDocVisible && isMobileContractUI()) {
-    closeMobileContractSheet();
-    return;
-  }
   mobileContractSheetKey = key;
   mobileContractSheetSignature = "";
   renderMobileContractUI({ forceSheet: true });
@@ -5130,7 +5159,8 @@ function bindEvents() {
       return;
     }
     if (action === "apply-mobile-contract-sheet") {
-      closeMobileContractSheet();
+      mobileContractSheetSignature = "";
+      renderMobileContractUI({ forceSheet: true });
       return;
     }
     if (action === "toggle-mobile-client-import") {
@@ -5148,15 +5178,8 @@ function bindEvents() {
       return;
     }
     if (action === "reset-contract-data") {
-      if (!confirm("Сбросить данные клиента?")) return;
-      const defaults = createDefaultContractDraft();
-      contractState.fields = { ...defaults.fields };
-      contractState.addendumFields = { ...defaults.addendumFields };
-      contractState.hiddenClauses = {};
-      contractState.textOverrides = {};
-      renderContractWorkspace();
-      hideMobileContractDoc();
-      scheduleContractSave();
+      if (!confirm("Сбросить все данные договора и допсоглашения? Это действие нельзя отменить.")) return;
+      resetContractDocuments();
       return;
     }
     if (action === "delete-contract-clause") {
@@ -5181,6 +5204,18 @@ function bindEvents() {
     if (action === "remove-stage") {
       state.stages.splice(Number(actionTarget.dataset.index), 1);
       renderEstimate();
+    }
+    if (action === "adjust-stage-hours") {
+      const index = Number(actionTarget.dataset.index);
+      const delta = Number(actionTarget.dataset.delta || 0);
+      const stage = state.stages[index];
+      if (!stage || !delta) return;
+      stage.hours = Math.max(0, Number(stage.hours || 0) + delta);
+      stage.manuallyEditedHours = true;
+      updateTotalsOnly();
+      const input = document.querySelector(`[data-stage-field="hours"][data-index="${index}"]`);
+      if (input) input.value = stage.hours;
+      return;
     }
     if (action === "add-expense") {
       const titleInput = document.querySelector('[data-input="expenseTitle"]');
@@ -5231,24 +5266,26 @@ function bindEvents() {
     }
     if (action === "reset-all-data") {
       if (!confirm("Сбросить все данные договора и допсоглашения? Это действие нельзя отменить.")) return;
-      const fresh = createDefaultContractDraft();
-      Object.assign(contractState, fresh);
-      mobileContractDocVisible = false;
-      mobileContractSheetKey = "";
-      mobileContractClientImportOpen = false;
-      scheduleContractSave();
-      renderContractWorkspace();
+      resetContractDocuments();
       return;
     }
     if (action === "show-contract-doc") {
+      const keepMobileDocVisible = mobileContractDocVisible && isMobileContractUI();
       contractState.docType = "contract";
-      mobileContractDocVisible = false;
+      mobileContractDocVisible = keepMobileDocVisible;
       mobileContractSheetKey = "";
       scheduleContractSave();
       renderContractWorkspace();
     }
     if (action === "show-addendum-doc") {
-      openAddendumDocument();
+      const keepMobileDocVisible = mobileContractDocVisible && isMobileContractUI();
+      syncAddendumFromContract();
+      contractState.docType = "addendum";
+      contractState.mode = "fill";
+      mobileContractDocVisible = keepMobileDocVisible;
+      mobileContractSheetKey = "";
+      scheduleContractSave();
+      renderContractWorkspace();
     }
     if (action === "set-addendum-payment") {
       contractState.addendumFields.paymentTerms = actionTarget.dataset.paymentTermValue || DEFAULT_ADDENDUM_PAYMENT_TERMS;
@@ -5297,6 +5334,7 @@ function bindEvents() {
       const btn = actionTarget;
       if (btn.disabled) return;
       if (!ensureCurrentDocumentReadyForPdf()) return;
+      if (!confirm(`${CONTRACT_PDF_DISCLAIMER}\n\nПродолжить скачивание PDF?`)) return;
       btn.disabled = true;
       btn.dataset.originalText = btn.textContent;
       btn.textContent = "Готовлю PDF…";
