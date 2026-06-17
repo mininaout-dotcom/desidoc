@@ -2023,8 +2023,18 @@ function renderContractPdf(root, { jsPDF, fonts, filename, docType = "contract",
       const firstKeep = firstBlock
         ? (firstBlock.kind === "img" ? firstBlock.total : Math.min(rules.keepLeadLines, firstBlock.lines.length) * firstBlock.spec.lh + firstBlock.spec.after)
         : (columns ? 44 : 0);
-      const leadHeight = (clauseTitleLines.length ? clauseTitleLines.length * 12.6 + 2 : 0) + firstKeep + 8;
-      return { clauseTitleLines, blocks, columns, leadHeight };
+      const titleHeight = clauseTitleLines.length ? clauseTitleLines.length * 12.6 + 2 : 0;
+      const firstBodyHeight = columns
+        ? Math.max(...columns.map((column) => column.height))
+        : (firstBlock
+          ? (firstBlock.kind === "img"
+            ? firstBlock.total + 10
+            : (firstBlock.lines.length <= rules.keepWholeParagraphLines
+              ? firstBlock.total + 6
+              : firstKeep + 6))
+          : 0);
+      const leadHeight = titleHeight + firstKeep + 8;
+      return { clauseTitleLines, blocks, columns, leadHeight, titleHeight, firstBodyHeight };
     });
     const sectionLeadHeight = rules.sectionLeadGap + Math.max(leftTitleLines.length * 13, clauses[0]?.leadHeight || 0);
     ensureSpace(sectionLeadHeight);
@@ -2042,6 +2052,10 @@ function renderContractPdf(root, { jsPDF, fonts, filename, docType = "contract",
     y = top;
     clauses.forEach((clause, clauseIndex) => {
       if (clauseIndex > 0) ensureSpace(clause.leadHeight);
+      const clauseStartHeight = clause.titleHeight + clause.firstBodyHeight + 4;
+      if (clause.clauseTitleLines.length && y + clauseStartHeight > pageBottom && clauseStartHeight <= maxBlock) {
+        startNewPage();
+      }
       if (clause.clauseTitleLines.length) {
         setF(9.8, "bold", BLACK);
         drawLines(clause.clauseTitleLines, rightX, 12.6);
