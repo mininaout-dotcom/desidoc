@@ -1892,12 +1892,29 @@ function renderContractPdf(root, { jsPDF, fonts, filename, onDone }) {
     }
     return false;
   };
-  const drawLines = (lines, x, lh) => {
-    lines.forEach((line) => {
-      if (y + lh > pageBottom) startNewPage();
-      y += lh;
-      doc.text(line, x, y);
-    });
+  const drawLines = (lines, x, lh, widowOrphan) => {
+    if (!widowOrphan) {
+      lines.forEach((line) => {
+        if (y + lh > pageBottom) startNewPage();
+        y += lh;
+        doc.text(line, x, y);
+      });
+      return;
+    }
+    // Контроль «висячих» строк: не оставлять и не переносить меньше 2 строк абзаца.
+    const MIN = 2;
+    let i = 0;
+    while (i < lines.length) {
+      let fit = Math.floor((pageBottom - y) / lh);
+      if (fit < 1) { startNewPage(); fit = Math.floor((pageBottom - y) / lh); }
+      const rem = lines.length - i;
+      let take = Math.min(fit, rem);
+      if (rem - take > 0 && rem - take < MIN) take = Math.max(1, rem - MIN); // не оставить вдову сверху
+      if (i === 0 && rem > MIN && take < MIN) { startNewPage(); continue; }   // не осиротить начало абзаца снизу
+      for (let k = 0; k < take; k++) { y += lh; doc.text(lines[i + k], x, y); }
+      i += take;
+      if (i < lines.length) startNewPage();
+    }
   };
   const getTextSpec = (type, isClauseTitle = false) => {
     if (isClauseTitle || type === "h3") return { size: 9.8, font: "bold", lh: 12.6, color: BLACK, after: 2 };
@@ -2036,7 +2053,7 @@ function renderContractPdf(root, { jsPDF, fonts, filename, onDone }) {
         const needed = blockIndex === 0 ? block.total + 6 : block.total;
         if (y + needed > pageBottom && needed <= maxBlock) startNewPage();
         setF(spec.size, spec.font, spec.color);
-        drawLines(block.lines, rightX, spec.lh);
+        drawLines(block.lines, rightX, spec.lh, true);
         y += spec.after;
       });
       y += 4;
