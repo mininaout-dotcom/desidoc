@@ -1712,6 +1712,7 @@ function collectPdfBlocks(root) {
     if (el.nodeType !== 1) return;
     if (el.getClientRects && getComputedStyle(el).display === "none") return;
     if (el.tagName === "IMG" || el.tagName === "CANVAS") { blocks.push({ type: "img", el }); return; }
+    if (el.classList.contains("signature-slot")) { Array.from(el.children).forEach(walk); return; }
     if (hasBlockChild(el)) { Array.from(el.children).forEach(walk); return; }
     const text = (el.textContent || "").replace(/\s+/g, " ").trim();
     if (text) blocks.push({ type: pdfBlockStyle(el), text });
@@ -2027,7 +2028,13 @@ function renderContractPdf(root, { jsPDF, fonts, filename, docType = "contract",
     const spec = getTextSpec(block.type);
     setF(spec.size, spec.font);
     const lines = doc.splitTextToSize(pdfText(block.text), width);
-    return { kind: "text", lines, spec, total: lines.length * spec.lh + spec.after };
+    const isSignature = block.type === "label" && /^подпись$/i.test(pdfText(block.text).trim());
+    return {
+      kind: isSignature ? "signature" : "text",
+      lines,
+      spec,
+      total: isSignature ? 26 : lines.length * spec.lh + spec.after,
+    };
   });
 
   root.querySelectorAll(".document-section").forEach((sec) => {
@@ -2050,7 +2057,24 @@ function renderContractPdf(root, { jsPDF, fonts, filename, docType = "contract",
           if (colBlocks[0] && colBlocks[0].kind === "text") {
             colBlocks[0] = { ...colBlocks[0], spec: { ...colBlocks[0].spec, font: "bold" } };
           }
-          return { blocks: colBlocks, height: colBlocks.reduce((a, b) => a + b.total, 0) };
+          const signatureLineIndex = colBlocks.findIndex((block) => block.kind === "signature");
+          const signatureStartIndex = signatureLineIndex > 0 && colBlocks[signatureLineIndex - 1].kind === "img"
+            ? signatureLineIndex - 1
+            : signatureLineIndex;
+          const signatureHeight = signatureStartIndex >= 0
+            ? colBlocks.slice(signatureStartIndex).reduce((acc, block) => acc + block.total, 0)
+            : 0;
+          const preSignatureHeight = signatureStartIndex >= 0
+            ? colBlocks.slice(0, signatureStartIndex).reduce((acc, block) => acc + block.total, 0)
+            : 0;
+          const rawHeight = colBlocks.reduce((a, b) => a + b.total, 0);
+          const signatureReserve = signatureStartIndex >= 0 ? 86 : 0;
+          return {
+            blocks: colBlocks,
+            height: Math.max(rawHeight, preSignatureHeight + signatureReserve),
+            signatureStartIndex,
+            signatureHeight,
+          };
         });
       } else {
         blocks = buildBlocks(body, rightW);
@@ -2117,19 +2141,36 @@ function renderContractPdf(root, { jsPDF, fonts, filename, docType = "contract",
         clause.columns.forEach((col, ci) => {
           const cx = rightX + ci * (reqColW + colGap);
           let cy = startY;
-          col.blocks.forEach((block) => {
+          const drawBlock = (block) => {
             if (block.kind === "img") {
               try {
                 const src = block.el.tagName === "CANVAS" ? block.el.toDataURL("image/png") : block.el.src;
                 doc.addImage(src, "PNG", cx, cy + 4, block.width, block.height);
               } catch (e) { /* пропускаем битую картинку */ }
               cy += block.total;
-            } else {
-              setF(block.spec.size, block.spec.font, block.spec.color);
-              block.lines.forEach((line) => { cy += block.spec.lh; doc.text(line, cx, cy); });
-              cy += block.spec.after;
+              return;
             }
-          });
+            if (block.kind === "signature") {
+              doc.setDrawColor(172, 172, 172);
+              doc.setLineWidth(0.6);
+              doc.line(cx, cy + 1, cx + Math.min(reqColW, 148), cy + 1);
+              setF(block.spec.size, block.spec.font, block.spec.color);
+              cy += block.spec.lh + 5;
+              doc.text(block.lines[0] || "Подпись", cx, cy);
+              cy += block.spec.after;
+              return;
+            }
+            setF(block.spec.size, block.spec.font, block.spec.color);
+            block.lines.forEach((line) => { cy += block.spec.lh; doc.text(line, cx, cy); });
+            cy += block.spec.after;
+          };
+          if (col.signatureStartIndex >= 0) {
+            col.blocks.slice(0, col.signatureStartIndex).forEach(drawBlock);
+            cy = startY + blockH - col.signatureHeight;
+            col.blocks.slice(col.signatureStartIndex).forEach(drawBlock);
+          } else {
+            col.blocks.forEach(drawBlock);
+          }
           if (cy > maxY) maxY = cy;
         });
         y = maxY + 4;
@@ -2511,15 +2552,28 @@ function applyContractAutoDefaults(options = {}) {
 
 function getLabelValueFromText(text, labels) {
   const lines = String(text || "").split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
-  const labelPattern = labels
-    .map((label) => label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
-    .join("|");
-  const regexp = new RegExp(`^(?:[-–—•]\\s*)?(?:${labelPattern})\\s*(?:[:：—–-]|\\s)\\s*(.+)$`, "i");
-  const inlineRegexp = new RegExp(`(?:${labelPattern})\\s*(?:[:：—–-])\\s*([^\\n;]+)`, "i");
+  const sortedLabels = [...labels].sort((a, b) => b.length - a.length);
+  const escapedLabels = sortedLabels.map((label) => label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  const inlineRegexp = new RegExp(`(?:${escapedLabels.join("|")})\\s*(?:[:：—–-])\\s*([^\\n;]+)`, "i");
+  const labelLineRegexp = new RegExp(`^(?:[-–—•]\\s*)?(?:${escapedLabels.join("|")})\\s*(?:[:：—–-])?\\s*$`, "i");
+  const genericLabelOnlyRegexp = /^(?:[-–—•]\s*)?[a-zа-яё0-9\s/().-]+[:：]\s*$/i;
+  const isLabelOnlyLine = (line) => labelLineRegexp.test(line);
 
-  for (const line of lines) {
-    const match = line.match(regexp);
-    if (match?.[1]) return match[1].trim();
+  for (let lineIndex = 0; lineIndex < lines.length; lineIndex += 1) {
+    const line = lines[lineIndex];
+    for (let labelIndex = 0; labelIndex < sortedLabels.length; labelIndex += 1) {
+      const label = escapedLabels[labelIndex];
+      const match = line.match(new RegExp(`^(?:[-–—•]\\s*)?${label}\\s*`, "i"));
+      if (!match) continue;
+      const rest = line.slice(match[0].length).replace(/^[:：—–-]\s*/, "").trim();
+      if (rest && !rest.startsWith("/")) return rest;
+      for (let nextIndex = lineIndex + 1; nextIndex < lines.length; nextIndex += 1) {
+        const nextLine = lines[nextIndex];
+        if (isLabelOnlyLine(nextLine) || genericLabelOnlyRegexp.test(nextLine)) continue;
+        return nextLine;
+      }
+      return "";
+    }
   }
 
   return text.match(inlineRegexp)?.[1]?.trim() || "";
@@ -2530,8 +2584,9 @@ function extractContactDetails(text) {
   const contacts = [];
   const email = source.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0];
   const phone = source.match(/(?:\+?\d[\d\s().-]{7,}\d)/)?.[0]?.replace(/\s{2,}/g, " ");
-  const telegram = source.match(/(?:telegram|телеграм|tg)\s*[:：@]?\s*(@?[a-zA-Z0-9_]{4,})/i)?.[1];
-  const labeled = getLabelValueFromText(source, ["контакты", "контакт", "телефон", "e-mail", "email", "почта"]);
+  const telegramMatch = source.match(/(?:telegram|телеграм|tg)\s*[:：@]?\s*(@?[a-zA-Z0-9_]{4,})|(@[a-zA-Z0-9_]{4,})/i);
+  const telegram = telegramMatch?.[1] || telegramMatch?.[2];
+  const labeled = getLabelValueFromText(source, ["телефон / telegram", "телефон/telegram", "телефон / телеграм", "контакты", "контакт", "телефон", "e-mail", "email", "почта"]);
 
   if (labeled) contacts.push(labeled);
   if (phone && !contacts.some((item) => item.includes(phone))) contacts.push(phone.trim());
@@ -2939,7 +2994,7 @@ function renderContractTemplateStrip() {
   const strips = document.querySelectorAll("[data-contract-template-strip]");
   if (!strips.length) return;
   const isAddendum = contractState.docType === "addendum";
-  const docTypeMarkup = `
+  const markup = `
     <div class="doc-type-toggle">
       <button class="doc-type-toggle__btn ${!isAddendum ? "is-active" : ""}" type="button" data-action="show-contract-doc"><span class="doc-type-toggle__step">01</span>Договор</button>
       <button class="doc-type-toggle__btn ${isAddendum ? "is-active" : ""}" type="button" data-action="show-addendum-doc"><span class="doc-type-toggle__step">02</span>Допсоглашение</button>
@@ -2947,23 +3002,7 @@ function renderContractTemplateStrip() {
     <button class="reset-btn" type="button" data-action="reset-all-data" title="Сбросить все данные">↺ Сбросить</button>
   `;
   strips.forEach((strip) => {
-    const shouldRenderMobileSteps = strip.classList.contains("mobile-contract-template-strip")
-      && isMobileContractUI()
-      && !mobileContractDocVisible;
-    if (shouldRenderMobileSteps) {
-      const steps = getMobileContractSteps();
-      strip.innerHTML = `
-        <div class="mobile-fill-page-chips" aria-label="Страницы заполнения">
-          ${steps.map((step, index) => `
-            <button class="mobile-fill-page-chip ${step.key === mobileContractSheetKey ? "is-active" : ""}" type="button" data-action="open-mobile-contract-sheet" data-mobile-contract-step="${step.key}">
-              <span>${String(index + 1).padStart(2, "0")}</span>${escapeHtml(step.title)}
-            </button>
-          `).join("")}
-        </div>
-      `;
-      return;
-    }
-    strip.innerHTML = docTypeMarkup;
+    strip.innerHTML = markup;
   });
 }
 
@@ -3863,13 +3902,13 @@ function hideMobileContractDoc() {
   renderMobileContractUI({ forceSheet: true });
 }
 
-function renderActiveContractDocument() {
+function renderActiveContractDocument(options = {}) {
   if (contractState.docType === "addendum") {
     renderAddendumDocument();
   } else {
     renderContractDocument();
   }
-  renderMobileContractUI();
+  renderMobileContractUI(options);
 }
 
 function deleteContractClause(key) {
@@ -4215,7 +4254,9 @@ function renderAddendumDocument() {
               <p>${addendumPartyValue("clientName")}</p>
               ${contractValue("clientInn") ? `<p>ИНН: ${contractValue("clientInn")}</p>` : ""}
               ${contractState.fields.clientAddress ? `<p>Адрес: ${escapeHtml(contractState.fields.clientAddress)}</p>` : ""}
-              <span class="sign-line">Подпись</span>
+              <div class="signature-slot signature-slot--empty">
+                <span class="sign-line">Подпись</span>
+              </div>
             </div>
             <div class="requisite-card">
               <p><strong>Исполнитель</strong></p>
@@ -4529,7 +4570,9 @@ function renderContractDocument() {
               <p>${contractField("clientName", "ФИО / название")}</p>
               <p>ИНН: ${contractField("clientInn", "__________")}</p>
               <p>Адрес: ${contractField("clientAddress", "юридический / почтовый адрес")}</p>
-              <span class="sign-line">Подпись</span>
+              <div class="signature-slot signature-slot--empty">
+                <span class="sign-line">Подпись</span>
+              </div>
             </div>
             <div class="requisite-card">
               <p><strong>Исполнитель</strong></p>
@@ -4946,6 +4989,10 @@ function printContract(onDone) {
       .pdf-clean-body .contract-clause { padding-right: 0; }
       .pdf-clean-body .contract-clause + .contract-clause { padding-top: 14px; border-top: 1px solid #e2e2e2; }
       .pdf-clean-body .requisites-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 18px; }
+      .pdf-clean-body .requisite-card { min-height: 178px; padding: 16px; border: 1px solid #ddd; border-radius: 18px; background: #f7f7f7; display: flex; flex-direction: column; }
+      .pdf-clean-body .signature-slot { min-height: 86px; margin-top: auto; display: flex; flex-direction: column; justify-content: flex-end; }
+      .pdf-clean-body .signature-slot--empty { min-height: 92px; }
+      .pdf-clean-body .sign-line { display: block; margin-top: 0; padding-top: 10px; border-top: 1px solid #aaa; color: #8c8c8c; font-size: 11px; }
     </style>
     <div class="pdf-clean-body">${clone.innerHTML}</div>
   `;
@@ -5436,7 +5483,7 @@ function bindEvents() {
     if (input.matches("[data-contract-control]")) {
       const key = input.dataset.contractControl;
       contractState.fields[key] = input.value.trim();
-      syncContractFieldDom(key);
+      renderActiveContractDocument();
       renderContractProgress();
       validateContractFields();
       scheduleContractSave();
@@ -5560,7 +5607,8 @@ function bindEvents() {
     if (input.matches("[data-action='toggle-contract-option']")) {
       const key = input.dataset.option;
       contractState.optional[key] = input.checked;
-      renderContractWorkspace();
+      renderContractOptions();
+      renderActiveContractDocument({ forceSheet: true });
       scheduleContractSave();
       return;
     }

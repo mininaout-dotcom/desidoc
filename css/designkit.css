@@ -240,6 +240,20 @@
   --shadow: 0 28px 80px rgba(0, 0, 0, 0.28);
 }
 
+html[data-theme="dark"]:has(body[data-view="home"]) {
+  background:
+    linear-gradient(180deg, rgba(2, 2, 1, 0.14), rgba(2, 2, 1, 0.24)),
+    var(--ddoc-bg-night) center / cover no-repeat,
+    #08070f;
+}
+
+[data-theme="dark"] body[data-view="home"] {
+  background:
+    linear-gradient(180deg, rgba(2, 2, 1, 0.14), rgba(2, 2, 1, 0.24)),
+    var(--ddoc-bg-night) center / cover no-repeat,
+    #08070f;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -617,6 +631,15 @@ textarea:focus-visible {
     --ddoc-mobile-sheet-radius: 28px;
     --ddoc-mobile-glass: rgba(255, 255, 255, 0.96);
     --ddoc-mobile-chip: rgba(255, 255, 255, 0.9);
+    --ddoc-mobile-border: transparent;
+    --ddoc-mobile-shadow: 0 14px 36px rgba(87, 52, 36, 0.12);
+  }
+
+  :root[data-theme="dark"] {
+    --ddoc-mobile-glass: rgba(26, 29, 37, 0.66);
+    --ddoc-mobile-chip: rgba(255, 255, 255, 0.10);
+    --ddoc-mobile-border: rgba(255, 255, 255, 0.14);
+    --ddoc-mobile-shadow: 0 18px 44px rgba(0, 0, 0, 0.38);
   }
 
   body:not([data-view="home"]) .deedoc-home__top--global.is-scrolled {
@@ -2635,6 +2658,8 @@ h2 {
   border: 1px solid var(--line);
   border-radius: 22px;
   background: var(--surface-muted);
+  display: flex;
+  flex-direction: column;
 }
 
 .sign-line {
@@ -2647,7 +2672,19 @@ h2 {
 }
 
 .signature-slot {
-  margin-top: 14px;
+  min-height: 86px;
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.signature-slot .sign-line {
+  margin-top: 0;
+}
+
+.signature-slot--empty {
+  min-height: 92px;
 }
 
 .contract-clause__body {
@@ -5891,11 +5928,11 @@ body.mobile-contract-sheet-open {
     justify-content: space-between;
     gap: 8px;
     padding: 10px 16px;
-    border: 1px solid transparent;
+    border: 1px solid var(--ddoc-mobile-border);
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.9);
+    background: var(--ddoc-mobile-chip);
     color: var(--cv-text);
-    box-shadow: 0 14px 36px rgba(87, 52, 36, 0.12);
+    box-shadow: var(--ddoc-mobile-shadow);
     backdrop-filter: blur(18px);
     -webkit-backdrop-filter: blur(18px);
     text-align: left;
@@ -6192,6 +6229,7 @@ body.mobile-contract-sheet-open {
       ".     side   side";
     gap: 4px 6px;
     align-items: start;
+    border-radius: var(--ddoc-mobile-inner-radius);
   }
 
   .view--calculator .stage-order {
@@ -7535,10 +7573,10 @@ body[data-view="contract"]::after {
 
   .mobile-contract-card {
     padding: 18px;
-    border: 1px solid transparent;
+    border: 1px solid var(--ddoc-mobile-border);
     border-radius: var(--ddoc-mobile-card-radius);
     background: var(--ddoc-mobile-glass);
-    box-shadow: 0 14px 36px rgba(87, 52, 36, 0.12);
+    box-shadow: var(--ddoc-mobile-shadow);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
   }
@@ -7561,47 +7599,6 @@ body[data-view="contract"]::after {
 
   .mobile-contract-template-strip .reset-btn {
     display: none;
-  }
-
-  .mobile-fill-page-chips {
-    width: 100%;
-    display: flex;
-    gap: 6px;
-    padding: 2px;
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-
-  .mobile-fill-page-chips::-webkit-scrollbar {
-    display: none;
-  }
-
-  .mobile-fill-page-chip {
-    min-width: max-content;
-    min-height: 38px;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    border: 1px solid transparent;
-    border-radius: 999px;
-    background: var(--ddoc-mobile-chip);
-    color: var(--cv-text);
-    padding: 0 12px;
-    font: inherit;
-    font-size: 13px;
-    font-weight: 650;
-  }
-
-  .mobile-fill-page-chip span {
-    color: var(--cv-muted);
-    font-size: 10px;
-    letter-spacing: 0.06em;
-  }
-
-  .mobile-fill-page-chip.is-active {
-    background: color-mix(in srgb, var(--accent) 10%, white);
-    color: var(--accent);
-    box-shadow: 0 10px 24px rgba(94, 56, 39, 0.12);
   }
 
   .mobile-contract-card__head {
@@ -7659,11 +7656,11 @@ body[data-view="contract"]::after {
     gap: 12px;
     width: 100%;
     padding: 14px 16px;
-    border: 1px solid transparent;
-    border-radius: 999px;
+    border: 1px solid var(--ddoc-mobile-border);
+    border-radius: var(--ddoc-mobile-inner-radius);
     background: var(--ddoc-mobile-chip);
     color: var(--cv-text);
-    box-shadow: 0 14px 36px rgba(87, 52, 36, 0.10);
+    box-shadow: var(--ddoc-mobile-shadow);
     text-align: left;
   }
 
@@ -8450,19 +8447,28 @@ body[data-view="contract"]::after {
    ============================================================ */
 
 @media (max-width: 760px) {
+  [data-theme="dark"] body[data-view="home"],
+  [data-theme="dark"] .app[data-view="home"] {
+    background: #08070f;
+  }
+
   [data-theme="dark"] .mobile-calc-chip,
   [data-theme="dark"] .mobile-calc-sheet__panel,
   [data-theme="dark"] .mobile-contract-card,
   [data-theme="dark"] .mobile-contract-step,
   [data-theme="dark"] .mobile-contract-sheet__panel,
-  [data-theme="dark"] .mobile-contract-actions {
-    border-color: var(--line);
-    background: var(--surface-strong);
+  [data-theme="dark"] .mobile-contract-actions,
+  [data-theme="dark"] .app[data-view="calculator"] .sticky-summary {
+    border-color: var(--ddoc-mobile-border);
+    background: var(--ddoc-mobile-glass);
+    backdrop-filter: blur(var(--ddoc-blur-glass)) saturate(1.25);
+    -webkit-backdrop-filter: blur(var(--ddoc-blur-glass)) saturate(1.25);
   }
 
   [data-theme="dark"] .mobile-calc-chip,
-  [data-theme="dark"] .mobile-contract-step {
-    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.4);
+  [data-theme="dark"] .mobile-contract-step,
+  [data-theme="dark"] .app[data-view="calculator"] .sticky-summary {
+    box-shadow: var(--ddoc-mobile-shadow);
   }
 
   [data-theme="dark"] .mobile-calc-sheet__panel,
@@ -8472,6 +8478,12 @@ body[data-view="contract"]::after {
 
   [data-theme="dark"] .mobile-contract-actions {
     box-shadow: 0 -18px 44px rgba(0, 0, 0, 0.45);
+  }
+
+  [data-theme="dark"] .mobile-contract-step.is-active,
+  [data-theme="dark"] .mobile-calc-chip.is-active {
+    border-color: rgba(225, 154, 118, 0.42);
+    background: rgba(225, 154, 118, 0.18);
   }
 
   [data-theme="dark"] .mobile-calc-sheet__handle::after,
@@ -8510,13 +8522,11 @@ body[data-view="contract"]::after {
     color: rgba(255, 255, 255, 0.38);
   }
 
-  [data-theme="dark"] .mobile-contract-card,
-  [data-theme="dark"] .mobile-contract-step,
-  [data-theme="dark"] .mobile-contract-sheet__panel,
-  [data-theme="dark"] .mobile-contract-sheet__field input,
-  [data-theme="dark"] .mobile-contract-sheet__field textarea,
-  [data-theme="dark"] .mobile-contract-sheet__toggle {
-    border-color: transparent;
+  [data-theme="dark"] .app[data-view="calculator"] .sticky-summary .button--ghost,
+  [data-theme="dark"] .mobile-contract-actions .button--ghost {
+    border-color: rgba(255, 255, 255, 0.10);
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text);
   }
 }
 
@@ -8812,6 +8822,7 @@ body[data-view="calculator"] [data-brief-ai-modal] textarea:focus-visible {
   .view--calculator .stage-card {
     padding: 14px 12px;
     gap: 6px 8px;
+    border-radius: var(--ddoc-mobile-inner-radius);
   }
 
   .view--calculator .stage-description-input {
