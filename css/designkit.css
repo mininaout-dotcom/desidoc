@@ -264,6 +264,7 @@ html[data-theme="dark"]:has(body[data-view="home"]) {
 
 html {
   min-height: 100%;
+  min-height: 100dvh;
   scroll-behavior: smooth;
 }
 
@@ -282,6 +283,7 @@ a, button, [role="button"], .deedoc-card, .project-option, .outline-link, .optio
 body {
   min-width: 320px;
   min-height: 100%;
+  min-height: 100dvh;
   margin: 0;
   background:
     radial-gradient(circle at 8% 6%, rgba(199, 109, 77, 0.16), transparent 30vw),
@@ -2531,18 +2533,37 @@ h2 {
   right: 0;
   width: 30px;
   height: 30px;
-  display: inline-grid;
-  place-items: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
   border: 1px solid var(--line);
   border-radius: 50%;
-  background: color-mix(in srgb, var(--surface-strong) 92%, transparent);
+  background: rgba(255, 255, 255, 0.52);
   color: var(--muted);
+  box-shadow: 0 4px 16px rgba(31, 29, 24, 0.10);
+  backdrop-filter: blur(var(--ddoc-blur-glass)) saturate(1.2);
+  -webkit-backdrop-filter: blur(var(--ddoc-blur-glass)) saturate(1.2);
   cursor: pointer;
-  font-size: 19px;
-  font-weight: 400;
-  line-height: 1;
+  font-size: 0;
   opacity: 0;
   transition: opacity 160ms ease, color 160ms ease, border-color 160ms ease, background 160ms ease;
+}
+
+.contract-clause-delete::before {
+  content: "";
+  width: 11px;
+  height: 11px;
+  background:
+    linear-gradient(currentColor, currentColor) center / 11px 1.5px no-repeat,
+    linear-gradient(currentColor, currentColor) center / 1.5px 11px no-repeat;
+  transform: rotate(45deg);
+}
+
+[data-theme="dark"] .view--contract .contract-clause-delete {
+  border-color: var(--cv-line);
+  background: rgba(255, 255, 255, 0.09);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.22);
 }
 
 .contract-clause:hover .contract-clause-delete,
@@ -2557,9 +2578,15 @@ h2 {
 .contract-clause-delete:hover,
 .contract-clause-delete:focus-visible {
   border-color: color-mix(in srgb, var(--accent) 42%, var(--line));
-  background: var(--accent-soft);
+  background: color-mix(in srgb, var(--accent) 16%, rgba(255, 255, 255, 0.52));
   color: var(--accent);
   opacity: 1;
+}
+
+[data-theme="dark"] .view--contract .contract-clause-delete:hover,
+[data-theme="dark"] .view--contract .contract-clause-delete:focus-visible {
+  border-color: color-mix(in srgb, var(--accent) 42%, var(--cv-line));
+  background: color-mix(in srgb, var(--accent) 18%, rgba(255, 255, 255, 0.09));
 }
 
 .contract-clause + .contract-clause {
@@ -3903,10 +3930,14 @@ h2 {
 
   /* Mobile home — Figma iPhone 16/17 Pro Max layout */
   .deedoc-home {
-    min-height: 100svh;
+    min-height: 100dvh;
     height: auto;
     grid-template-rows: auto 1fr auto;
-    padding: 33px 24px;
+    padding:
+      calc(33px + env(safe-area-inset-top))
+      calc(24px + env(safe-area-inset-right))
+      calc(33px + env(safe-area-inset-bottom))
+      calc(24px + env(safe-area-inset-left));
   }
 
   /* Фокус фоновой картинки задаём на реальном слое с изображением,
@@ -3936,9 +3967,9 @@ h2 {
 
   /* ── Header compact on mobile ─────────────── */
   .deedoc-home__top--global {
-    padding-left: 16px;
-    padding-right: 16px;
-    padding-top: 14px;
+    padding-left: calc(16px + env(safe-area-inset-left));
+    padding-right: calc(16px + env(safe-area-inset-right));
+    padding-top: calc(14px + env(safe-area-inset-top));
     padding-bottom: 14px;
   }
 
