@@ -115,7 +115,7 @@ const savedProfile = loadProfile();
 const state = {
   view: "home",
   navHistory: [],
-  theme: localStorage.getItem("designkit.theme") || "light",
+  theme: "light",
   projectKey: DEFAULT_PROJECT_KEY,
   rateMode: "custom",
   marketGrade: "middle",
