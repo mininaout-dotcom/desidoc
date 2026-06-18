@@ -5236,6 +5236,17 @@ body[data-view="calculator"]::after {
   background: transparent;
 }
 
+.view--calculator .hours-field input[type="number"] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.view--calculator .hours-field input[type="number"]::-webkit-inner-spin-button,
+.view--calculator .hours-field input[type="number"]::-webkit-outer-spin-button {
+  margin: 0;
+  -webkit-appearance: none;
+}
+
 .view--calculator .hours-field span {
   color: var(--cv-muted);
 }
