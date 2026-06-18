@@ -836,6 +836,10 @@ function refreshStageHours(level) {
 function setTheme(theme) {
   state.theme = theme;
   root.dataset.theme = theme === "dark" ? "dark" : "light";
+  document.querySelectorAll(".deedoc-card").forEach((card) => {
+    card.style.removeProperty("transform");
+    card.style.removeProperty("transition");
+  });
   localStorage.setItem("designkit.theme", state.theme);
 }
 
@@ -5842,38 +5846,6 @@ init();
     targetX = 0; targetY = 0;
     start();
   });
-}());
-
-// — Card parallax —
-(function initCardParallax() {
-  const MAX_TILT = 7;       // degrees
-  const MAX_LIFT = 14;      // px translateZ
-  const EASE_IN  = "transform 0.08s ease-out";
-  const EASE_OUT = "transform 0.55s cubic-bezier(0.34, 1.56, 0.64, 1)";
-
-  function applyTilt(card, e) {
-    const r = card.getBoundingClientRect();
-    const dx = (e.clientX - (r.left + r.width  / 2)) / (r.width  / 2); // −1…1
-    const dy = (e.clientY - (r.top  + r.height / 2)) / (r.height / 2);
-    const rotX = -dy * MAX_TILT;
-    const rotY =  dx * MAX_TILT;
-    card.style.transition = EASE_IN;
-    card.style.transform  = `perspective(700px) rotateX(${rotX}deg) rotateY(${rotY}deg) translateZ(${MAX_LIFT}px)`;
-  }
-
-  function resetTilt(card) {
-    card.style.transition = EASE_OUT;
-    card.style.transform  = "";
-  }
-
-  function bind() {
-    document.querySelectorAll(".deedoc-card").forEach(card => {
-      card.addEventListener("mousemove",  e => applyTilt(card, e));
-      card.addEventListener("mouseleave", ()  => resetTilt(card));
-    });
-  }
-
-  bind();
 }());
 
 /* Hide the top nav (Смета / Мои данные) on scroll down, reveal on scroll up */
