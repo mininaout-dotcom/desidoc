@@ -80,7 +80,7 @@ const PROJECTS = {
 
 const PROJECT_ORDER = ["logo", "branding", "landing_design", "landing_tilda", "presentation", "custom"];
 
-const MARKET_RATES = { junior: 800, middle: 2000, senior: 3500 };
+const MARKET_RATES = { junior: 600, middle: 1800, senior: 3000 };
 const MODIFIERS = { urgent: 0.3 };
 const DEFAULT_DESIGNER_RATE = 1500;
 const DEFAULT_PROJECT_KEY = "landing_design";
