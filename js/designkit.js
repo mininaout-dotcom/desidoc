@@ -1168,6 +1168,7 @@ function generateEstimate(force = false, { preserveBrief = false } = {}) {
   state.generated = true;
   renderEstimate();
   routeTo("calculator");
+  trackMetrikaGoal("estimate_calculated");
   // На мобиле прокручиваем к результату
   if (window.innerWidth <= 760) {
     const result = document.querySelector("[data-estimate-result]");
@@ -1371,6 +1372,7 @@ function saveProfile() {
     scheduleContractSave();
   }
   modal.close();
+  trackMetrikaGoal("profile_saved");
 }
 
 function bindProfileModalBackdropClose() {
@@ -1449,7 +1451,7 @@ function acceptCookies() {
 
 let feedbackPromptCloseHandled = false;
 
-function trackFeedbackPromptGoal(goal) {
+function trackMetrikaGoal(goal) {
   if (window.__desidocMetrikaLoaded && typeof window.ym === "function") {
     window.ym(YANDEX_METRIKA_ID, "reachGoal", goal);
   }
@@ -1475,10 +1477,11 @@ function showFeedbackPrompt() {
   if (!modal || modal.open || !canShowFeedbackPrompt()) return;
   feedbackPromptCloseHandled = false;
   modal.showModal();
-  trackFeedbackPromptGoal("feedback_prompt_shown");
+  trackMetrikaGoal("feedback_prompt_shown");
 }
 
-function notifyPdfDownloadSuccess() {
+function notifyPdfDownloadSuccess(goal) {
+  if (goal) trackMetrikaGoal(goal);
   setTimeout(showFeedbackPrompt, 220);
 }
 
@@ -1493,7 +1496,7 @@ function startFeedbackSurvey() {
   feedbackPromptCloseHandled = true;
   localStorage.setItem(FEEDBACK_COMPLETED_KEY, "true");
   localStorage.removeItem(FEEDBACK_SNOOZED_UNTIL_KEY);
-  trackFeedbackPromptGoal("feedback_started");
+  trackMetrikaGoal("feedback_started");
   window.open(FEEDBACK_FORM_URL, "_blank", "noopener");
   modal?.close();
 }
@@ -1503,7 +1506,7 @@ function snoozeFeedbackPrompt({ closeModal = true } = {}) {
   if (localStorage.getItem(FEEDBACK_COMPLETED_KEY)) return;
   feedbackPromptCloseHandled = true;
   localStorage.setItem(FEEDBACK_SNOOZED_UNTIL_KEY, new Date(Date.now() + FEEDBACK_SNOOZE_DELAY).toISOString());
-  trackFeedbackPromptGoal("feedback_snoozed");
+  trackMetrikaGoal("feedback_snoozed");
   if (closeModal) modal?.close();
 }
 
@@ -2344,7 +2347,7 @@ function printEstimate() {
       filename,
       onDone: () => {
         cleanupSheet();
-        notifyPdfDownloadSuccess();
+        notifyPdfDownloadSuccess("estimate_pdf_download");
       },
       onError: (err) => {
         cleanupSheet();
@@ -2404,7 +2407,7 @@ function printEstimate() {
       rows: pdfRows,
       summary: pdfSummary,
       footer: "Оценка действует 14 дней. Итоговые сроки и состав работ фиксируются в договоре или допсоглашении.",
-      onDone: () => { cleanupSheet(); notifyPdfDownloadSuccess(); },
+      onDone: () => { cleanupSheet(); notifyPdfDownloadSuccess("estimate_pdf_download"); },
     });
   }).catch((err) => { console.warn("Векторный PDF не удался, растровый запасной вариант:", err); rasterFallback(); });
 }
@@ -4943,6 +4946,7 @@ function printContract(onDone) {
   clone.querySelectorAll("[contenteditable]").forEach((node) => node.removeAttribute("contenteditable"));
 
   const isAddendum = contractState.docType === "addendum";
+  const pdfDownloadGoal = isAddendum ? "" : "contract_pdf_download";
   const f = contractState.addendumFields;
   const template = getContractTemplate();
   const today = new Date().toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" });
@@ -5015,7 +5019,7 @@ function printContract(onDone) {
       filename,
       onDone: () => {
         cleanup();
-        notifyPdfDownloadSuccess();
+        notifyPdfDownloadSuccess(pdfDownloadGoal);
       },
       onError: (err) => {
         cleanup();
@@ -5066,7 +5070,7 @@ function printContract(onDone) {
       renderContractPdf(page, {
         jsPDF, fonts, filename,
         docType: isAddendum ? "addendum" : "contract",
-        onDone: () => { cleanup(); notifyPdfDownloadSuccess(); },
+        onDone: () => { cleanup(); notifyPdfDownloadSuccess(pdfDownloadGoal); },
       });
     })
     .catch((err) => { console.warn("Векторный PDF не удался, растровый запасной вариант:", err); rasterFallback(); });
@@ -5433,6 +5437,7 @@ function bindEvents() {
       const text = document.querySelector("[data-client-request-text]")?.textContent || "";
       navigator.clipboard.writeText(text).then(() => {
         flashButton('[data-action="copy-client-request"]', "Скопировано ✓");
+        trackMetrikaGoal("client_request_copied");
       });
     }
     if (action === "parse-client-reply") {
@@ -5447,7 +5452,7 @@ function bindEvents() {
         || document.querySelector("[data-client-reply-input]")?.value
         || mobileContractClientReplyDraft
         || "";
-      applyClientReplyText(value);
+      if (applyClientReplyText(value)) trackMetrikaGoal("client_data_parsed");
     }
     if (action === "focus-contract-field") {
       focusContractControlField(actionTarget.dataset.field);
@@ -5652,6 +5657,7 @@ function bindEvents() {
         renderContractDocument();
         renderAddendumDocument();
         scheduleContractSave();
+        trackMetrikaGoal("signature_uploaded");
       };
       processSignatureFile(file).then(applySignature).catch((err) => {
         console.warn("processSignatureFile failed, using raw:", err);
