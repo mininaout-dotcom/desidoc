@@ -31,13 +31,15 @@ const PROJECTS = {
   landing_tilda: {
     label: "Сайт на Tilda",
     stages: [
-      { title: "Брифинг и сбор данных", description: "Изучение продукта, целевой аудитории и задач, которые должен решать лендинг.", hours: { junior: 3, middle: 3, senior: 3 } },
-      { title: "Прототип", description: "Текстовая структура страницы, логика блоков и призывов к действию.", hours: { junior: 11, middle: 9, senior: 8 } },
-      { title: "Дизайн", description: "Отрисовка всех блоков лендинга в Figma с учётом фирменного стиля.", hours: { junior: 21, middle: 17, senior: 14 } },
-      { title: "Сборка", description: "Сборка страницы на платформе Tilda по готовому дизайну.", hours: { junior: 20, middle: 17, senior: 15 } },
-      { title: "Адаптив", description: "Настройка мобильной и планшетной версий страницы.", hours: { junior: 8, middle: 6, senior: 4 } },
-      { title: "Формы", description: "Подключение форм заявок, настройка уведомлений и интеграций с CRM.", hours: { junior: 2, middle: 1, senior: 1 } },
-      { title: "Правки", description: "Корректировки по итогам финального согласования с клиентом.", hours: { junior: 8, middle: 8, senior: 8 } },
+      { title: "Брифинг и сбор требований", description: "Краткая сессия с заказчиком, уточнение целей, задач, аудитории, количества нужных страниц и обязательных функций.", hours: { junior: 2, middle: 2, senior: 2 } },
+      { title: "Исследование и анализ", description: "Анализ конкурентов и референсов, ресерч целевой аудитории, сбор вдохновляющих примеров, фиксация допущений по структуре и стилю.", hours: { junior: 10, middle: 8, senior: 8 } },
+      { title: "Проектирование и структура", description: "Составление карты сайта, определение логики переходов и базовых пользовательских сценариев.", hours: { junior: 11, middle: 9, senior: 8 } },
+      { title: "Прототипирование", description: "Создание wireframes для ключевых страниц: компоновка блоков, функции и последовательность подачи информации.", hours: { junior: 8, middle: 6, senior: 4 } },
+      { title: "Визуальная концепция", description: "Формулировка визуального стиля: moodboard, цветовая палитра, типографика, графические приемы и развитие айдентики под веб.", hours: { junior: 10, middle: 8, senior: 8 } },
+      { title: "Дизайн ключевых блоков", description: "Отрисовка визуала ключевых экранов и подготовка стиля для дальнейшей сборки на Tilda.", hours: { junior: 14, middle: 12, senior: 10 } },
+      { title: "Сборка на Tilda и адаптив", description: "Сборка страниц и блоков в Tilda, настройка мобильной и планшетной версий сразу внутри платформы.", hours: { junior: 28, middle: 22, senior: 18 } },
+      { title: "Формы и базовые настройки", description: "Подключение форм, уведомлений, базовых настроек страницы и проверка технических мелочей перед запуском.", hours: { junior: 4, middle: 3, senior: 2 } },
+      { title: "Финальное тестирование и правки", description: "Проверка отображения, кликабельности, форм и внесение финальных правок после согласования.", hours: { junior: 8, middle: 8, senior: 8 } },
     ],
   },
   landing_design: {
@@ -68,12 +70,12 @@ const PROJECTS = {
   custom: {
     label: "Другое",
     stages: [
-      { title: "Брифинг", description: "Интервью с заказчиком, сбор вводной информации, уточнение задач и ожиданий.", hours: { junior: 3, middle: 2, senior: 2 } },
-      { title: "Анализ конкурентов", description: "Изучение рынка, анализ конкурентных решений и позиционирования.", hours: { junior: 5, middle: 4, senior: 3 } },
-      { title: "Подборка референсов", description: "Сбор и отбор визуальных референсов, формулировка визуальных принципов.", hours: { junior: 5, middle: 4, senior: 3 } },
-      { title: "Концепция", description: "Разработка и презентация визуальной концепции, выбор направления.", hours: { junior: 8, middle: 6, senior: 5 } },
-      { title: "Препресс и подготовка к печати", description: "Проверка макетов под печатные требования: цветовые профили, отступы, разрешение, вылеты.", hours: { junior: 3, middle: 3, senior: 3 } },
-      { title: "Передача файлов и макетов", description: "Экспорт финальных файлов в нужных форматах, организация папок и передача заказчику.", hours: { junior: 2, middle: 2, senior: 2 } },
+      { title: "Брифинг и сбор данных", description: "Уточнение задачи, целей, ограничений и ожидаемого результата.", hours: { junior: 4, middle: 3, senior: 3 } },
+      { title: "Анализ и референсы", description: "Изучение контекста проекта и подбор визуальных ориентиров.", hours: { junior: 6, middle: 5, senior: 4 } },
+      { title: "Концепция", description: "Разработка основного визуального направления.", hours: { junior: 10, middle: 8, senior: 6 } },
+      { title: "Дизайн-макеты", description: "Создание основных материалов проекта.", hours: { junior: 12, middle: 10, senior: 8 } },
+      { title: "Подготовка файлов", description: "Экспорт, проверка и подготовка материалов к передаче.", hours: { junior: 4, middle: 3, senior: 3 } },
+      { title: "Согласование и правки", description: "Коммуникация с клиентом и финальные корректировки.", hours: { junior: 6, middle: 5, senior: 5 } },
     ],
   },
 };
@@ -84,6 +86,7 @@ const MARKET_RATES = { junior: 600, middle: 1800, senior: 3000 };
 const MODIFIERS = { urgent: 0.3 };
 const DEFAULT_DESIGNER_RATE = 1500;
 const DEFAULT_PROJECT_KEY = "landing_design";
+const BRIEF_AI_ENTRY_ENABLED = false;
 const PROFILE_CONSENT_VERSION = "2026-06-16";
 const RU_CONTRACT_MONTHS = [
   "января",
@@ -110,6 +113,13 @@ const PDF_PAGE_MARGIN_MM = Object.freeze({ top: 8, right: 8, bottom: 16, left: 8
 const CONTRACT_PDF_DISCLAIMER = "Документ носит ознакомительный характер. Перед использованием проконсультируйтесь со своим юристом.";
 const YANDEX_METRIKA_ID = 109865409;
 const YANDEX_METRIKA_SCRIPT_URL = `https://mc.yandex.ru/metrika/tag.js?id=${YANDEX_METRIKA_ID}`;
+const DEFAULT_CURRENCY = "RUB";
+const CURRENCIES = {
+  RUB: { label: "RUB · ₽", symbol: "₽" },
+  USD: { label: "USD · $", symbol: "$" },
+  EUR: { label: "EUR · €", symbol: "€" },
+  KZT: { label: "KZT · ₸", symbol: "₸" },
+};
 const savedProfile = loadProfile();
 
 const state = {
@@ -123,6 +133,7 @@ const state = {
   monthlyIncome: Number(localStorage.getItem("designkit.monthlyIncome") || 240000),
   workDays: Number(localStorage.getItem("designkit.workDays") || 5),
   billableHours: Number(localStorage.getItem("designkit.billableHours") || 6),
+  currency: CURRENCIES[localStorage.getItem("designkit.currency")] ? localStorage.getItem("designkit.currency") : DEFAULT_CURRENCY,
   rate: 0,
   taxMode: "selfEmployed",
   clientType: "individual",
@@ -131,6 +142,7 @@ const state = {
   stages: [],
   expenses: [],
   mods: new Set(),
+  exportShowHours: localStorage.getItem("designkit.exportShowHours") !== "false",
   profile: savedProfile,
   estimateMeta: loadEstimateMeta(savedProfile, DEFAULT_PROJECT_KEY),
   briefAi: {
@@ -308,11 +320,20 @@ const contractState = loadContractDraft();
 
 const app = document.querySelector(".app");
 const root = document.documentElement;
-const formatMoney = new Intl.NumberFormat("ru-RU", { style: "currency", currency: "RUB", maximumFractionDigits: 0 });
 const formatNumber = new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 0 });
 
-function money(value) {
-  return formatMoney.format(Math.round(value || 0)).replace("₽", "₽");
+function getEstimateCurrency() {
+  if (state?.rateMode === "market") return DEFAULT_CURRENCY;
+  return CURRENCIES[state?.currency] ? state.currency : DEFAULT_CURRENCY;
+}
+
+function money(value, currencyKey = getEstimateCurrency()) {
+  const currency = CURRENCIES[currencyKey] || CURRENCIES[DEFAULT_CURRENCY];
+  return `${formatNumber.format(Math.round(value || 0))} ${currency.symbol}`;
+}
+
+function getCurrencyLabel() {
+  return CURRENCIES[getEstimateCurrency()]?.symbol || CURRENCIES[DEFAULT_CURRENCY].symbol;
 }
 
 function loadProfile() {
@@ -453,7 +474,7 @@ function getTotalHours() {
 }
 
 function createStages(project, level) {
-  return project.stages.map((stage) => ({
+  return (project.stages || []).map((stage) => ({
     title: stage.title,
     description: stage.description || "",
     note: stage.note || "",
@@ -891,7 +912,9 @@ function syncRouteHash(view, replace = false) {
 }
 
 function openSoonModal(target) {
+  const description = target.dataset.description || "Раздел находится в очереди MVP. Сейчас можно работать со сметой и договором.";
   document.querySelector("[data-soon-title]").textContent = target.dataset.label || "Сценарий";
+  document.querySelector("[data-soon-description]").textContent = description;
   document.querySelector("[data-soon-modal]").showModal();
 }
 
@@ -1002,7 +1025,7 @@ function updateEmptyHint() {
 
 function renderBriefAiEntry() {
   document.querySelectorAll("[data-brief-ai-entry]").forEach((entry) => {
-    entry.hidden = state.projectKey !== "custom";
+    entry.hidden = !BRIEF_AI_ENTRY_ENABLED || state.projectKey !== "custom";
   });
 }
 
@@ -1099,6 +1122,8 @@ function renderBriefAiInsights() {
 
   const stagesNote = document.querySelector("[data-ai-stages-note]");
   if (stagesNote) stagesNote.hidden = !isAiEstimate;
+  const customStagesNote = document.querySelector("[data-custom-stages-note]");
+  if (customStagesNote) customStagesNote.hidden = !(state.generated && state.projectKey === "custom" && !isAiEstimate);
 
   const risks = isAiEstimate ? (analysis.pricing_risks || []) : [];
   node.hidden = !risks.length;
@@ -1118,6 +1143,7 @@ function renderBriefAiInsights() {
 
 function renderRate() {
   state.rate = getActiveRate();
+  const currencyLabel = getCurrencyLabel();
   document.querySelectorAll('[data-input="designerRate"]').forEach((designerRateInput) => {
     if (document.activeElement !== designerRateInput) designerRateInput.value = state.designerRate;
   });
@@ -1127,14 +1153,32 @@ function renderRate() {
     });
   });
   document.querySelectorAll("[data-income-rate]").forEach((node) => {
-    node.textContent = `${formatNumber.format(getIncomeRate())} ₽/час`;
+    node.textContent = `${money(getIncomeRate())}/час`;
+  });
+  document.querySelectorAll("[data-currency-rate-label]").forEach((node) => {
+    node.textContent = `${currencyLabel}/час`;
+  });
+  Object.entries(MARKET_RATES).forEach(([grade, rate]) => {
+    document.querySelectorAll(`[data-market-rate-label="${grade}"]`).forEach((node) => {
+      node.textContent = money(rate, DEFAULT_CURRENCY);
+    });
+  });
+  document.querySelectorAll("[data-currency-picker]").forEach((node) => {
+    node.classList.toggle("is-hidden", state.rateMode === "market");
+  });
+  document.querySelectorAll("[data-currency]").forEach((button) => {
+    const isActive = button.dataset.currency === state.currency;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-pressed", String(isActive));
   });
 
   document.querySelectorAll("[data-rate-mode]").forEach((button) => {
     button.classList.toggle("is-active", button.dataset.rateMode === state.rateMode);
   });
   document.querySelectorAll("[data-rate-panel]").forEach((panel) => {
-    panel.classList.toggle("is-hidden", panel.dataset.ratePanel !== state.rateMode);
+    const isHidden = panel.dataset.ratePanel !== state.rateMode;
+    panel.classList.toggle("is-hidden", isHidden);
+    panel.hidden = isHidden;
   });
   document.querySelectorAll("[data-market-grade]").forEach((button) => {
     button.classList.toggle("is-active", button.dataset.marketGrade === state.marketGrade);
@@ -1168,7 +1212,7 @@ function generateEstimate(force = false, { preserveBrief = false } = {}) {
   state.generated = true;
   renderEstimate();
   routeTo("calculator");
-  trackMetrikaGoal("estimate_calculated");
+  if (state.stages.length || state.expenses.length) trackMetrikaGoal("estimate_calculated");
   // На мобиле прокручиваем к результату
   if (window.innerWidth <= 760) {
     const result = document.querySelector("[data-estimate-result]");
@@ -1208,7 +1252,15 @@ function renderEstimate() {
   updateTotalsOnly();
 
   const list = document.querySelector("[data-stage-list]");
-  list.innerHTML = state.stages.map((stage, index) => {
+  if (!state.stages.length) {
+    list.innerHTML = `
+      <div class="stage-list-empty">
+        <strong>Добавьте этапы проекта вручную</strong>
+        <p>Вы удалили все этапы. Добавьте хотя бы один этап, чтобы смета и PDF собрались корректно.</p>
+      </div>
+    `;
+  } else {
+    list.innerHTML = state.stages.map((stage, index) => {
     return `
       <article class="stage-card" data-stage-index="${index}">
         <div class="stage-order">
@@ -1234,7 +1286,8 @@ function renderEstimate() {
         <button class="icon-button icon-button--remove" type="button" data-action="remove-stage" data-index="${index}" aria-label="Удалить этап">×</button>
       </article>
     `;
-  }).join("");
+    }).join("");
+  }
 
   requestAnimationFrame(() => {
     list.querySelectorAll(".stage-description-input").forEach(el => {
@@ -1583,10 +1636,15 @@ function openExport(force = false) {
 
 function renderExportOptions() {
   const urgent = document.querySelector('[data-action="toggle-export-urgent"]');
-  if (!urgent) return;
-  const isActive = state.mods.has("urgent");
-  urgent.classList.toggle("is-active", isActive);
-  urgent.setAttribute("aria-pressed", String(isActive));
+  if (urgent) {
+    const isActive = state.mods.has("urgent");
+    urgent.classList.toggle("is-active", isActive);
+    urgent.setAttribute("aria-pressed", String(isActive));
+  }
+  const hours = document.querySelector("[data-export-hours-toggle]");
+  if (hours) {
+    hours.checked = !state.exportShowHours;
+  }
 }
 
 function getPdfRenderScale() {
@@ -1782,7 +1840,7 @@ function renderPdfFromBlocks(blocks, { jsPDF, fonts, filename, onDone }) {
 
 // Векторная (текстовая) смета в том же «швейцарском» дизайне, что и растровая.
 // Координаты заданы в px макета (ширина листа 794px) и масштабируются в pt листа A4.
-function renderEstimatePdf({ jsPDF, fonts, filename, title, number, projectName, total, kicker, meta, rows, summary, footer, chip, onDone }) {
+function renderEstimatePdf({ jsPDF, fonts, filename, title, number, projectName, total, kicker, meta, rows, summary, footer, chip, showHours = true, onDone }) {
   const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
   registerPdfFonts(doc, fonts);
   const rules = PDF_LAYOUT_RULES.estimate;
@@ -1850,13 +1908,16 @@ function renderEstimatePdf({ jsPDF, fonts, filename, title, number, projectName,
 
   // ── Таблица ───────────────────────────────────────────────
   const numX = padX, descX = padX + 58;
-  const costRX = contentR, hoursColLeft = contentR - 160.6, hoursRX = hoursColLeft - 6;
-  const descW = hoursColLeft - descX - 12;
+  const costRX = contentR;
+  const costColLeft = showHours ? contentR - 160.6 : contentR - 128;
+  const hoursRX = costColLeft - 6;
+  const descW = costColLeft - descX - 12;
   const drawTableHead = () => {
     rule(padX, contentR, y, 1.5);
     font(10, "normal"); color(BLACK); space(0.8);
     T("№", numX, y + 9 + 8); T("ОПИСАНИЕ", descX, y + 9 + 8);
-    T("ЧАСЫ", hoursRX, y + 9 + 8, "right"); T("СУММА", costRX, y + 9 + 8, "right");
+    if (showHours) T("ЧАСЫ", hoursRX, y + 9 + 8, "right");
+    T("СУММА", costRX, y + 9 + 8, "right");
     space(0);
     y = y + 9 + 8 + 9;
     rule(padX, contentR, y, 1.5);
@@ -1871,7 +1932,8 @@ function renderEstimatePdf({ jsPDF, fonts, filename, title, number, projectName,
     const top = y + 9; // td padding-top
     font(11, "normal"); color(BLACK); T(row.idx, numX, top + 9);
     font(14, "bold"); color(BLACK); space(-0.6);
-    T(row.hours, hoursRX, top + 11, "right"); T(row.cost, costRX, top + 11, "right"); space(0);
+    if (showHours) T(row.hours, hoursRX, top + 11, "right");
+    T(row.cost, costRX, top + 11, "right"); space(0);
     let ly = top;
     font(14, "bold"); color(BLACK); space(-0.6);
     nameLines.forEach((l) => { T(l, descX, ly + 11); ly += 14.7; }); space(0);
@@ -2217,6 +2279,10 @@ function renderContractPdf(root, { jsPDF, fonts, filename, docType = "contract",
 
 function printEstimate() {
   if (!state.stages.length) {
+    if (state.projectKey === "custom") {
+      notifyPdfDownloadFailure("Добавьте хотя бы один этап проекта, чтобы скачать PDF сметы.");
+      return;
+    }
     state.rate = getActiveRate();
     state.stages = createStages(getProject(), getHoursLevel());
     state.generated = true;
@@ -2239,12 +2305,13 @@ function printEstimate() {
   const issuedAt = new Date();
   const todayShort = issuedAt.toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric" });
   const estimateNumber = issuedAt.toISOString().slice(0, 10).replace(/-/g, "").slice(2);
+  const showHoursInPdf = state.exportShowHours;
 
   const rows = state.stages.map((stage, index) => `
     <tr>
       <td class="pdf-index">${String(index + 1).padStart(2, "0")}</td>
       <td><div class="pdf-stage-name">${escapeHtml(stage.title)}</div><div class="pdf-stage-desc">${escapeHtml(stage.description)}</div></td>
-      <td class="pdf-hours">${stage.hours}</td>
+      ${showHoursInPdf ? `<td class="pdf-hours">${stage.hours}</td>` : ""}
       <td class="pdf-cost">${money(getStageCost(stage))}</td>
     </tr>
   `).join("");
@@ -2253,13 +2320,16 @@ function printEstimate() {
     <tr>
       <td class="pdf-index">E${index + 1}</td>
       <td><div class="pdf-stage-name">${escapeHtml(expense.title)}</div><div class="pdf-stage-desc">Дополнительный расход</div></td>
-      <td class="pdf-hours">—</td>
+      ${showHoursInPdf ? `<td class="pdf-hours">—</td>` : ""}
       <td class="pdf-cost">${money(expense.amount)}</td>
     </tr>
   `).join("");
   const urgencyRow = state.mods.has("urgent")
-    ? `<tr><td class="pdf-index">U</td><td><div class="pdf-stage-name">Срочность +30%</div><div class="pdf-stage-desc">Финальная опция перед экспортом PDF</div></td><td class="pdf-hours">—</td><td class="pdf-cost">${money(getUrgencyAmount())}</td></tr>`
+    ? `<tr><td class="pdf-index">U</td><td><div class="pdf-stage-name">Срочность +30%</div><div class="pdf-stage-desc">Финальная опция перед экспортом PDF</div></td>${showHoursInPdf ? `<td class="pdf-hours">—</td>` : ""}<td class="pdf-cost">${money(getUrgencyAmount())}</td></tr>`
     : "";
+  const pdfRateMeta = showHoursInPdf
+    ? `<div class="pdf-meta-item"><div class="pdf-meta-label">Ставка</div><div class="pdf-meta-value">${money(state.rate)} / час</div><div class="pdf-meta-note">${getTotalHours()} ч работы</div></div>`
+    : `<div class="pdf-meta-item"><div class="pdf-meta-label">Формат</div><div class="pdf-meta-value">Стоимость по этапам</div></div>`;
   const activeMods = state.mods.has("urgent")
     ? `<span class="pdf-note-chip">Срочность +30%</span>`
     : "";
@@ -2288,17 +2358,17 @@ function printEstimate() {
       <section class="pdf-meta">
         <div class="pdf-meta-item"><div class="pdf-meta-label">Исполнитель</div><div class="pdf-meta-value">${escapeHtml(profileName)}</div>${profileContact ? `<div class="pdf-meta-note">${escapeHtml(profileContact)}</div>` : ""}</div>
         <div class="pdf-meta-item"><div class="pdf-meta-label">Дата</div><div class="pdf-meta-value">${todayShort}</div><div class="pdf-meta-note">Актуальна до ${validUntilText}</div></div>
-        <div class="pdf-meta-item"><div class="pdf-meta-label">Ставка</div><div class="pdf-meta-value">${money(state.rate)} / час</div><div class="pdf-meta-note">${getTotalHours()} ч работы</div></div>
+        ${pdfRateMeta}
       </section>
 
       <table class="pdf-table">
         <colgroup>
           <col style="width: 8%;">
           <col>
-          <col style="width: 12%;">
+          ${showHoursInPdf ? `<col style="width: 12%;">` : ""}
           <col style="width: 22%;">
         </colgroup>
-        <thead><tr><th>№</th><th>Описание</th><th class="pdf-th-hours">Часы</th><th>Сумма</th></tr></thead>
+        <thead><tr><th>№</th><th>Описание</th>${showHoursInPdf ? `<th class="pdf-th-hours">Часы</th>` : ""}<th>Сумма</th></tr></thead>
         <tbody>
           ${rows}
           ${expenses}
@@ -2402,11 +2472,14 @@ function printEstimate() {
       meta: [
         { label: "Исполнитель", value: profileName, note: profileContact || "" },
         { label: "Дата", value: todayShort, note: "Актуальна до " + validUntilText },
-        { label: "Ставка", value: money(state.rate) + " / час", note: getTotalHours() + " ч работы" },
+        showHoursInPdf
+          ? { label: "Ставка", value: money(state.rate) + " / час", note: getTotalHours() + " ч работы" }
+          : { label: "Формат", value: "Стоимость по этапам", note: "" },
       ],
       rows: pdfRows,
       summary: pdfSummary,
       footer: "Оценка действует 14 дней. Итоговые сроки и состав работ фиксируются в договоре или допсоглашении.",
+      showHours: showHoursInPdf,
       onDone: () => { cleanupSheet(); notifyPdfDownloadSuccess("estimate_pdf_download"); },
     });
   }).catch((err) => { console.warn("Векторный PDF не удался, растровый запасной вариант:", err); rasterFallback(); });
@@ -5154,6 +5227,15 @@ function bindEvents() {
       return;
     }
 
+    const currencyTarget = event.target.closest("[data-currency]");
+    if (currencyTarget) {
+      state.currency = CURRENCIES[currencyTarget.dataset.currency] ? currencyTarget.dataset.currency : DEFAULT_CURRENCY;
+      localStorage.setItem("designkit.currency", state.currency);
+      renderRate();
+      if (state.generated) updateTotalsOnly();
+      return;
+    }
+
     const actionTarget = event.target.closest("[data-action]");
     if (!actionTarget) return;
 
@@ -5597,6 +5679,13 @@ function bindEvents() {
 
   document.addEventListener("change", (event) => {
     const input = event.target;
+    if (input.matches("[data-export-hours-toggle]")) {
+      state.exportShowHours = !input.checked;
+      localStorage.setItem("designkit.exportShowHours", String(state.exportShowHours));
+      renderExportOptions();
+      trackMetrikaGoal("estimate_pdf_hours_toggled");
+      return;
+    }
     if (input.matches("[data-signature-pdf-toggle]")) {
       contractState.signature.includeInPdf = input.checked;
       renderContractDocument();

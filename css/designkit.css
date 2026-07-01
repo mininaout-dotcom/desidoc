@@ -1732,7 +1732,8 @@ h2 {
 }
 
 .field input,
-.field textarea {
+.field textarea,
+.field select {
   width: 100%;
   min-height: var(--input-height);
   border: 1px solid var(--line);
@@ -1751,7 +1752,8 @@ h2 {
 }
 
 .field input:focus,
-.field textarea:focus {
+.field textarea:focus,
+.field select:focus {
   outline: none;
   border-color: var(--accent);
 }
@@ -2877,7 +2879,7 @@ h2 {
   right: clamp(18px, 4vw, 48px);
   bottom: 22px;
   z-index: 18;
-  width: min(560px, calc(100vw - 120px));
+  width: min(680px, calc(100vw - 120px));
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -2900,9 +2902,47 @@ h2 {
   letter-spacing: -0.055em;
 }
 
+.sticky-summary__main {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.sticky-summary__total {
+  min-width: 0;
+}
+
 .sticky-summary__actions {
   display: flex;
+  align-items: center;
   gap: 8px;
+}
+
+.sticky-summary__toggle {
+  min-height: 42px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.sticky-summary__toggle .expl-toggle__label {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.sticky-summary__toggle .expl-toggle__track {
+  width: 36px;
+  height: 20px;
+  border-radius: 999px;
+}
+
+.sticky-summary__toggle .expl-toggle__thumb {
+  width: 16px;
+  height: 16px;
+}
+
+.sticky-summary__toggle input:checked ~ .expl-toggle__track .expl-toggle__thumb {
+  transform: translateX(16px);
 }
 
 .modal {
@@ -4908,6 +4948,61 @@ body[data-view="calculator"]::after {
   text-underline-offset: 2px;
 }
 
+.view--calculator .currency-picker {
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  height: var(--cv-field-h);
+  min-height: var(--cv-field-h);
+}
+
+.view--calculator .rate-control-row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  align-items: center;
+  gap: 8px;
+}
+
+.view--calculator .rate-control-row .rate-summary {
+  width: 100%;
+  min-width: 0;
+}
+
+.view--calculator .currency-picker__chips {
+  display: inline-flex;
+  gap: 3px;
+  height: 100%;
+  padding: 4px;
+  border-radius: 999px;
+  background: var(--cv-surface);
+}
+
+.view--calculator .currency-chip {
+  min-width: 38px;
+  height: 100%;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--cv-muted);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+
+.view--calculator .currency-chip:hover {
+  color: var(--cv-text);
+  background: var(--cv-hover-bg);
+}
+
+.view--calculator .currency-chip.is-active {
+  border-color: transparent;
+  background: var(--cv-glass);
+  color: var(--cv-text);
+}
+
 /* ── Rate summary & total pill ───────────────────────────── */
 
 .view--calculator .rate-summary {
@@ -4934,13 +5029,15 @@ body[data-view="calculator"]::after {
   color: #c8c4c4;
 }
 
-.view--calculator .field input {
+.view--calculator .field input,
+.view--calculator .field select {
   border-color: transparent;
   background: var(--cv-surface);
   color: var(--cv-text);
 }
 
-.view--calculator .field input:focus {
+.view--calculator .field input:focus,
+.view--calculator .field select:focus {
   border-color: var(--accent);
   outline: none;
 }
@@ -4970,6 +5067,8 @@ body[data-view="calculator"]::after {
 .cv-cta-btn {
   width: 100%;
   height: var(--btn-height-lg);
+  -webkit-appearance: none;
+  appearance: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -5416,7 +5515,8 @@ body.mobile-contract-sheet-open {
   font-size: var(--label-fs);
 }
 
-.view--calculator .field input {
+.view--calculator .field input,
+.view--calculator .field select {
   min-height: var(--cv-field-h);
   padding: 0 18px;
   border-radius: 999px;
@@ -5529,6 +5629,29 @@ body.mobile-contract-sheet-open {
 
 .view--calculator .stage-list {
   gap: 6px;
+}
+
+.view--calculator .stage-list-empty {
+  display: grid;
+  gap: 8px;
+  padding: 18px;
+  border: 1px dashed color-mix(in srgb, var(--cv-text) 20%, transparent);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--cv-card-muted) 72%, transparent);
+  color: var(--cv-text);
+}
+
+.view--calculator .stage-list-empty strong {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.view--calculator .stage-list-empty p {
+  margin: 0;
+  max-width: 620px;
+  color: var(--cv-muted);
+  font-size: 13px;
+  line-height: 1.45;
 }
 
   .view--calculator .stage-card {
@@ -5843,6 +5966,14 @@ body.mobile-contract-sheet-open {
   box-shadow: 0 18px 52px rgba(42, 35, 25, 0.08);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
+}
+
+[data-theme="dark"] .app[data-view="calculator"] .sticky-summary {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.09);
+  box-shadow: 0 4px 40px rgba(0, 0, 0, 0.30), 0 1px 4px rgba(0, 0, 0, 0.20);
+  backdrop-filter: blur(var(--ddoc-blur-glass)) saturate(1.3);
+  -webkit-backdrop-filter: blur(var(--ddoc-blur-glass)) saturate(1.3);
 }
 
 .app[data-view="calculator"] .sticky-summary span {
@@ -6218,11 +6349,22 @@ body.mobile-contract-sheet-open {
     border-radius: 16px;
   }
 
+  .mobile-calc-sheet__section .rate-control-row .rate-summary,
+  .mobile-calc-sheet__section .rate-control-row .currency-picker__chips {
+    border-radius: 999px;
+  }
+
+  .mobile-calc-sheet__section .rate-control-row .currency-picker {
+    height: 46px;
+    min-height: 46px;
+  }
+
   .mobile-calc-sheet__section .field-row {
     grid-template-columns: 1fr;
   }
 
-  .mobile-calc-sheet__section .field input {
+  .mobile-calc-sheet__section .field input,
+  .mobile-calc-sheet__section .field select {
     min-height: 46px;
   }
 
@@ -8942,9 +9084,11 @@ body[data-view="calculator"] [data-brief-ai-modal] textarea:focus-visible {
     display: none !important;
   }
 
-  .app[data-view="calculator"] .sticky-summary > div:first-child {
+  .app[data-view="calculator"] .sticky-summary__main {
     display: grid;
-    gap: 4px;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
   }
 
   .app[data-view="calculator"] .sticky-summary strong {
@@ -8955,6 +9099,10 @@ body[data-view="calculator"] [data-brief-ai-modal] textarea:focus-visible {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 8px;
+  }
+
+  .app[data-view="calculator"] .sticky-summary__toggle {
+    justify-content: flex-end;
   }
 
   .app[data-view="calculator"] .sticky-summary__actions .button {
@@ -9066,6 +9214,12 @@ body[data-view="calculator"] [data-brief-ai-modal] textarea:focus-visible {
    поэтому отключаем backdrop-filter и компенсируем чуть более плотной
    заливкой, чтобы плашка читалась без блюра. */
 [data-theme="dark"] .deedoc-card__button {
+  background: rgba(255, 255, 255, 0.16);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+[data-theme="dark"] .cv-cta-btn {
   background: rgba(255, 255, 255, 0.16);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;

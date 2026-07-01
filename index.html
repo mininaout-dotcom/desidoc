@@ -19,7 +19,7 @@
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="DesiDoc — сервис для подготовки проектных документов">
   <meta name="twitter:description" content="Создавайте сметы, договоры и проектные документы без лишней рутины.">
-  <link rel="stylesheet" href="css/designkit.css?v=159">
+  <link rel="stylesheet" href="css/designkit.css?v=168">
 </head>
 <body data-view="home">
   <div class="app" data-view="home">
@@ -179,11 +179,11 @@
 	                <section class="mobile-calc-sheet__section" data-mobile-sheet-panel="project">
 	                  <div class="project-options mobile-calc-sheet__project-grid" role="radiogroup" aria-label="Тип проекта" data-project-options></div>
 	                  <div class="brief-ai-card brief-ai-card--mobile" data-brief-ai-entry hidden>
-	                    <button class="brief-ai-button" type="button" data-action="open-brief-ai">
+	                    <button class="brief-ai-button" type="button" data-action="show-soon" data-label="Собрать из брифа" data-description="Функция скоро будет доступна. Пока можно выбрать «Другое», посчитать стандартные этапы и отредактировать их вручную.">
 	                      <span aria-hidden="true">✨</span>
 	                      Собрать из брифа
 	                    </button>
-	                    <p>Вставьте сообщение клиента, бриф или заметки после созвона. DesiDoc автоматически предложит этапы работ и часы.</p>
+	                    <p>Скоро можно будет вставить бриф или переписку, а DesiDoc предложит этапы и часы. Пока считайте через стандартные этапы.</p>
 	                  </div>
 	                </section>
 
@@ -196,28 +196,38 @@
 
                   <div class="rate-panel rate-panel--market is-hidden" data-rate-panel="market">
                     <div class="market-grade-grid" aria-label="Рыночная ставка">
-                      <button class="market-grade is-active" type="button" data-market-grade="junior">
-                        <span>Джун</span>
-                        <strong>600 ₽</strong>
-                      </button>
-                      <button class="market-grade" type="button" data-market-grade="middle">
-                        <span>Мидл</span>
-                        <strong>1 800 ₽</strong>
-                      </button>
-                      <button class="market-grade" type="button" data-market-grade="senior">
-                        <span>Синьор</span>
-                        <strong>3 000 ₽</strong>
-                      </button>
+	                      <button class="market-grade is-active" type="button" data-market-grade="junior">
+	                        <span>Джун</span>
+	                        <strong data-market-rate-label="junior">600 ₽</strong>
+	                      </button>
+	                      <button class="market-grade" type="button" data-market-grade="middle">
+	                        <span>Мидл</span>
+	                        <strong data-market-rate-label="middle">1 800 ₽</strong>
+	                      </button>
+	                      <button class="market-grade" type="button" data-market-grade="senior">
+	                        <span>Синьор</span>
+	                        <strong data-market-rate-label="senior">3 000 ₽</strong>
+	                      </button>
                     </div>
-                    <p class="market-rate-note">Ориентир по опросу <a href="https://t.me/creative_bones" target="_blank" rel="noopener noreferrer">@creative_bones</a> и открытым данным рынка. Не официальный тариф — твоя ставка зависит от опыта, проекта, клиента и финансовых целей.</p>
+                    <p class="market-rate-note">Ориентир по опросу <a href="https://t.me/creative_bones" target="_blank" rel="noopener noreferrer">@creative_bones</a> и открытым данным рынка. Это примерная ставка, а не официальный тариф: считайте с учётом опыта, проекта, клиента и финансовых целей.</p>
                   </div>
 
-                  <div class="rate-panel rate-panel--custom" data-rate-panel="custom">
-                    <div class="rate-summary">
-                      <input class="rate-input" type="number" min="0" step="100" data-input="designerRate" value="1500" aria-label="Ставка дизайнера">
-                      <span>₽/час</span>
-                    </div>
-                  </div>
+	                  <div class="rate-panel rate-panel--custom" data-rate-panel="custom">
+	                    <div class="rate-control-row">
+	                      <div class="rate-summary">
+	                        <input class="rate-input" type="number" min="0" step="100" data-input="designerRate" value="1500" aria-label="Ставка дизайнера">
+	                        <span data-currency-rate-label>₽/час</span>
+	                      </div>
+	                      <div class="currency-picker" data-currency-picker aria-label="Валюта сметы">
+	                        <div class="currency-picker__chips">
+	                          <button class="currency-chip is-active" type="button" data-currency="RUB" aria-pressed="true" aria-label="Рубли">₽</button>
+	                          <button class="currency-chip" type="button" data-currency="USD" aria-pressed="false" aria-label="Доллары">$</button>
+	                          <button class="currency-chip" type="button" data-currency="EUR" aria-pressed="false" aria-label="Евро">€</button>
+	                          <button class="currency-chip" type="button" data-currency="KZT" aria-pressed="false" aria-label="Тенге">₸</button>
+	                        </div>
+	                      </div>
+	                    </div>
+	                  </div>
 
                   <div class="rate-panel rate-panel--income is-hidden" data-rate-panel="income" hidden>
                     <label class="field">
@@ -234,11 +244,21 @@
                         <input type="number" min="1" max="12" data-input="billableHours" value="6">
                       </label>
                     </div>
-                    <div class="rate-summary">
-                      <strong data-income-rate>0 ₽/час</strong>
-                    </div>
-                  </div>
-                </section>
+	                    <div class="rate-control-row">
+	                      <div class="rate-summary">
+	                        <strong data-income-rate>0 ₽/час</strong>
+	                      </div>
+	                      <div class="currency-picker" data-currency-picker aria-label="Валюта сметы">
+	                        <div class="currency-picker__chips">
+	                          <button class="currency-chip is-active" type="button" data-currency="RUB" aria-pressed="true" aria-label="Рубли">₽</button>
+	                          <button class="currency-chip" type="button" data-currency="USD" aria-pressed="false" aria-label="Доллары">$</button>
+	                          <button class="currency-chip" type="button" data-currency="EUR" aria-pressed="false" aria-label="Евро">€</button>
+	                          <button class="currency-chip" type="button" data-currency="KZT" aria-pressed="false" aria-label="Тенге">₸</button>
+	                        </div>
+	                      </div>
+	                    </div>
+	                  </div>
+	                </section>
 
                 <section class="mobile-calc-sheet__section" data-mobile-sheet-panel="tax" hidden>
                   <div class="tax-settings">
@@ -284,18 +304,18 @@
 	                </div>
 	                <div class="project-options" role="radiogroup" aria-label="Тип проекта" data-project-options></div>
 	                <div class="brief-ai-card" data-brief-ai-entry hidden>
-	                  <button class="brief-ai-button" type="button" data-action="open-brief-ai">
+	                  <button class="brief-ai-button" type="button" data-action="show-soon" data-label="Собрать из брифа" data-description="Функция скоро будет доступна. Пока можно выбрать «Другое», посчитать стандартные этапы и отредактировать их вручную.">
 	                    <span aria-hidden="true">✨</span>
 	                    Собрать из брифа
 	                  </button>
-	                  <p>Вставьте сообщение клиента, бриф или заметки после созвона. DesiDoc автоматически предложит этапы работ и часы.</p>
+	                  <p>Скоро можно будет вставить бриф или переписку, а DesiDoc предложит этапы и часы. Пока считайте через стандартные этапы.</p>
 	                </div>
 	              </div>
 
               <div class="cv-divider" aria-hidden="true"></div>
 
               <!-- Step 02 -->
-              <div class="cv-step-block">
+              <div class="cv-step-block cv-step-block--rate">
                 <div class="cv-step-label">
                   <span class="cv-step-num">2</span>
                   <span class="cv-step-title">Ставка</span>
@@ -309,28 +329,38 @@
 
                 <div class="rate-panel rate-panel--market is-hidden" data-rate-panel="market">
                   <div class="market-grade-grid" aria-label="Рыночная ставка">
-                    <button class="market-grade is-active" type="button" data-market-grade="junior">
-                      <span>Джун</span>
-                      <strong>600 ₽</strong>
-                    </button>
-                    <button class="market-grade" type="button" data-market-grade="middle">
-                      <span>Мидл</span>
-                      <strong>1 800 ₽</strong>
-                    </button>
-                    <button class="market-grade" type="button" data-market-grade="senior">
-                      <span>Синьор</span>
-                      <strong>3 000 ₽</strong>
-                    </button>
+	                    <button class="market-grade is-active" type="button" data-market-grade="junior">
+	                      <span>Джун</span>
+	                      <strong data-market-rate-label="junior">600 ₽</strong>
+	                    </button>
+	                    <button class="market-grade" type="button" data-market-grade="middle">
+	                      <span>Мидл</span>
+	                      <strong data-market-rate-label="middle">1 800 ₽</strong>
+	                    </button>
+	                    <button class="market-grade" type="button" data-market-grade="senior">
+	                      <span>Синьор</span>
+	                      <strong data-market-rate-label="senior">3 000 ₽</strong>
+	                    </button>
                   </div>
-                  <p class="market-rate-note">Ориентир по опросу <a href="https://t.me/creative_bones" target="_blank" rel="noopener noreferrer">@creative_bones</a> и открытым данным рынка. Не официальный тариф — твоя ставка зависит от опыта, проекта, клиента и финансовых целей.</p>
+                  <p class="market-rate-note">Ориентир по опросу <a href="https://t.me/creative_bones" target="_blank" rel="noopener noreferrer">@creative_bones</a> и открытым данным рынка. Это примерная ставка, а не официальный тариф: считайте с учётом опыта, проекта, клиента и финансовых целей.</p>
                 </div>
 
-                <div class="rate-panel rate-panel--custom" data-rate-panel="custom">
-                  <div class="rate-summary">
-                    <input class="rate-input" type="number" min="0" step="100" data-input="designerRate" value="1500" aria-label="Ставка дизайнера">
-                    <span>₽/час</span>
-                  </div>
-                </div>
+	                <div class="rate-panel rate-panel--custom" data-rate-panel="custom">
+	                  <div class="rate-control-row">
+	                    <div class="rate-summary">
+	                      <input class="rate-input" type="number" min="0" step="100" data-input="designerRate" value="1500" aria-label="Ставка дизайнера">
+	                      <span data-currency-rate-label>₽/час</span>
+	                    </div>
+	                    <div class="currency-picker" data-currency-picker aria-label="Валюта сметы">
+	                      <div class="currency-picker__chips">
+	                        <button class="currency-chip is-active" type="button" data-currency="RUB" aria-pressed="true" aria-label="Рубли">₽</button>
+	                        <button class="currency-chip" type="button" data-currency="USD" aria-pressed="false" aria-label="Доллары">$</button>
+	                        <button class="currency-chip" type="button" data-currency="EUR" aria-pressed="false" aria-label="Евро">€</button>
+	                        <button class="currency-chip" type="button" data-currency="KZT" aria-pressed="false" aria-label="Тенге">₸</button>
+	                      </div>
+	                    </div>
+	                  </div>
+	                </div>
 
                 <div class="rate-panel rate-panel--income is-hidden" data-rate-panel="income" hidden>
                   <label class="field">
@@ -347,10 +377,20 @@
                       <input type="number" min="1" max="12" data-input="billableHours" value="6">
                     </label>
                   </div>
-                  <div class="rate-summary">
-                    <strong data-income-rate>0 ₽/час</strong>
-                  </div>
-                </div>
+	                  <div class="rate-control-row">
+	                    <div class="rate-summary">
+	                      <strong data-income-rate>0 ₽/час</strong>
+	                    </div>
+	                    <div class="currency-picker" data-currency-picker aria-label="Валюта сметы">
+	                      <div class="currency-picker__chips">
+	                        <button class="currency-chip is-active" type="button" data-currency="RUB" aria-pressed="true" aria-label="Рубли">₽</button>
+	                        <button class="currency-chip" type="button" data-currency="USD" aria-pressed="false" aria-label="Доллары">$</button>
+	                        <button class="currency-chip" type="button" data-currency="EUR" aria-pressed="false" aria-label="Евро">€</button>
+	                        <button class="currency-chip" type="button" data-currency="KZT" aria-pressed="false" aria-label="Тенге">₸</button>
+	                      </div>
+	                    </div>
+	                  </div>
+	                </div>
               </div>
 
               <div class="cv-divider" aria-hidden="true"></div>
@@ -422,6 +462,7 @@
 
                 <!-- AI disclaimer — под этапами, только для AI-смет -->
                 <p class="ai-stages-note" data-ai-stages-note hidden>Оценка примерная — измените часы под свою скорость работы, сложность проекта и договорённости с клиентом.</p>
+                <p class="ai-stages-note" data-custom-stages-note hidden>Это стандартная заготовка. Отредактируйте этапы и часы под свой проект, лишнее можно удалить.</p>
 
                 <!-- Add stage -->
                 <button class="button button--ghost button--wide cv-add-stage-btn" type="button" data-action="add-stage">+ Добавить этап</button>
@@ -622,9 +663,16 @@
     </main>
 
     <aside class="sticky-summary is-hidden" data-sticky-summary aria-label="Итог сметы">
-      <div>
-        <span>Итого по смете</span>
-        <strong data-sticky-total>0 ₽</strong>
+      <div class="sticky-summary__main">
+        <div class="sticky-summary__total">
+          <span>Итого по смете</span>
+          <strong data-sticky-total>0 ₽</strong>
+        </div>
+        <label class="expl-toggle sticky-summary__toggle">
+          <input type="checkbox" data-export-hours-toggle aria-label="Скрыть часы от клиента">
+          <span class="expl-toggle__track"><span class="expl-toggle__thumb"></span></span>
+          <span class="expl-toggle__label">Скрыть часы</span>
+        </label>
       </div>
       <div class="sticky-summary__actions">
         <button class="button button--soft" type="button" data-action="open-export-settings">Параметры PDF</button>
@@ -780,7 +828,7 @@
       <button class="modal__close" value="cancel" aria-label="Закрыть">×</button>
       <p class="eyebrow">Скоро появится</p>
       <h2 data-soon-title>Сценарий</h2>
-      <p class="modal__lead">Раздел находится в очереди MVP. Сейчас можно работать со сметой и договором.</p>
+      <p class="modal__lead" data-soon-description>Раздел находится в очереди MVP. Сейчас можно работать со сметой и договором.</p>
       <button class="button button--dark button--wide" value="cancel">Понятно</button>
     </form>
   </dialog>
@@ -827,6 +875,6 @@
   <script src="assets/vendor/html2canvas.min.js"></script>
   <script src="assets/vendor/jspdf.umd.min.js"></script>
   <script src="assets/vendor/html-to-image.js"></script>
-  <script src="js/designkit.js?v=87"></script>
+  <script src="js/designkit.js?v=95"></script>
 </body>
 </html>
