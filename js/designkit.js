@@ -143,6 +143,7 @@ const state = {
   expenses: [],
   mods: new Set(),
   exportShowHours: localStorage.getItem("designkit.exportShowHours") !== "false",
+  exportHideBranding: localStorage.getItem("designkit.exportHideBranding") === "true",
   profile: savedProfile,
   estimateMeta: loadEstimateMeta(savedProfile, DEFAULT_PROJECT_KEY),
   briefAi: {
@@ -1645,6 +1646,10 @@ function renderExportOptions() {
   if (hours) {
     hours.checked = !state.exportShowHours;
   }
+  const branding = document.querySelector("[data-export-branding-toggle]");
+  if (branding) {
+    branding.checked = state.exportHideBranding;
+  }
 }
 
 function getPdfRenderScale() {
@@ -1851,13 +1856,26 @@ function renderEstimatePdf({ jsPDF, fonts, filename, title, number, projectName,
   const padX = 32, contentR = SHEET_W - padX;     // 32 … 762
 
   let y = 0; // курсор в px макета
+  let curCharSpace = 0; // текущий charSpace в pt — нужен для ручного выравнивания
   const pageTop = 40;
   const pageBottom = SHEET_H - 56 - rules.bottomSafePx;
 
   const font = (px, weight) => { doc.setFont("Onest", weight === "bold" ? "bold" : "normal"); doc.setFontSize(px * k); };
   const color = (c) => doc.setTextColor(c[0], c[1], c[2]);
-  const space = (emPx) => doc.setCharSpace((emPx || 0) * k);
-  const T = (s, xpx, ypx, align) => doc.text(pdfText(s), xpx * k, ypx * k, align ? { align } : undefined);
+  const space = (emPx) => { curCharSpace = (emPx || 0) * k; doc.setCharSpace(curCharSpace); };
+  // jsPDF считает ширину для align:"right"/"center" без учёта charSpace, поэтому у чисел
+  // с трекингом остаётся зазор у правого края. Выравниваем вручную с поправкой на charSpace.
+  const T = (s, xpx, ypx, align) => {
+    const str = pdfText(s);
+    if (align === "right" || align === "center") {
+      doc.setCharSpace(0);
+      const w = doc.getTextWidth(str) + curCharSpace * Math.max(str.length - 1, 0);
+      doc.setCharSpace(curCharSpace);
+      doc.text(str, xpx * k - (align === "center" ? w / 2 : w), ypx * k);
+    } else {
+      doc.text(str, xpx * k, ypx * k);
+    }
+  };
   const rule = (x1, x2, ypx, wpx, c) => { doc.setDrawColor((c || BLACK)[0], (c || BLACK)[1], (c || BLACK)[2]); doc.setLineWidth(wpx * k); doc.line(x1 * k, ypx * k, x2 * k, ypx * k); };
   const wrap = (s, wpx, px, weight) => { font(px, weight); return doc.splitTextToSize(pdfText(s), wpx * k).map((l) => l); };
   const startNewPage = () => { doc.addPage(); y = pageTop; };
@@ -1903,7 +1921,6 @@ function renderEstimatePdf({ jsPDF, fonts, filename, title, number, projectName,
     if (m.note) { font(10, "normal"); color(GRAY); T(m.note, x, metaTop + 9 + 9 + 11 + 5 + 9); }
   });
   const metaBottom = metaTop + 9 + 9 + 11 + 5 + 9 + 14;
-  rule(padX, contentR, metaBottom, 1);
   y = metaBottom + 28;
 
   // ── Таблица ───────────────────────────────────────────────
@@ -2305,6 +2322,9 @@ function printEstimate() {
   const issuedAt = new Date();
   const todayShort = issuedAt.toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric" });
   const estimateNumber = issuedAt.toISOString().slice(0, 10).replace(/-/g, "").slice(2);
+  const estimateKicker = state.exportHideBranding
+    ? "Предварительная оценка"
+    : "DESIDOC / Предварительная оценка";
   const showHoursInPdf = state.exportShowHours;
 
   const rows = state.stages.map((stage, index) => `
@@ -2338,7 +2358,7 @@ function printEstimate() {
     <div class="pdf-page pdf-page--swiss">
       <header class="pdf-swiss-hero">
         <div>
-          <div class="pdf-swiss-kicker">DesiDoc / Estimate</div>
+          <div class="pdf-swiss-kicker">${estimateKicker}</div>
           <h1>СМЕТА</h1>
         </div>
         <div class="pdf-swiss-number">#${estimateNumber}</div>
@@ -2465,7 +2485,7 @@ function printEstimate() {
       jsPDF, fonts, filename,
       title: "СМЕТА",
       number: "#" + estimateNumber,
-      kicker: "DesiDoc / Estimate",
+      kicker: estimateKicker,
       projectName: estimateName,
       total: money(getTotal()),
       chip: state.mods.has("urgent") ? "Срочность +30%" : "",
@@ -5684,6 +5704,12 @@ function bindEvents() {
       localStorage.setItem("designkit.exportShowHours", String(state.exportShowHours));
       renderExportOptions();
       trackMetrikaGoal("estimate_pdf_hours_toggled");
+      return;
+    }
+    if (input.matches("[data-export-branding-toggle]")) {
+      state.exportHideBranding = input.checked;
+      localStorage.setItem("designkit.exportHideBranding", String(state.exportHideBranding));
+      renderExportOptions();
       return;
     }
     if (input.matches("[data-signature-pdf-toggle]")) {
