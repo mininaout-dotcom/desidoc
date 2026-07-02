@@ -36,7 +36,7 @@ const PROJECTS = {
       { title: "Проектирование и структура", description: "Составление карты сайта, определение логики переходов и базовых пользовательских сценариев.", hours: { junior: 11, middle: 9, senior: 8 } },
       { title: "Прототипирование", description: "Создание wireframes для ключевых страниц: компоновка блоков, функции и последовательность подачи информации.", hours: { junior: 8, middle: 6, senior: 4 } },
       { title: "Визуальная концепция", description: "Формулировка визуального стиля: moodboard, цветовая палитра, типографика, графические приемы и развитие айдентики под веб.", hours: { junior: 10, middle: 8, senior: 8 } },
-      { title: "Дизайн ключевых блоков", description: "Отрисовка визуала ключевых экранов и подготовка стиля для дальнейшей сборки на Tilda.", hours: { junior: 14, middle: 12, senior: 10 } },
+      { title: "Дизайн ключевых блоков", description: "Отрисовка визуала ключевых экранов и подготовка стиля для дальнейшей сборки на Tilda.", hours: { junior: 14, middle: 12, senior: 10 }, billing: { unit: "screen", quantity: 6 } },
       { title: "Сборка на Tilda и адаптив", description: "Сборка страниц и блоков в Tilda, настройка мобильной и планшетной версий сразу внутри платформы.", hours: { junior: 28, middle: 22, senior: 18 } },
       { title: "Формы и базовые настройки", description: "Подключение форм, уведомлений, базовых настроек страницы и проверка технических мелочей перед запуском.", hours: { junior: 4, middle: 3, senior: 2 } },
       { title: "Финальное тестирование и правки", description: "Проверка отображения, кликабельности, форм и внесение финальных правок после согласования.", hours: { junior: 8, middle: 8, senior: 8 } },
@@ -62,9 +62,10 @@ const PROJECTS = {
       { title: "Брифинг", description: "Изучение цели, аудитории и содержания презентации.", hours: { junior: 2, middle: 1, senior: 1 } },
       { title: "Структура", description: "Сценарий и логика подачи: порядок слайдов, нарратив и переходы.", hours: { junior: 4, middle: 4, senior: 4 } },
       { title: "Дизайн-концепция", description: "Стиль, цвет, шрифты — утверждение визуального направления на 2-3 слайдах.", hours: { junior: 8, middle: 8, senior: 8 } },
-      { title: "Слайды", description: "Дизайн всех слайдов с финальным контентом и иллюстрациями.", note: "Время зависит от количества слайдов — скорректируйте вручную.", hours: { junior: 16, middle: 12, senior: 9 } },
-      { title: "Верстка", description: "Финальная правка текстов, выравнивание, экспорт в PDF и PPTX.", hours: { junior: 6, middle: 5, senior: 4 } },
+      { title: "Простые слайды", description: "Типовые слайды: заголовок, текст, списки по готовому мастер-шаблону.", hours: { junior: 8, middle: 6, senior: 4 }, billing: { unit: "slide", quantity: 8, price: 500 } },
+      { title: "Сложные слайды", description: "Слайды с графиками, диаграммами, схемами, коллажами и инфографикой.", hours: { junior: 14, middle: 10, senior: 7 }, billing: { unit: "slide", quantity: 4, price: 1000 } },
       { title: "Правки", description: "Корректировки по итогам согласования с клиентом.", hours: { junior: 6, middle: 6, senior: 6 } },
+      { title: "Подготовка и передача файлов", description: "Финальная проверка презентации, подготовка версий в PDF и PPTX, упаковка исходников и передача заказчику.", hours: { junior: 1, middle: 1, senior: 1 } },
     ],
   },
   custom: {
@@ -84,6 +85,13 @@ const PROJECT_ORDER = ["logo", "branding", "landing_design", "landing_tilda", "p
 
 const MARKET_RATES = { junior: 600, middle: 1800, senior: 3000 };
 const MODIFIERS = { urgent: 0.3 };
+const UNIT_TYPES = {
+  hour: { one: "час", few: "часа", many: "часов", short: "ч", priceLabel: "час" },
+  slide: { one: "слайд", few: "слайда", many: "слайдов", short: "слайд", priceLabel: "слайд" },
+  screen: { one: "экран", few: "экрана", many: "экранов", short: "экран", priceLabel: "экран" },
+  page: { one: "страница", few: "страницы", many: "страниц", short: "страница", priceLabel: "страницу" },
+  item: { one: "штука", few: "штуки", many: "штук", short: "шт.", priceLabel: "штуку" },
+};
 const DEFAULT_DESIGNER_RATE = 1500;
 const DEFAULT_PROJECT_KEY = "landing_design";
 const BRIEF_AI_ENTRY_ENABLED = false;
@@ -333,6 +341,10 @@ function money(value, currencyKey = getEstimateCurrency()) {
   return `${formatNumber.format(Math.round(value || 0))} ${currency.symbol}`;
 }
 
+function getCurrencySymbol() {
+  return (CURRENCIES[getEstimateCurrency()] || CURRENCIES[DEFAULT_CURRENCY]).symbol;
+}
+
 function getCurrencyLabel() {
   return CURRENCIES[getEstimateCurrency()]?.symbol || CURRENCIES[DEFAULT_CURRENCY].symbol;
 }
@@ -426,7 +438,44 @@ function getHoursLevel() {
   return state.rateMode === "market" ? state.marketGrade : "middle";
 }
 
+function isUnitStage(stage) {
+  return stage?.billingMode === "unit" && stage?.unit && stage.unit !== "hour";
+}
+
+function getUnitWord(unit, quantity) {
+  const meta = UNIT_TYPES[unit] || UNIT_TYPES.item;
+  const value = Math.abs(Number(quantity || 0));
+  const mod10 = value % 10;
+  const mod100 = value % 100;
+  if (mod10 === 1 && mod100 !== 11) return meta.one;
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return meta.few;
+  return meta.many;
+}
+
+function getStageCalculationLabel(stage) {
+  if (!isUnitStage(stage)) return `${Number(stage.hours || 0)} ч × ${money(state.rate)}`;
+  const quantity = Number(stage.quantity || 0);
+  return `${quantity} ${getUnitWord(stage.unit, quantity)} × ${money(stage.unitPrice || 0)}`;
+}
+
+function getPdfStageVolume(stage, showHours) {
+  if (isUnitStage(stage)) {
+    const quantity = Number(stage.quantity || 0);
+    return `${quantity} шт.`;
+  }
+  return showHours ? `${Number(stage.hours || 0)} ч` : "—";
+}
+
+function getSuggestedUnitPrice(hours, quantity) {
+  const safeQuantity = Math.max(Number(quantity || 0), 1);
+  const rawPrice = (Number(hours || 0) * Number(state.rate || 0)) / safeQuantity;
+  return Math.max(Math.round(rawPrice / 100) * 100, 100);
+}
+
 function getBaseStageCost(stage) {
+  if (isUnitStage(stage)) {
+    return Number(stage.quantity || 0) * Number(stage.unitPrice || 0);
+  }
   return Number(stage.hours || 0) * state.rate;
 }
 
@@ -475,14 +524,26 @@ function getTotalHours() {
 }
 
 function createStages(project, level) {
-  return (project.stages || []).map((stage) => ({
-    title: stage.title,
-    description: stage.description || "",
-    note: stage.note || "",
-    hours: stage.hours[level] || stage.hours.middle,
-    defaults: stage.hours,
-    manuallyEditedHours: false,
-  }));
+  return (project.stages || []).map((stage) => {
+    const hours = stage.hours[level] || stage.hours.middle;
+    const unit = stage.billing?.unit || "hour";
+    const quantity = stage.billing?.quantity || hours;
+    const fixedPrice = stage.billing?.price;
+    const hasFixedPrice = unit !== "hour" && fixedPrice != null;
+    return {
+      title: stage.title,
+      description: stage.description || "",
+      note: stage.note || "",
+      hours,
+      defaults: stage.hours,
+      manuallyEditedHours: false,
+      billingMode: unit === "hour" ? "hourly" : "unit",
+      unit,
+      quantity,
+      unitPrice: unit === "hour" ? state.rate : (hasFixedPrice ? fixedPrice : getSuggestedUnitPrice(hours, quantity)),
+      manuallyEditedUnitPrice: hasFixedPrice,
+    };
+  });
 }
 
 const BRIEF_PROJECT_META = {
@@ -851,6 +912,9 @@ function refreshStageHours(level) {
   state.stages.forEach((stage) => {
     if (!stage.manuallyEditedHours && stage.defaults) {
       stage.hours = stage.defaults[level] || stage.defaults.middle;
+      if (isUnitStage(stage) && !stage.manuallyEditedUnitPrice) {
+        stage.unitPrice = getSuggestedUnitPrice(stage.hours, stage.quantity);
+      }
     }
   });
 }
@@ -920,7 +984,7 @@ function openSoonModal(target) {
 }
 
 function isMobileCalculatorUI() {
-  return window.innerWidth <= 760;
+  return window.innerWidth <= 1180;
 }
 
 function getMobileRateChipLabel() {
@@ -1104,7 +1168,7 @@ function applyBriefAnalysis(analysis, sourceText) {
   renderEstimate();
   routeTo("calculator");
 
-  if (window.innerWidth <= 760) {
+  if (isMobileCalculatorUI()) {
     const result = document.querySelector("[data-estimate-result]");
     if (result) setTimeout(() => result.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
   }
@@ -1215,7 +1279,7 @@ function generateEstimate(force = false, { preserveBrief = false } = {}) {
   routeTo("calculator");
   if (state.stages.length || state.expenses.length) trackMetrikaGoal("estimate_calculated");
   // На мобиле прокручиваем к результату
-  if (window.innerWidth <= 760) {
+  if (isMobileCalculatorUI()) {
     const result = document.querySelector("[data-estimate-result]");
     if (result) setTimeout(() => result.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
   }
@@ -1262,6 +1326,19 @@ function renderEstimate() {
     `;
   } else {
     list.innerHTML = state.stages.map((stage, index) => {
+    const unit = isUnitStage(stage) ? stage.unit : "hour";
+    const quantity = isUnitStage(stage) ? Number(stage.quantity || 0) : Number(stage.hours || 0);
+    const unitOptions = Object.entries(UNIT_TYPES).map(([value, meta]) => `
+      <option value="${value}" ${value === unit ? "selected" : ""}>${meta.short}</option>
+    `).join("");
+    const unitPriceControl = isUnitStage(stage)
+      ? `
+        <label class="hours-field hours-field--price" title="Цена за ${escapeHtml(UNIT_TYPES[unit]?.priceLabel || "единицу")}">
+          <input type="number" min="0" step="100" value="${Number(stage.unitPrice || 0)}" data-stage-field="unitPrice" data-index="${index}" aria-label="Цена за ${escapeHtml(UNIT_TYPES[unit]?.priceLabel || "единицу")}">
+          <span class="hours-field__unit">${escapeHtml(getCurrencySymbol())}/${escapeHtml(UNIT_TYPES[unit]?.priceLabel || "ед.")}</span>
+        </label>
+      `
+      : "";
     return `
       <article class="stage-card" data-stage-index="${index}">
         <div class="stage-order">
@@ -1272,17 +1349,28 @@ function renderEstimate() {
           <input class="stage-title-input" type="text" value="${escapeHtml(stage.title)}" data-stage-field="title" data-index="${index}" aria-label="Название этапа ${index + 1}">
           <textarea class="stage-description-input" data-stage-field="description" data-index="${index}" aria-label="Описание этапа ${index + 1}">${escapeHtml(stage.description)}</textarea>
           ${stage.note ? `<p class="stage-note">${escapeHtml(stage.note)}</p>` : ""}
+          ${unitPriceControl}
         </div>
         <div class="stage-card__side">
-          <div class="hours-stepper" aria-label="Часы этапа ${index + 1}">
-            <button class="hours-stepper__btn" type="button" data-action="adjust-stage-hours" data-index="${index}" data-delta="-1" aria-label="Уменьшить часы этапа ${index + 1}">−</button>
-            <label class="hours-field">
-              <input type="number" min="0" step="1" value="${stage.hours}" data-stage-field="hours" data-index="${index}" aria-label="Часы этапа ${index + 1}">
-              <span>ч</span>
-            </label>
-            <button class="hours-stepper__btn" type="button" data-action="adjust-stage-hours" data-index="${index}" data-delta="1" aria-label="Увеличить часы этапа ${index + 1}">+</button>
+          <div class="stage-tools">
+            <div class="hours-stepper" aria-label="Объём этапа ${index + 1}">
+              <button class="hours-stepper__btn" type="button" data-action="adjust-stage-value" data-index="${index}" data-delta="-1" aria-label="Уменьшить объём этапа ${index + 1}">−</button>
+              <div class="hours-field hours-field--quantity">
+                <input type="number" min="0" step="1" value="${quantity}" data-stage-field="${unit === "hour" ? "hours" : "quantity"}" data-index="${index}" aria-label="Количество для этапа ${index + 1}">
+                <span class="unit-picker" title="Сменить единицу расчёта (часы, слайды, экраны…)">
+                  <span class="unit-picker__label">${escapeHtml(UNIT_TYPES[unit]?.short || "шт.")}</span>
+                  <svg class="unit-picker__caret" width="8" height="5" viewBox="0 0 8 5" aria-hidden="true"><path d="M0 0h8L4 5z" fill="currentColor"/></svg>
+                  <select class="stage-unit-select" data-stage-field="unit" data-index="${index}" aria-label="Единица расчёта этапа ${index + 1}">
+                    ${unitOptions}
+                  </select>
+                </span>
+              </div>
+              <button class="hours-stepper__btn" type="button" data-action="adjust-stage-value" data-index="${index}" data-delta="1" aria-label="Увеличить объём этапа ${index + 1}">+</button>
+            </div>
           </div>
-          <div class="stage-stat"><strong data-stage-cost="${index}">${money(getStageCost(stage))}</strong></div>
+          <div class="stage-stat">
+            <strong data-stage-cost="${index}">${money(getStageCost(stage))}</strong>
+          </div>
         </div>
         <button class="icon-button icon-button--remove" type="button" data-action="remove-stage" data-index="${index}" aria-label="Удалить этап">×</button>
       </article>
@@ -1326,6 +1414,8 @@ function updateTotalsOnly() {
   state.stages.forEach((stage, index) => {
     const costNode = document.querySelector(`[data-stage-cost="${index}"]`);
     if (costNode) costNode.textContent = money(getStageCost(stage));
+    const calculationNode = document.querySelector(`[data-stage-index="${index}"] [data-stage-calculation]`);
+    if (calculationNode) calculationNode.textContent = getStageCalculationLabel(stage);
   });
 }
 
@@ -1344,7 +1434,17 @@ function renderExpenses() {
 }
 
 function addStage() {
-  state.stages.push({ title: "Новый этап", hours: 4, description: "Коротко опишите результат этапа.", defaults: null, manuallyEditedHours: true });
+  state.stages.push({
+    title: "Новый этап",
+    hours: 4,
+    description: "Коротко опишите результат этапа.",
+    defaults: null,
+    manuallyEditedHours: true,
+    billingMode: "hourly",
+    unit: "hour",
+    quantity: 1,
+    unitPrice: state.rate,
+  });
   renderEstimate();
 }
 
@@ -1845,7 +1945,7 @@ function renderPdfFromBlocks(blocks, { jsPDF, fonts, filename, onDone }) {
 
 // Векторная (текстовая) смета в том же «швейцарском» дизайне, что и растровая.
 // Координаты заданы в px макета (ширина листа 794px) и масштабируются в pt листа A4.
-function renderEstimatePdf({ jsPDF, fonts, filename, title, number, projectName, total, kicker, meta, rows, summary, footer, chip, showHours = true, onDone }) {
+function renderEstimatePdf({ jsPDF, fonts, filename, title, number, projectName, total, kicker, meta, rows, summary, footer, chip, showVolume = true, onDone }) {
   const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
   registerPdfFonts(doc, fonts);
   const rules = PDF_LAYOUT_RULES.estimate;
@@ -1856,26 +1956,13 @@ function renderEstimatePdf({ jsPDF, fonts, filename, title, number, projectName,
   const padX = 32, contentR = SHEET_W - padX;     // 32 … 762
 
   let y = 0; // курсор в px макета
-  let curCharSpace = 0; // текущий charSpace в pt — нужен для ручного выравнивания
   const pageTop = 40;
   const pageBottom = SHEET_H - 56 - rules.bottomSafePx;
 
   const font = (px, weight) => { doc.setFont("Onest", weight === "bold" ? "bold" : "normal"); doc.setFontSize(px * k); };
   const color = (c) => doc.setTextColor(c[0], c[1], c[2]);
-  const space = (emPx) => { curCharSpace = (emPx || 0) * k; doc.setCharSpace(curCharSpace); };
-  // jsPDF считает ширину для align:"right"/"center" без учёта charSpace, поэтому у чисел
-  // с трекингом остаётся зазор у правого края. Выравниваем вручную с поправкой на charSpace.
-  const T = (s, xpx, ypx, align) => {
-    const str = pdfText(s);
-    if (align === "right" || align === "center") {
-      doc.setCharSpace(0);
-      const w = doc.getTextWidth(str) + curCharSpace * Math.max(str.length - 1, 0);
-      doc.setCharSpace(curCharSpace);
-      doc.text(str, xpx * k - (align === "center" ? w / 2 : w), ypx * k);
-    } else {
-      doc.text(str, xpx * k, ypx * k);
-    }
-  };
+  const space = (emPx) => doc.setCharSpace((emPx || 0) * k);
+  const T = (s, xpx, ypx, align) => doc.text(pdfText(s), xpx * k, ypx * k, align ? { align } : undefined);
   const rule = (x1, x2, ypx, wpx, c) => { doc.setDrawColor((c || BLACK)[0], (c || BLACK)[1], (c || BLACK)[2]); doc.setLineWidth(wpx * k); doc.line(x1 * k, ypx * k, x2 * k, ypx * k); };
   const wrap = (s, wpx, px, weight) => { font(px, weight); return doc.splitTextToSize(pdfText(s), wpx * k).map((l) => l); };
   const startNewPage = () => { doc.addPage(); y = pageTop; };
@@ -1914,26 +2001,37 @@ function renderEstimatePdf({ jsPDF, fonts, filename, title, number, projectName,
   // ── Мета (Исполнитель / Дата / Ставка) ────────────────────
   const metaTop = y;
   const cW = (contentR - padX), c1 = padX, c2 = padX + cW * (1.45 / 3.45), c3 = padX + cW * (2.45 / 3.45);
-  [[c1, meta[0]], [c2, meta[1]], [c3, meta[2]]].forEach(([x, m]) => {
+  let metaContentBottom = metaTop + 52;
+  [[c1, c2 - c1 - 18, meta[0]], [c2, c3 - c2 - 18, meta[1]], [c3, contentR - c3, meta[2]]].forEach(([x, width, m]) => {
     if (!m) return;
     font(10, "normal"); color(BLACK); space(0.8); T((m.label || "").toUpperCase(), x, metaTop + 9); space(0);
     font(14, "bold"); color(BLACK); space(-0.6); T(m.value, x, metaTop + 9 + 9 + 11); space(0);
-    if (m.note) { font(10, "normal"); color(GRAY); T(m.note, x, metaTop + 9 + 9 + 11 + 5 + 9); }
+    const notes = Array.isArray(m.notes) ? m.notes : (m.note ? [m.note] : []);
+    let noteY = metaTop + 9 + 9 + 11 + 5 + 9;
+    notes.forEach((note) => {
+      const lines = wrap(note, width, 10, "normal");
+      font(10, "normal"); color(GRAY);
+      lines.forEach((line) => {
+        T(line, x, noteY);
+        noteY += 12;
+      });
+    });
+    metaContentBottom = Math.max(metaContentBottom, noteY);
   });
-  const metaBottom = metaTop + 9 + 9 + 11 + 5 + 9 + 14;
-  y = metaBottom + 28;
+  const metaBottom = metaContentBottom + 8;
+  y = metaBottom + 20;
 
   // ── Таблица ───────────────────────────────────────────────
   const numX = padX, descX = padX + 58;
   const costRX = contentR;
-  const costColLeft = showHours ? contentR - 160.6 : contentR - 128;
-  const hoursRX = costColLeft - 6;
+  const costColLeft = showVolume ? contentR - 160.6 : contentR - 128;
+  const volumeX = contentR - 212;
   const descW = costColLeft - descX - 12;
   const drawTableHead = () => {
     rule(padX, contentR, y, 1.5);
     font(10, "normal"); color(BLACK); space(0.8);
     T("№", numX, y + 9 + 8); T("ОПИСАНИЕ", descX, y + 9 + 8);
-    if (showHours) T("ЧАСЫ", hoursRX, y + 9 + 8, "right");
+    if (showVolume) T("ОБЪЁМ", volumeX, y + 9 + 8);
     T("СУММА", costRX, y + 9 + 8, "right");
     space(0);
     y = y + 9 + 8 + 9;
@@ -1944,12 +2042,16 @@ function renderEstimatePdf({ jsPDF, fonts, filename, title, number, projectName,
   rows.forEach((row) => {
     const nameLines = wrap(row.name, descW, 14, "bold");
     const descLines = row.desc ? wrap(row.desc, Math.min(descW, 380), 10.5, "normal") : [];
-    const rowH = 9 + nameLines.length * 14.7 + (descLines.length ? 4 + descLines.length * 13.4 : 0) + 10;
+    const descriptionHeight = nameLines.length * 14.7 + (descLines.length ? 4 + descLines.length * 13.4 : 0);
+    const volumeHeight = showVolume ? 14.7 : 0;
+    const rowH = 9 + Math.max(descriptionHeight, volumeHeight) + 10;
     if (ensure(rowH + 2)) drawTableHead();
     const top = y + 9; // td padding-top
     font(11, "normal"); color(BLACK); T(row.idx, numX, top + 9);
+    if (showVolume) {
+      font(12, "bold"); color(BLACK); space(-0.3); T(row.volume || "—", volumeX, top + 10); space(0);
+    }
     font(14, "bold"); color(BLACK); space(-0.6);
-    if (showHours) T(row.hours, hoursRX, top + 11, "right");
     T(row.cost, costRX, top + 11, "right"); space(0);
     let ly = top;
     font(14, "bold"); color(BLACK); space(-0.6);
@@ -2324,31 +2426,38 @@ function printEstimate() {
   const estimateNumber = issuedAt.toISOString().slice(0, 10).replace(/-/g, "").slice(2);
   const estimateKicker = state.exportHideBranding
     ? "Предварительная оценка"
-    : "DESIDOC / Предварительная оценка";
+    : "Предварительная оценка / создано в DesiDoc";
   const showHoursInPdf = state.exportShowHours;
+  const showVolumeInPdf = showHoursInPdf;
+  const pdfUnitRateNotes = state.stages
+    .filter(isUnitStage)
+    .map((stage) => `${stage.title}: ${money(stage.unitPrice || 0)} / ${UNIT_TYPES[stage.unit]?.priceLabel || "ед."}`);
 
-  const rows = state.stages.map((stage, index) => `
-    <tr>
-      <td class="pdf-index">${String(index + 1).padStart(2, "0")}</td>
-      <td><div class="pdf-stage-name">${escapeHtml(stage.title)}</div><div class="pdf-stage-desc">${escapeHtml(stage.description)}</div></td>
-      ${showHoursInPdf ? `<td class="pdf-hours">${stage.hours}</td>` : ""}
-      <td class="pdf-cost">${money(getStageCost(stage))}</td>
-    </tr>
-  `).join("");
+  const rows = state.stages.map((stage, index) => {
+    const volume = getPdfStageVolume(stage, showHoursInPdf);
+    return `
+      <tr>
+        <td class="pdf-index">${String(index + 1).padStart(2, "0")}</td>
+        <td><div class="pdf-stage-name">${escapeHtml(stage.title)}</div><div class="pdf-stage-desc">${escapeHtml(stage.description)}</div></td>
+        ${showVolumeInPdf ? `<td class="pdf-hours">${escapeHtml(volume)}</td>` : ""}
+        <td class="pdf-cost">${money(getStageCost(stage))}</td>
+      </tr>
+    `;
+  }).join("");
 
   const expenses = state.expenses.map((expense, index) => `
     <tr>
       <td class="pdf-index">E${index + 1}</td>
       <td><div class="pdf-stage-name">${escapeHtml(expense.title)}</div><div class="pdf-stage-desc">Дополнительный расход</div></td>
-      ${showHoursInPdf ? `<td class="pdf-hours">—</td>` : ""}
+      ${showVolumeInPdf ? `<td class="pdf-hours">—</td>` : ""}
       <td class="pdf-cost">${money(expense.amount)}</td>
     </tr>
   `).join("");
   const urgencyRow = state.mods.has("urgent")
-    ? `<tr><td class="pdf-index">U</td><td><div class="pdf-stage-name">Срочность +30%</div><div class="pdf-stage-desc">Финальная опция перед экспортом PDF</div></td>${showHoursInPdf ? `<td class="pdf-hours">—</td>` : ""}<td class="pdf-cost">${money(getUrgencyAmount())}</td></tr>`
+    ? `<tr><td class="pdf-index">U</td><td><div class="pdf-stage-name">Срочность +30%</div><div class="pdf-stage-desc">Финальная опция перед экспортом PDF</div></td>${showVolumeInPdf ? `<td class="pdf-hours">—</td>` : ""}<td class="pdf-cost">${money(getUrgencyAmount())}</td></tr>`
     : "";
   const pdfRateMeta = showHoursInPdf
-    ? `<div class="pdf-meta-item"><div class="pdf-meta-label">Ставка</div><div class="pdf-meta-value">${money(state.rate)} / час</div><div class="pdf-meta-note">${getTotalHours()} ч работы</div></div>`
+    ? `<div class="pdf-meta-item"><div class="pdf-meta-label">Ставка</div><div class="pdf-meta-value">${money(state.rate)} / час</div>${(pdfUnitRateNotes.length ? pdfUnitRateNotes : [`${getTotalHours()} ч работы`]).map((note) => `<div class="pdf-meta-note">${escapeHtml(note)}</div>`).join("")}</div>`
     : `<div class="pdf-meta-item"><div class="pdf-meta-label">Формат</div><div class="pdf-meta-value">Стоимость по этапам</div></div>`;
   const activeMods = state.mods.has("urgent")
     ? `<span class="pdf-note-chip">Срочность +30%</span>`
@@ -2385,10 +2494,10 @@ function printEstimate() {
         <colgroup>
           <col style="width: 8%;">
           <col>
-          ${showHoursInPdf ? `<col style="width: 12%;">` : ""}
+          ${showVolumeInPdf ? `<col style="width: 18%;">` : ""}
           <col style="width: 22%;">
         </colgroup>
-        <thead><tr><th>№</th><th>Описание</th>${showHoursInPdf ? `<th class="pdf-th-hours">Часы</th>` : ""}<th>Сумма</th></tr></thead>
+        <thead><tr><th>№</th><th>Описание</th>${showVolumeInPdf ? `<th class="pdf-th-hours">Объём</th>` : ""}<th>Сумма</th></tr></thead>
         <tbody>
           ${rows}
           ${expenses}
@@ -2466,13 +2575,13 @@ function printEstimate() {
     idx: String(index + 1).padStart(2, "0"),
     name: stage.title,
     desc: stage.description,
-    hours: String(stage.hours),
+    volume: getPdfStageVolume(stage, showHoursInPdf),
     cost: money(getStageCost(stage)),
   }));
   state.expenses.forEach((expense, index) => pdfRows.push({
-    idx: "E" + (index + 1), name: expense.title, desc: "Дополнительный расход", hours: "—", cost: money(expense.amount),
+    idx: "E" + (index + 1), name: expense.title, desc: "Дополнительный расход", volume: "—", cost: money(expense.amount),
   }));
-  if (state.mods.has("urgent")) pdfRows.push({ idx: "U", name: "Срочность +30%", desc: "Финальная опция перед экспортом PDF", hours: "—", cost: money(getUrgencyAmount()) });
+  if (state.mods.has("urgent")) pdfRows.push({ idx: "U", name: "Срочность +30%", desc: "Финальная опция перед экспортом PDF", volume: "—", cost: money(getUrgencyAmount()) });
 
   const pdfSummary = [{ label: "Работы", value: money(getBaseStagesTotal()) }];
   if (state.mods.has("urgent")) pdfSummary.push({ label: "Срочность", value: money(getUrgencyAmount()) });
@@ -2493,13 +2602,13 @@ function printEstimate() {
         { label: "Исполнитель", value: profileName, note: profileContact || "" },
         { label: "Дата", value: todayShort, note: "Актуальна до " + validUntilText },
         showHoursInPdf
-          ? { label: "Ставка", value: money(state.rate) + " / час", note: getTotalHours() + " ч работы" }
+          ? { label: "Ставка", value: money(state.rate) + " / час", notes: pdfUnitRateNotes.length ? pdfUnitRateNotes : [getTotalHours() + " ч работы"] }
           : { label: "Формат", value: "Стоимость по этапам", note: "" },
       ],
       rows: pdfRows,
       summary: pdfSummary,
       footer: "Оценка действует 14 дней. Итоговые сроки и состав работ фиксируются в договоре или допсоглашении.",
-      showHours: showHoursInPdf,
+      showVolume: showVolumeInPdf,
       onDone: () => { cleanupSheet(); notifyPdfDownloadSuccess("estimate_pdf_download"); },
     });
   }).catch((err) => { console.warn("Векторный PDF не удался, растровый запасной вариант:", err); rasterFallback(); });
@@ -5362,16 +5471,19 @@ function bindEvents() {
       state.stages.splice(Number(actionTarget.dataset.index), 1);
       renderEstimate();
     }
-    if (action === "adjust-stage-hours") {
+    if (action === "adjust-stage-value") {
       const index = Number(actionTarget.dataset.index);
       const delta = Number(actionTarget.dataset.delta || 0);
       const stage = state.stages[index];
       if (!stage || !delta) return;
-      stage.hours = Math.max(0, Number(stage.hours || 0) + delta);
-      stage.manuallyEditedHours = true;
+      const field = isUnitStage(stage) ? "quantity" : "hours";
+      stage[field] = Math.max(0, Number(stage[field] || 0) + delta);
+      if (field === "hours") stage.manuallyEditedHours = true;
       updateTotalsOnly();
-      const input = document.querySelector(`[data-stage-field="hours"][data-index="${index}"]`);
-      if (input) input.value = stage.hours;
+      const input = document.querySelector(`[data-stage-field="${field}"][data-index="${index}"]`);
+      if (input) input.value = stage[field];
+      const calculationNode = document.querySelector(`[data-stage-index="${index}"] [data-stage-calculation]`);
+      if (calculationNode) calculationNode.textContent = getStageCalculationLabel(stage);
       return;
     }
     if (action === "add-expense") {
@@ -5690,15 +5802,41 @@ function bindEvents() {
       if (field === "hours") {
         state.stages[index].hours = Number(input.value || 0);
         state.stages[index].manuallyEditedHours = true;
+      } else if (field === "quantity") {
+        state.stages[index].quantity = Math.max(Number(input.value || 0), 0);
+      } else if (field === "unitPrice") {
+        state.stages[index].unitPrice = Math.max(Number(input.value || 0), 0);
+        state.stages[index].manuallyEditedUnitPrice = true;
+      } else if (field === "unit") {
+        return;
       } else {
         state.stages[index][field] = input.value;
       }
       updateTotalsOnly();
+      const calculationNode = document.querySelector(`[data-stage-index="${index}"] [data-stage-calculation]`);
+      if (calculationNode) calculationNode.textContent = getStageCalculationLabel(state.stages[index]);
     }
   });
 
   document.addEventListener("change", (event) => {
     const input = event.target;
+    if (input.matches('[data-stage-field="unit"]')) {
+      const index = Number(input.dataset.index);
+      const stage = state.stages[index];
+      if (!stage) return;
+      const previousCost = getStageCost(stage);
+      const nextUnit = UNIT_TYPES[input.value] ? input.value : "hour";
+      stage.unit = nextUnit;
+      stage.billingMode = nextUnit === "hour" ? "hourly" : "unit";
+      if (nextUnit !== "hour") {
+        stage.quantity = Math.max(Number(stage.quantity || stage.hours || 1), 1);
+        if (!stage.manuallyEditedUnitPrice) {
+          stage.unitPrice = Math.max(Math.round((previousCost / stage.quantity) / 100) * 100, 100);
+        }
+      }
+      renderEstimate();
+      return;
+    }
     if (input.matches("[data-export-hours-toggle]")) {
       state.exportShowHours = !input.checked;
       localStorage.setItem("designkit.exportShowHours", String(state.exportShowHours));

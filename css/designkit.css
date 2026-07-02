@@ -1882,7 +1882,11 @@ h2 {
 }
 
 .stage-tools {
+  width: 192px;
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
   gap: 5px;
 }
 
@@ -1997,6 +2001,90 @@ h2 {
 .hours-field span {
   color: var(--muted);
   font-size: 12px;
+}
+
+.view--calculator .stage-card .hours-field--quantity {
+  width: fit-content;
+  justify-self: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+}
+
+.view--calculator .stage-card .hours-field--quantity input {
+  width: 24px;
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.unit-picker {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--cv-text, var(--text));
+  line-height: 1;
+  cursor: pointer;
+}
+
+.unit-picker:hover {
+  background: transparent;
+}
+
+.unit-picker__label {
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.unit-picker__caret {
+  flex: none;
+  width: 7px;
+  height: 4px;
+  color: var(--cv-text, var(--text));
+}
+
+.stage-unit-select {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  opacity: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  font-family: var(--font);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.stage-unit-select option {
+  font-family: var(--font);
+  font-size: 13px;
+  color: #1a1a1a;
+  background: #ffffff;
+}
+
+.unit-picker:focus-within {
+  outline: none;
 }
 
 .expense-box {
@@ -2920,29 +3008,7 @@ h2 {
 }
 
 .sticky-summary__toggle {
-  min-height: 42px;
-  border-radius: 999px;
   white-space: nowrap;
-}
-
-.sticky-summary__toggle .expl-toggle__label {
-  color: var(--muted);
-  font-size: 12px;
-}
-
-.sticky-summary__toggle .expl-toggle__track {
-  width: 36px;
-  height: 20px;
-  border-radius: 999px;
-}
-
-.sticky-summary__toggle .expl-toggle__thumb {
-  width: 16px;
-  height: 16px;
-}
-
-.sticky-summary__toggle input:checked ~ .expl-toggle__track .expl-toggle__thumb {
-  transform: translateX(16px);
 }
 
 .modal {
@@ -3620,6 +3686,15 @@ h2 {
   font-weight: 400;
   line-height: 1.2;
   letter-spacing: -0.015em;
+}
+
+.print-sheet .pdf-meta-note + .pdf-meta-note {
+  margin-top: 3px;
+}
+
+.print-sheet .pdf-page--swiss .pdf-th-hours,
+.print-sheet .pdf-page--swiss .pdf-hours {
+  text-align: left;
 }
 
 .print-sheet .pdf-page--swiss .pdf-table {
@@ -5653,8 +5728,8 @@ body.mobile-contract-sheet-open {
   line-height: 1.45;
 }
 
-  .view--calculator .stage-card {
-    grid-template-columns: 60px minmax(0, 1fr) minmax(116px, auto) minmax(110px, auto) 24px;
+.view--calculator .stage-card {
+  grid-template-columns: 56px minmax(0, 1fr) 148px minmax(82px, auto) 24px;
   gap: 8px;
   align-items: center;
   padding: 7px 8px;
@@ -5722,17 +5797,18 @@ body.mobile-contract-sheet-open {
   line-height: 1.28;
 }
 
-  .view--calculator .hours-field {
-    width: 48px;
+.view--calculator .hours-field {
+    width: 124px;
     min-height: 30px;
     gap: 3px;
     padding: 0 6px;
     border-radius: 10px;
   }
 
-  .view--calculator .hours-stepper {
-    gap: 4px;
-    justify-self: end;
+.view--calculator .hours-stepper {
+    grid-template-columns: auto 1fr auto;
+    gap: 5px;
+    width: 100%;
   }
 
   .view--calculator .hours-stepper__btn {
@@ -5742,7 +5818,6 @@ body.mobile-contract-sheet-open {
     border-color: transparent;
     background: var(--cv-surface);
     color: var(--cv-text);
-    box-shadow: 0 8px 18px rgba(56, 34, 24, 0.08);
   }
 
 .view--calculator .hours-field input {
@@ -5753,6 +5828,57 @@ body.mobile-contract-sheet-open {
 
 .view--calculator .hours-field span {
   font-size: 11px;
+}
+
+.view--calculator .stage-tools {
+  width: 148px;
+  justify-self: end;
+  display: grid;
+  grid-template-columns: 148px;
+  align-items: center;
+  justify-items: stretch;
+  gap: 4px;
+}
+
+.view--calculator .hours-field--price {
+  width: 140px;
+  height: 28px;
+  min-height: 28px;
+  justify-self: start;
+  margin-top: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border-color: transparent;
+}
+
+.view--calculator .hours-field--price input {
+  width: 100%;
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: left;
+  font-size: 13px;
+}
+
+.view--calculator .hours-field--price input[type="number"] {
+  appearance: auto;
+  -moz-appearance: auto;
+}
+
+.view--calculator .hours-field--price input[type="number"]::-webkit-inner-spin-button,
+.view--calculator .hours-field--price input[type="number"]::-webkit-outer-spin-button {
+  margin: 0 0 0 3px;
+  opacity: 1;
+  -webkit-appearance: auto;
+}
+
+.view--calculator .hours-field--price .hours-field__unit {
+  font-size: 11px;
+  letter-spacing: -0.01em;
+  color: var(--cv-muted);
+  white-space: nowrap;
 }
 
 .view--calculator .stage-stat {
@@ -6029,7 +6155,7 @@ body.mobile-contract-sheet-open {
   }
 }
 
-@media (max-width: 760px) {
+@media (max-width: 1180px) {
   .view--calculator {
     padding: 88px 16px 100px;
   }
@@ -6465,12 +6591,38 @@ body.mobile-contract-sheet-open {
     display: flex;
     grid-area: side;
     align-items: center;
+    flex-wrap: wrap;
     gap: 6px;
   }
 
   .view--calculator .stage-card .hours-field {
-    width: 56px;
+    width: 124px;
     flex-shrink: 0;
+  }
+
+  .view--calculator .stage-tools {
+    grid-template-columns: 148px;
+    flex: none;
+    gap: 0;
+  }
+
+  .view--calculator .stage-card .hours-field--quantity {
+    width: fit-content;
+  }
+
+  .view--calculator .stage-card .hours-field--price {
+    width: 136px;
+    min-height: 32px;
+    padding: 0 11px;
+    gap: 5px;
+  }
+
+  .view--calculator .stage-card .hours-field--price input {
+    font-size: 14px;
+  }
+
+  .view--calculator .stage-card .hours-field--price .hours-field__unit {
+    font-size: 12px;
   }
 
   .view--calculator .stage-card .stage-stat {
@@ -9220,6 +9372,17 @@ body[data-view="calculator"] [data-brief-ai-modal] textarea:focus-visible {
 
 [data-theme="dark"] .cv-cta-btn {
   background: rgba(255, 255, 255, 0.16);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+[data-theme="dark"] .view--calculator .cv-add-stage-btn {
+  -webkit-appearance: none;
+  appearance: none;
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.10);
+  color: rgba(255, 255, 255, 0.68);
+  box-shadow: none;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
 }
