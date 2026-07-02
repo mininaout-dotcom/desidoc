@@ -1,0 +1,885 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>DesiDoc — сервис для подготовки проектных документов</title>
+  <meta name="description" content="Создавайте сметы, договоры и проектные документы без лишней рутины.">
+  <link rel="icon" href="/favicon.ico" sizes="48x48">
+  <link rel="icon" href="assets/favicon-32.png" type="image/png" sizes="32x32">
+  <link rel="icon" href="assets/favicon-192.png" type="image/png" sizes="192x192">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+  <link rel="preload" href="assets/deedoc-landscape.webp" as="image" type="image/webp" fetchpriority="high">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://desidoc.ru/">
+  <meta property="og:site_name" content="DesiDoc">
+  <meta property="og:title" content="DesiDoc — сервис для подготовки проектных документов">
+  <meta property="og:description" content="Создавайте сметы, договоры и проектные документы без лишней рутины.">
+  <meta property="og:locale" content="ru_RU">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="DesiDoc — сервис для подготовки проектных документов">
+  <meta name="twitter:description" content="Создавайте сметы, договоры и проектные документы без лишней рутины.">
+  <link rel="stylesheet" href="css/designkit.css?v=unit-pricing-32">
+</head>
+<body data-view="home">
+  <div class="app" data-view="home">
+    <aside class="rail" aria-label="Основная навигация">
+      <a class="brand" href="#home" data-route="home" aria-label="DesiDoc home">DD</a>
+      <nav class="rail__nav">
+        <a href="#home" data-route="home" class="rail__link is-active">Главная</a>
+        <a href="#calculator" data-route="calculator" class="rail__link">Смета</a>
+        <a href="#contract" data-route="contract" class="rail__link is-muted">Документы</a>
+      </nav>
+      <button class="theme-toggle" type="button" data-action="toggle-theme" aria-label="Переключить тему">
+        <span class="theme-toggle__dot"></span>
+      </button>
+    </aside>
+
+    <main class="workspace">
+      <header class="topbar">
+        <a class="mobile-brand" href="#home" data-route="home">DesiDoc</a>
+        <nav class="topbar__nav" aria-label="Навигация">
+          <a href="#home" data-route="home" class="topbar__link is-active">Главная</a>
+          <a href="#calculator" data-route="calculator" class="topbar__link">Смета</a>
+          <a href="#contract" data-route="contract" class="topbar__link">Документы</a>
+        </nav>
+        <button class="topbar__theme" type="button" data-action="toggle-theme">Тема</button>
+      </header>
+
+      <!-- Global nav header — visible on all screens -->
+      <header class="deedoc-home__top deedoc-home__top--global">
+        <div class="deedoc-user">
+          <button class="deedoc-user__avatar" type="button" data-route="home" aria-label="На главную" title="На главную">🐱</button>
+          <nav class="deedoc-section-nav" aria-label="Разделы" hidden>
+            <button class="deedoc-section-tab" type="button" data-route="calculator" aria-label="Смета">
+              <svg class="tab-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <rect x="2" y="2" width="5" height="4" rx="1" stroke="currentColor" stroke-width="1.3"/>
+                <rect x="9" y="2" width="5" height="4" rx="1" stroke="currentColor" stroke-width="1.3"/>
+                <rect x="2" y="10" width="5" height="4" rx="1" stroke="currentColor" stroke-width="1.3"/>
+                <path d="M9 12h6M12 9v6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+              </svg>
+              <span class="tab-label">Смета</span>
+            </button>
+            <button class="deedoc-section-tab" type="button" data-route="contract" aria-label="Документы">
+              <svg class="tab-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <path d="M3 2.5A1.5 1.5 0 014.5 1h5L13 4.5V13a1.5 1.5 0 01-1.5 1.5h-7A1.5 1.5 0 013 13V2.5z" stroke="currentColor" stroke-width="1.3"/>
+                <path d="M9 1v3.5H13" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M5.5 8h5M5.5 10.5h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+              </svg>
+              <span class="tab-label">Документы</span>
+            </button>
+          </nav>
+        </div>
+        <div class="deedoc-home__tools">
+          <button class="deedoc-pill" type="button" data-action="open-profile"><span class="pill-clip"><span class="pill-reel" data-text="Мои данные">Мои данные</span></span></button>
+          <button class="deedoc-toggle" type="button" data-action="toggle-theme" aria-label="Переключить тему">
+            <svg class="deedoc-toggle__moon" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="12" height="13" viewBox="44 44 12 13" fill="none">
+              <path d="M47.6269 46.0322C48.0415 45.8719 48.379 46.3405 48.2231 46.7572C47.9912 47.3765 47.8644 48.0472 47.8644 48.7476C47.8644 51.881 50.4019 54.4211 53.5321 54.4211C53.8965 54.4211 54.1461 54.8226 53.9039 55.0952C52.8659 56.2637 51.3528 57 49.6678 57C46.5375 57 44 54.4599 44 51.3265C44 48.9133 45.5051 46.8523 47.6269 46.0322Z" fill="#F8F4F3"/>
+            </svg>
+            <span class="deedoc-toggle__knob"></span>
+            <svg class="deedoc-toggle__sun" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="70.5 123 17 17" fill="none">
+              <path d="M86.9963 130.681V130.678C86.9775 130.539 86.8853 130.423 86.7572 130.372C85.1307 129.716 84.6054 128.555 85.1777 126.884C85.2229 126.753 85.1947 126.607 85.1043 126.5L85.1024 126.496C85.0121 126.392 84.8728 126.342 84.7372 126.369C83.0184 126.705 81.9529 126.015 81.5406 124.297C81.5236 124.229 81.4916 124.168 81.4445 124.121C81.3994 124.071 81.341 124.035 81.2732 124.016C81.1415 123.976 80.9984 124.012 80.8986 124.109C79.6316 125.329 78.3665 125.329 77.1014 124.109C77.0016 124.012 76.8585 123.978 76.7268 124.016L76.7211 124.018C76.5893 124.058 76.4877 124.164 76.4557 124.301C76.0453 126.019 74.9797 126.711 73.2609 126.375C73.1253 126.348 72.986 126.396 72.8957 126.502L72.8938 126.506C72.8034 126.61 72.7752 126.757 72.8204 126.89C73.3946 128.558 72.8693 129.722 71.2428 130.377C71.1147 130.429 71.0225 130.546 71.0037 130.683V130.687C70.9848 130.826 71.0394 130.963 71.1486 131.048C72.5267 132.139 72.7055 133.405 71.6889 134.844C71.608 134.958 71.5948 135.106 71.6513 135.231L71.6532 135.235C71.7096 135.363 71.8301 135.448 71.9676 135.461C73.7108 135.627 74.5392 136.594 74.4545 138.358C74.4469 138.497 74.5147 138.63 74.6314 138.706L74.6352 138.708C74.7519 138.784 74.8988 138.789 75.0211 138.725C76.5762 137.913 77.7904 138.272 78.6658 139.804C78.7355 139.926 78.8616 140 79.0009 140H79.0047C79.1421 140 79.2701 139.926 79.3398 139.804C80.2133 138.272 81.4276 137.913 82.9845 138.723C83.1069 138.787 83.2537 138.78 83.3704 138.704L83.3742 138.702C83.4909 138.626 83.5568 138.495 83.5512 138.354C83.4665 136.588 84.2948 135.623 86.0381 135.456C86.1755 135.442 86.296 135.357 86.3525 135.23L86.3544 135.226C86.4108 135.098 86.3977 134.95 86.3167 134.838C85.3001 133.399 85.479 132.135 86.8551 131.042C86.9606 130.957 87.0152 130.82 86.9963 130.681ZM78.9991 136.839C76.2655 136.839 74.0516 134.602 74.0516 131.845C74.0516 129.085 76.2674 126.85 78.9991 126.85C81.7307 126.85 83.9465 129.087 83.9465 131.845C83.9484 134.602 81.7326 136.839 78.9991 136.839Z" fill="#FFFBFA"/>
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <section class="view view--home" data-screen="home" aria-labelledby="home-title">
+        <div class="deedoc-home">
+          <div class="deedoc-home__bg" aria-hidden="true">
+            <div class="deedoc-home__bg-layer" data-layer="sky"></div>
+            <div class="deedoc-home__bg-layer" data-layer="mountains"></div>
+            <div class="deedoc-home__bg-layer" data-layer="water"></div>
+          </div>
+          <!-- Spacer keeps grid-template-rows: auto 1fr auto intact after header moved globally -->
+          <div class="deedoc-home__nav-spacer" aria-hidden="true"></div>
+          <section class="deedoc-hero" aria-labelledby="home-title">
+            <div class="deedoc-hero__inner">
+            <h1 id="home-title" data-home-greeting>Привет!<br>С чего начнем работу?</h1>
+            <div class="deedoc-actions" aria-label="Рабочие сценарии">
+              <article class="deedoc-card deedoc-card--quick" data-route="calculator" tabindex="0" role="button" aria-label="Быстро рассчитать смету">
+                <div class="deedoc-card__plus">+</div>
+                <p>Быстро рассчитать<br>смету</p>
+              </article>
+
+              <article class="deedoc-card deedoc-card--paper" data-route="contract" tabindex="0" role="button" aria-label="Оформить договор">
+                <div>
+                  <h2>Оформить<br>договор</h2>
+                  <p>Заполни шаблон договора и создай документ всего за пару минут</p>
+                </div>
+                <button class="deedoc-card__button" type="button" data-route="contract" data-icon="document">Создать документ</button>
+              </article>
+
+              <article class="deedoc-card deedoc-card--paper" data-action="show-soon" data-label="Клиентский проект" tabindex="0" role="button" aria-label="Добавить клиентский проект">
+                <div>
+                  <h2>Клиентский<br>проект</h2>
+                  <p>Веди весь документооборот проекта в одном месте</p>
+                </div>
+                <button class="deedoc-card__button" type="button" data-action="show-soon" data-label="Клиентский проект" data-icon="project">Скоро</button>
+              </article>
+            </div>
+            </div>
+          </section>
+
+          <footer class="deedoc-home__footer">
+            <strong>DD</strong>
+            <p>DesiDoc — создавайте сметы, договоры и проектные документы без сложных таблиц и ручной сборки.</p>
+            <p class="deedoc-home__footer-legal">
+              <a class="link-btn" href="policy.html">Политика конфиденциальности</a>
+              <span>·</span>
+              <a class="link-btn" href="personal-data-consent.html">Согласие на обработку персональных данных</a>
+            </p>
+          </footer>
+        </div>
+      </section>
+
+      <section class="view view--calculator" data-screen="calculator" aria-labelledby="calculator-title">
+        <div class="calculator-shell">
+          <h1 class="visually-hidden" id="calculator-title">Смета</h1>
+          <section class="mobile-calc-controls" aria-label="Параметры сметы">
+            <div class="mobile-calc-controls__rail">
+              <button class="mobile-calc-chip" type="button" data-action="open-mobile-calc-sheet" data-mobile-sheet="project">
+                <div class="mobile-calc-chip__text">
+                  <span>Проект</span>
+                  <strong data-mobile-chip-value="project">Дизайн сайта</strong>
+                </div>
+                <svg class="mobile-calc-chip__chevron" width="10" height="6" viewBox="0 0 10 6" fill="none" aria-hidden="true"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+              <button class="mobile-calc-chip" type="button" data-action="open-mobile-calc-sheet" data-mobile-sheet="rate">
+                <div class="mobile-calc-chip__text">
+                  <span>Ставка</span>
+                  <strong data-mobile-chip-value="rate">1 500 ₽/ч</strong>
+                </div>
+                <svg class="mobile-calc-chip__chevron" width="10" height="6" viewBox="0 0 10 6" fill="none" aria-hidden="true"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+              <button class="mobile-calc-chip" type="button" data-action="open-mobile-calc-sheet" data-mobile-sheet="tax">
+                <div class="mobile-calc-chip__text">
+                  <span>Налог</span>
+                  <strong data-mobile-chip-value="tax">СЗ · 4%</strong>
+                </div>
+                <svg class="mobile-calc-chip__chevron" width="10" height="6" viewBox="0 0 10 6" fill="none" aria-hidden="true"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+            </div>
+            <button class="mobile-calc-controls__cta" type="button" data-action="generate-estimate">Рассчитать стоимость</button>
+          </section>
+
+          <section class="mobile-calc-sheet" data-mobile-calc-sheet hidden aria-hidden="true">
+            <button class="mobile-calc-sheet__backdrop" type="button" data-action="close-mobile-calc-sheet" aria-label="Закрыть"></button>
+            <div class="mobile-calc-sheet__panel" role="dialog" aria-modal="true" aria-labelledby="mobile-calc-sheet-title">
+              <button class="mobile-calc-sheet__handle" type="button" data-action="toggle-mobile-calc-sheet" data-mobile-sheet="project" aria-label="Свернуть панель параметров"></button>
+              <div class="mobile-calc-sheet__header">
+                <div>
+                  <p class="mobile-calc-sheet__eyebrow">Параметр сметы</p>
+                  <h2 class="mobile-calc-sheet__title" id="mobile-calc-sheet-title" data-mobile-sheet-title>Тип проекта</h2>
+                </div>
+                <button class="mobile-calc-sheet__close" type="button" data-action="close-mobile-calc-sheet" aria-label="Закрыть">×</button>
+              </div>
+
+              <div class="mobile-calc-sheet__body">
+	                <section class="mobile-calc-sheet__section" data-mobile-sheet-panel="project">
+	                  <div class="project-options mobile-calc-sheet__project-grid" role="radiogroup" aria-label="Тип проекта" data-project-options></div>
+	                  <div class="brief-ai-card brief-ai-card--mobile" data-brief-ai-entry hidden>
+	                    <button class="brief-ai-button" type="button" data-action="show-soon" data-label="Собрать из брифа" data-description="Функция скоро будет доступна. Пока можно выбрать «Другое», посчитать стандартные этапы и отредактировать их вручную.">
+	                      <span aria-hidden="true">✨</span>
+	                      Собрать из брифа
+	                    </button>
+	                    <p>Скоро можно будет вставить бриф или переписку, а DesiDoc предложит этапы и часы. Пока считайте через стандартные этапы.</p>
+	                  </div>
+	                </section>
+
+                <section class="mobile-calc-sheet__section" data-mobile-sheet-panel="rate" hidden>
+                  <div class="segmented" role="tablist" aria-label="Режим ставки">
+                    <button class="segmented__item is-active" type="button" data-rate-mode="custom">Моя ставка</button>
+                    <button class="segmented__item" type="button" data-rate-mode="income">От дохода</button>
+                    <button class="segmented__item" type="button" data-rate-mode="market">По рынку</button>
+                  </div>
+
+                  <div class="rate-panel rate-panel--market is-hidden" data-rate-panel="market">
+                    <div class="market-grade-grid" aria-label="Рыночная ставка">
+	                      <button class="market-grade is-active" type="button" data-market-grade="junior">
+	                        <span>Джун</span>
+	                        <strong data-market-rate-label="junior">600 ₽</strong>
+	                      </button>
+	                      <button class="market-grade" type="button" data-market-grade="middle">
+	                        <span>Мидл</span>
+	                        <strong data-market-rate-label="middle">1 800 ₽</strong>
+	                      </button>
+	                      <button class="market-grade" type="button" data-market-grade="senior">
+	                        <span>Синьор</span>
+	                        <strong data-market-rate-label="senior">3 000 ₽</strong>
+	                      </button>
+                    </div>
+                    <p class="market-rate-note">Ориентир по опросу <a href="https://t.me/creative_bones" target="_blank" rel="noopener noreferrer">@creative_bones</a> и открытым данным рынка. Это примерная ставка, а не официальный тариф: считайте с учётом опыта, проекта, клиента и финансовых целей.</p>
+                  </div>
+
+	                  <div class="rate-panel rate-panel--custom" data-rate-panel="custom">
+	                    <div class="rate-control-row">
+	                      <div class="rate-summary">
+	                        <input class="rate-input" type="number" min="0" step="100" data-input="designerRate" value="1500" aria-label="Ставка дизайнера">
+	                        <span data-currency-rate-label>₽/час</span>
+	                      </div>
+	                      <div class="currency-picker" data-currency-picker aria-label="Валюта сметы">
+	                        <div class="currency-picker__chips">
+	                          <button class="currency-chip is-active" type="button" data-currency="RUB" aria-pressed="true" aria-label="Рубли">₽</button>
+	                          <button class="currency-chip" type="button" data-currency="USD" aria-pressed="false" aria-label="Доллары">$</button>
+	                          <button class="currency-chip" type="button" data-currency="EUR" aria-pressed="false" aria-label="Евро">€</button>
+	                          <button class="currency-chip" type="button" data-currency="KZT" aria-pressed="false" aria-label="Тенге">₸</button>
+	                        </div>
+	                      </div>
+	                    </div>
+	                  </div>
+
+                  <div class="rate-panel rate-panel--income is-hidden" data-rate-panel="income" hidden>
+                    <label class="field">
+                      <span>Желаемый доход в месяц</span>
+                      <input type="number" min="0" step="1000" data-input="monthlyIncome" value="240000">
+                    </label>
+                    <div class="field-row">
+                      <label class="field">
+                        <span>Рабочих дней в неделю</span>
+                        <input type="number" min="1" max="7" data-input="workDays" value="5">
+                      </label>
+                      <label class="field">
+                        <span>Часов в день</span>
+                        <input type="number" min="1" max="12" data-input="billableHours" value="6">
+                      </label>
+                    </div>
+	                    <div class="rate-control-row">
+	                      <div class="rate-summary">
+	                        <strong data-income-rate>0 ₽/час</strong>
+	                      </div>
+	                      <div class="currency-picker" data-currency-picker aria-label="Валюта сметы">
+	                        <div class="currency-picker__chips">
+	                          <button class="currency-chip is-active" type="button" data-currency="RUB" aria-pressed="true" aria-label="Рубли">₽</button>
+	                          <button class="currency-chip" type="button" data-currency="USD" aria-pressed="false" aria-label="Доллары">$</button>
+	                          <button class="currency-chip" type="button" data-currency="EUR" aria-pressed="false" aria-label="Евро">€</button>
+	                          <button class="currency-chip" type="button" data-currency="KZT" aria-pressed="false" aria-label="Тенге">₸</button>
+	                        </div>
+	                      </div>
+	                    </div>
+	                  </div>
+	                </section>
+
+                <section class="mobile-calc-sheet__section" data-mobile-sheet-panel="tax" hidden>
+                  <div class="tax-settings">
+                    <div class="segmented segmented--tax" role="tablist" aria-label="Налоговый режим">
+                      <button class="segmented__item is-active" type="button" data-tax-mode="selfEmployed">Самозанятый</button>
+                      <button class="segmented__item" type="button" data-tax-mode="ipUsn">ИП 6%</button>
+                      <button class="segmented__item" type="button" data-tax-mode="custom">Свой %</button>
+                    </div>
+
+                    <div class="segmented segmented--client" role="tablist" aria-label="Тип клиента">
+                      <button class="segmented__item is-active" type="button" data-client-type="individual">Физлицо</button>
+                      <button class="segmented__item" type="button" data-client-type="business">Юрлицо / ИП</button>
+                    </div>
+
+                    <div class="rate-summary tax-custom is-hidden" data-tax-custom>
+                      <input class="rate-input" type="number" min="0" max="100" step="0.5" data-input="customTaxRate" value="6" aria-label="Свой процент налога">
+                      <span>%</span>
+                    </div>
+
+                    <div class="tax-rate-line">Налог: <strong data-tax-rate-label>4%</strong></div>
+                  </div>
+                </section>
+              </div>
+
+              <button class="mobile-calc-sheet__apply" type="button" data-action="apply-mobile-calc-sheet">Применить</button>
+            </div>
+          </section>
+
+          <!-- Hero -->
+
+
+          <!-- Two-column builder -->
+          <div class="builder-grid">
+
+            <!-- LEFT: Setup card with CTA pinned to its bottom -->
+            <section class="setup-card" aria-labelledby="setup-title">
+
+              <!-- Step 01 -->
+              <div class="cv-step-block">
+                <div class="cv-step-label">
+                  <span class="cv-step-num">1</span>
+                  <span class="cv-step-title">Тип проекта</span>
+	                </div>
+	                <div class="project-options" role="radiogroup" aria-label="Тип проекта" data-project-options></div>
+	                <div class="brief-ai-card" data-brief-ai-entry hidden>
+	                  <button class="brief-ai-button" type="button" data-action="show-soon" data-label="Собрать из брифа" data-description="Функция скоро будет доступна. Пока можно выбрать «Другое», посчитать стандартные этапы и отредактировать их вручную.">
+	                    <span aria-hidden="true">✨</span>
+	                    Собрать из брифа
+	                  </button>
+	                  <p>Скоро можно будет вставить бриф или переписку, а DesiDoc предложит этапы и часы. Пока считайте через стандартные этапы.</p>
+	                </div>
+	              </div>
+
+              <div class="cv-divider" aria-hidden="true"></div>
+
+              <!-- Step 02 -->
+              <div class="cv-step-block cv-step-block--rate">
+                <div class="cv-step-label">
+                  <span class="cv-step-num">2</span>
+                  <span class="cv-step-title">Ставка</span>
+                </div>
+
+                <div class="segmented" role="tablist" aria-label="Режим ставки">
+                  <button class="segmented__item is-active" type="button" data-rate-mode="custom">Моя ставка</button>
+                  <button class="segmented__item" type="button" data-rate-mode="income">От дохода</button>
+                  <button class="segmented__item" type="button" data-rate-mode="market">По рынку</button>
+                </div>
+
+                <div class="rate-panel rate-panel--market is-hidden" data-rate-panel="market">
+                  <div class="market-grade-grid" aria-label="Рыночная ставка">
+	                    <button class="market-grade is-active" type="button" data-market-grade="junior">
+	                      <span>Джун</span>
+	                      <strong data-market-rate-label="junior">600 ₽</strong>
+	                    </button>
+	                    <button class="market-grade" type="button" data-market-grade="middle">
+	                      <span>Мидл</span>
+	                      <strong data-market-rate-label="middle">1 800 ₽</strong>
+	                    </button>
+	                    <button class="market-grade" type="button" data-market-grade="senior">
+	                      <span>Синьор</span>
+	                      <strong data-market-rate-label="senior">3 000 ₽</strong>
+	                    </button>
+                  </div>
+                  <p class="market-rate-note">Ориентир по опросу <a href="https://t.me/creative_bones" target="_blank" rel="noopener noreferrer">@creative_bones</a> и открытым данным рынка. Это примерная ставка, а не официальный тариф: считайте с учётом опыта, проекта, клиента и финансовых целей.</p>
+                </div>
+
+	                <div class="rate-panel rate-panel--custom" data-rate-panel="custom">
+	                  <div class="rate-control-row">
+	                    <div class="rate-summary">
+	                      <input class="rate-input" type="number" min="0" step="100" data-input="designerRate" value="1500" aria-label="Ставка дизайнера">
+	                      <span data-currency-rate-label>₽/час</span>
+	                    </div>
+	                    <div class="currency-picker" data-currency-picker aria-label="Валюта сметы">
+	                      <div class="currency-picker__chips">
+	                        <button class="currency-chip is-active" type="button" data-currency="RUB" aria-pressed="true" aria-label="Рубли">₽</button>
+	                        <button class="currency-chip" type="button" data-currency="USD" aria-pressed="false" aria-label="Доллары">$</button>
+	                        <button class="currency-chip" type="button" data-currency="EUR" aria-pressed="false" aria-label="Евро">€</button>
+	                        <button class="currency-chip" type="button" data-currency="KZT" aria-pressed="false" aria-label="Тенге">₸</button>
+	                      </div>
+	                    </div>
+	                  </div>
+	                </div>
+
+                <div class="rate-panel rate-panel--income is-hidden" data-rate-panel="income" hidden>
+                  <label class="field">
+                    <span>Желаемый доход в месяц</span>
+                    <input type="number" min="0" step="1000" data-input="monthlyIncome" value="240000">
+                  </label>
+                  <div class="field-row">
+                    <label class="field">
+                      <span>Рабочих дней в неделю</span>
+                      <input type="number" min="1" max="7" data-input="workDays" value="5">
+                    </label>
+                    <label class="field">
+                      <span>Часов в день</span>
+                      <input type="number" min="1" max="12" data-input="billableHours" value="6">
+                    </label>
+                  </div>
+	                  <div class="rate-control-row">
+	                    <div class="rate-summary">
+	                      <strong data-income-rate>0 ₽/час</strong>
+	                    </div>
+	                    <div class="currency-picker" data-currency-picker aria-label="Валюта сметы">
+	                      <div class="currency-picker__chips">
+	                        <button class="currency-chip is-active" type="button" data-currency="RUB" aria-pressed="true" aria-label="Рубли">₽</button>
+	                        <button class="currency-chip" type="button" data-currency="USD" aria-pressed="false" aria-label="Доллары">$</button>
+	                        <button class="currency-chip" type="button" data-currency="EUR" aria-pressed="false" aria-label="Евро">€</button>
+	                        <button class="currency-chip" type="button" data-currency="KZT" aria-pressed="false" aria-label="Тенге">₸</button>
+	                      </div>
+	                    </div>
+	                  </div>
+	                </div>
+              </div>
+
+              <div class="cv-divider" aria-hidden="true"></div>
+
+              <!-- Step 03 -->
+              <div class="cv-step-block cv-step-block--tax">
+                <div class="cv-step-label">
+                  <span class="cv-step-num">3</span>
+                  <span class="cv-step-title">Налог</span>
+                </div>
+
+                <div class="tax-settings">
+                  <div class="segmented segmented--tax" role="tablist" aria-label="Налоговый режим">
+                    <button class="segmented__item is-active" type="button" data-tax-mode="selfEmployed">Самозанятый</button>
+                    <button class="segmented__item" type="button" data-tax-mode="ipUsn">ИП 6%</button>
+                    <button class="segmented__item" type="button" data-tax-mode="custom">Свой %</button>
+                  </div>
+
+                  <div class="segmented segmented--client" role="tablist" aria-label="Тип клиента">
+                    <button class="segmented__item is-active" type="button" data-client-type="individual">Физлицо</button>
+                    <button class="segmented__item" type="button" data-client-type="business">Юрлицо / ИП</button>
+                  </div>
+
+                  <div class="rate-summary tax-custom is-hidden" data-tax-custom>
+                    <input class="rate-input" type="number" min="0" max="100" step="0.5" data-input="customTaxRate" value="6" aria-label="Свой процент налога">
+                    <span>%</span>
+                  </div>
+
+                  <div class="tax-rate-line">Налог: <strong data-tax-rate-label>4%</strong></div>
+                </div>
+              </div>
+
+              <!-- Primary CTA inside the card, pinned to the bottom -->
+              <button class="cv-cta-btn" type="button" data-action="generate-estimate">Рассчитать стоимость</button>
+
+            </section>
+
+            <!-- RIGHT: Estimate card -->
+            <section class="estimate-card" aria-live="polite">
+
+              <!-- Empty state -->
+              <div class="estimate-empty cv-estimate-empty" data-estimate-empty>
+                <div class="cv-empty-icon" aria-hidden="true">₽</div>
+                <div class="cv-empty-text">
+                  <h2 id="setup-title">Стоимость появится здесь.</h2>
+                  <p data-empty-hint>Выбери проект, ставку и налог</p>
+                </div>
+              </div>
+
+              <!-- Result state -->
+              <div class="estimate-result is-hidden" data-estimate-result>
+
+                <!-- Summary header -->
+                <div class="cv-result-header">
+                  <div class="cv-result-meta">
+                    <label class="estimate-inline-field" aria-label="Название сметы">
+                      <span class="estimate-inline-caption">Введите название сметы</span>
+                      <textarea class="estimate-inline-input estimate-inline-input--title" data-estimate-meta="estimateName" rows="1" placeholder="Название сметы" aria-label="Название сметы"></textarea>
+                    </label>
+                  </div>
+                  <div class="cv-total-block">
+                    <span class="cv-total-label">Итого · <span data-estimate-tax-label>налог 4%</span></span>
+                    <strong class="cv-total-amount" data-estimate-total>0 ₽</strong>
+                  </div>
+                </div>
+
+                <!-- Stage list -->
+                <div class="stage-list" data-stage-list></div>
+
+                <!-- AI disclaimer — под этапами, только для AI-смет -->
+                <p class="ai-stages-note" data-ai-stages-note hidden>Оценка примерная — измените часы под свою скорость работы, сложность проекта и договорённости с клиентом.</p>
+                <p class="ai-stages-note" data-custom-stages-note hidden>Это стандартная заготовка. Отредактируйте этапы и часы под свой проект, лишнее можно удалить.</p>
+
+                <!-- Add stage -->
+                <button class="button button--ghost button--wide cv-add-stage-btn" type="button" data-action="add-stage">+ Добавить этап</button>
+
+                <!-- Expenses -->
+                <details class="expense-box" data-expense-box>
+                  <summary>
+                    <span class="expense-box__title">+ Добавить дополнительные расходы</span>
+                    <span class="expense-box__hint">Добавьте стоимость токенов нейросетей, если используете AI-инструменты в работе, лицензий на шрифты, фотостоков или печати.</span>
+                  </summary>
+                  <div class="expense-form">
+                    <label class="field">
+                      <span>Название расхода</span>
+                      <input type="text" data-input="expenseTitle" placeholder="Например, шрифт или иллюстрация">
+                    </label>
+                    <label class="field">
+                      <span>Сумма</span>
+                      <input type="number" min="0" step="500" data-input="expenseAmount" placeholder="0">
+                    </label>
+                    <button class="button button--ghost" type="button" data-action="add-expense">Добавить</button>
+                  </div>
+                  <div class="expense-list" data-expense-list></div>
+                </details>
+
+	                <!-- Breakdown -->
+	                <div class="estimate-breakdown" data-estimate-breakdown></div>
+	                <div class="ai-estimate-insights" data-ai-estimate-insights hidden></div>
+
+                <!-- Actions row — bottom -->
+                <div class="estimate-actions cv-result-actions">
+                  <button class="button button--soft" type="button" data-action="reset-estimate">Сбросить</button>
+                  <button class="button button--ghost" type="button" data-action="open-export-settings">Параметры PDF</button>
+                  <button class="button button--dark" type="button" data-action="open-export">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M7 1v8M4 6l3 3 3-3M2 10v1a1 1 0 001 1h8a1 1 0 001-1v-1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    Скачать PDF
+                  </button>
+                </div>
+
+              </div>
+            </section>
+
+          </div>
+        </div>
+      </section>
+
+      <section class="view view--contract" data-screen="contract" aria-labelledby="contract-title">
+        <div class="contract-workspace">
+          <h1 class="visually-hidden" id="contract-title">Документы</h1>
+          <header class="contract-header contract-hero"></header>
+
+          <section class="mobile-contract-flow" data-mobile-contract-flow hidden>
+            <div class="mobile-contract-card">
+              <div class="mobile-contract-template-strip" data-contract-template-strip aria-label="Тип документа"></div>
+
+              <div class="mobile-contract-card__head">
+                <h2 class="mobile-contract-card__title" data-mobile-contract-title>Рамочный договор</h2>
+                <div class="mobile-contract-progressline">
+                  <div class="mobile-contract-progressline__track">
+                    <span class="mobile-contract-progressline__fill" data-mobile-contract-progress-fill></span>
+                  </div>
+                  <strong class="mobile-contract-progressline__value" data-mobile-contract-progress-label>0 из 4</strong>
+                </div>
+              </div>
+
+              <div class="mobile-contract-steps" data-mobile-contract-steps></div>
+
+              <button class="mobile-contract-cta" type="button" data-action="show-mobile-contract-doc">Показать договор</button>
+            </div>
+          </section>
+
+          <section class="mobile-contract-sheet" data-mobile-contract-sheet hidden aria-hidden="true">
+            <button class="mobile-contract-sheet__backdrop" type="button" data-action="close-mobile-contract-sheet" aria-label="Закрыть"></button>
+            <div class="mobile-contract-sheet__panel" role="dialog" aria-modal="true" aria-labelledby="mobile-contract-sheet-title">
+              <button class="mobile-contract-sheet__handle" type="button" data-action="toggle-mobile-contract-sheet" aria-label="Свернуть панель параметров"></button>
+              <div class="mobile-contract-sheet__header">
+                <div>
+                  <p class="mobile-contract-sheet__eyebrow">Шаг договора</p>
+                  <h2 class="mobile-contract-sheet__title" id="mobile-contract-sheet-title" data-mobile-contract-sheet-title>Исполнитель</h2>
+                </div>
+                <button class="mobile-contract-sheet__close" type="button" data-action="close-mobile-contract-sheet" aria-label="Закрыть">×</button>
+              </div>
+
+              <div class="mobile-contract-sheet__body" data-mobile-contract-sheet-body></div>
+
+              <button class="mobile-contract-sheet__apply" type="button" data-action="apply-mobile-contract-sheet">Применить</button>
+            </div>
+          </section>
+
+          <div class="contract-layout">
+            <aside class="contract-outline" aria-label="Структура договора">
+              <div data-addendum-sidebar></div>
+
+              <!-- Шаг 1: Запрос данных у клиента -->
+              <details class="outline-group contract-helper-panel outline-group--collapsible" data-step="1">
+                <summary class="outline-title outline-title--toggle"><span class="step-badge">1</span>Запроси данные у клиента</summary>
+                <div class="outline-group-body">
+                  <p class="contract-data-hint">Скопируйте и отправьте клиенту — он ответит одним сообщением, вы вставите ниже.</p>
+                  <pre class="client-request-preview" data-client-request-text>Привет! Для подготовки договора пришлите, пожалуйста, одним сообщением:
+
+ФИО / название компании:
+ИНН:
+Ответственное лицо:
+Телефон / Telegram:
+Юридический или почтовый адрес:
+
+Для выставления счёта также нужны:
+Расчётный счёт:
+БИК банка:
+Название банка:
+
+Если вы самозанятый или физлицо — реквизиты счёта всё равно нужны для оплаты.</pre>
+                  <button class="button button--ghost button--wide" type="button" data-action="copy-client-request">Скопировать запрос</button>
+                  <textarea class="client-reply-textarea" data-client-reply-input rows="4" placeholder="Вставьте ответ клиента — разложу данные по полям автоматически."></textarea>
+                  <label class="contract-control contract-control--checkbox client-reply-consent">
+                    <input type="checkbox" data-client-pd-ack>
+                    <span>Подтверждаю, что вправе использовать и вносить данные клиента в документ.</span>
+                  </label>
+                  <button class="button button--primary button--wide" type="button" data-action="parse-client-reply">Заполнить из ответа</button>
+                  <p class="client-reply-status" data-client-reply-status>Принимаю свободный текст: ФИО, ИНН, телефон, email, Telegram, адрес.</p>
+                </div>
+              </details>
+
+              <!-- Шаг 2: Данные -->
+              <details class="outline-group contract-data-panel outline-group--collapsible" data-step="2" data-contract-fields-panel>
+                <summary class="outline-title outline-title--toggle"><span class="step-badge">2</span>Заполни данные</summary>
+                <div class="outline-group-body">
+                  <p class="contract-data-hint">Ваши данные загружены из профиля. Проверьте и дополните данные клиента.</p>
+                  <div class="contract-progress" data-contract-progress></div>
+                  <div class="contract-required-summary" data-contract-required-summary></div>
+                  <div class="contract-form" data-contract-fields></div>
+                </div>
+              </details>
+
+              <!-- Шаг 3: Подпись -->
+              <details class="outline-group contract-signature-panel outline-group--collapsible" data-step="3" data-signature-panel>
+                <summary class="outline-title outline-title--toggle"><span class="step-badge">3</span>Добавь подпись</summary>
+                <div class="outline-group-body">
+                  <p class="contract-data-hint">Сфотографируйте подпись на белом листе — уберём фон и сделаем синей автоматически.</p>
+                  <div class="signature-preview" data-signature-preview></div>
+                  <input class="visually-hidden" type="file" accept="image/*" data-signature-file>
+                  <div class="signature-actions">
+                    <button class="button button--ghost button--wide" type="button" data-action="upload-signature">Загрузить подпись</button>
+                    <button class="button button--ghost button--wide" type="button" data-action="delete-signature">Удалить</button>
+                  </div>
+                  <label class="contract-control contract-control--checkbox" style="margin-top:10px">
+                    <input type="checkbox" data-signature-pdf-toggle>
+                    <span>Включить подпись в PDF</span>
+                  </label>
+                  <p class="signature-legal-note">Подпись используется только как изображение в документах и не является электронной подписью.</p>
+                </div>
+              </details>
+
+              <!-- Шаг 4: Плановый перерыв -->
+              <details class="outline-group outline-group--utility outline-group--collapsible" data-step="4">
+                <summary class="outline-title outline-title--toggle"><span class="step-badge">4</span>Запланируй отпуск</summary>
+                <div class="outline-group-body">
+                  <div class="optional-list" data-contract-options></div>
+                </div>
+              </details>
+
+            </aside>
+
+            <div class="contract-canvas-area">
+              <button class="mobile-contract-back" type="button" data-action="hide-mobile-contract-doc" hidden>← Изменить данные</button>
+              <!-- Doc type toggle — aligned to canvas left edge -->
+              <div class="contract-top-bar">
+                <div class="contract-template-strip" data-contract-template-strip aria-label="Тип договора"></div>
+              </div>
+              <article class="document-canvas" data-contract-canvas aria-label="Договор"></article>
+              <div class="mobile-contract-actions" hidden>
+                <nav class="document-section-nav document-section-nav--mobile-actions" data-contract-outline aria-label="Навигация по разделам договора"></nav>
+                <button class="button button--dark" type="button" data-action="print-contract">Скачать PDF</button>
+                <div class="mobile-contract-actions__secondary">
+                  <button class="button button--ghost" type="button" data-action="hide-mobile-contract-doc">← Изменить данные</button>
+                  <button class="button button--ghost" type="button" data-action="reset-contract-data">Сбросить</button>
+                </div>
+              </div>
+            </div>
+            <aside class="contract-side-rail" aria-label="Быстрая навигация по договору">
+              <nav class="document-section-nav document-section-nav--floating" data-contract-outline aria-label="Навигация по разделам договора"></nav>
+            </aside>
+          </div>
+
+          <footer class="document-toolbar">
+            <span class="autosave-status" data-autosave-status>Сохранено</span>
+            <div class="document-toolbar__actions">
+              <label class="expl-toggle">
+                <input type="checkbox" data-contract-explanation-toggle>
+                <span class="expl-toggle__track"><span class="expl-toggle__thumb"></span></span>
+                <span class="expl-toggle__label">Пояснения</span>
+              </label>
+              <button class="button button--ghost" type="button" data-action="create-addendum">Допсоглашение</button>
+              <button class="button button--dark" type="button" data-action="print-contract">Скачать PDF</button>
+            </div>
+          </footer>
+        </div>
+      </section>
+    </main>
+
+    <aside class="sticky-summary is-hidden" data-sticky-summary aria-label="Итог сметы">
+      <div class="sticky-summary__main">
+        <div class="sticky-summary__total">
+          <span>Итого по смете</span>
+          <strong data-sticky-total>0 ₽</strong>
+        </div>
+        <label class="expl-toggle sticky-summary__toggle">
+          <input type="checkbox" data-export-hours-toggle aria-label="Скрыть часы от клиента">
+          <span class="expl-toggle__track"><span class="expl-toggle__thumb"></span></span>
+          <span class="expl-toggle__label">Скрыть часы</span>
+        </label>
+      </div>
+      <div class="sticky-summary__actions">
+        <button class="button button--soft" type="button" data-action="open-export-settings">Параметры PDF</button>
+        <button class="button button--dark" type="button" data-action="open-export">Скачать PDF</button>
+      </div>
+    </aside>
+
+  </div>
+
+  <dialog class="modal" data-export-modal>
+    <form method="dialog" class="modal__panel">
+      <button class="modal__close" value="cancel" aria-label="Закрыть">×</button>
+      <p class="eyebrow">Экспорт</p>
+      <h2>Данные для PDF</h2>
+      <p class="modal__lead">Финальная сумма сметы. Смета актуальна 14 дней.</p>
+      <p class="modal__hint">Данные для сметы сохраняются только в вашем браузере и не отправляются на сервер DesiDoc.</p>
+
+      <label class="field">
+        <span>Имя дизайнера</span>
+        <input type="text" data-input="designerName" placeholder="Например, Анна Иванова">
+      </label>
+      <label class="field">
+        <span>Название сметы</span>
+        <input type="text" data-input="estimateName" placeholder="Быстрая смета на дизайн">
+      </label>
+
+      <div class="export-options">
+        <p class="export-options__title">Опции документа</p>
+        <button class="export-toggle" type="button" data-action="toggle-export-urgent" aria-pressed="false">
+          <span>Срочность</span>
+          <strong>+30%</strong>
+        </button>
+        <label class="export-toggle expl-toggle">
+          <span>Убрать логотип DesiDoc</span>
+          <input type="checkbox" data-export-branding-toggle>
+          <span class="expl-toggle__track"><span class="expl-toggle__thumb"></span></span>
+        </label>
+      </div>
+
+      <div class="legal-note">
+        <strong>Рекомендация:</strong> покажите документы и условия своему юристу. Ответственность за использование сметы и приложенных условий остается на пользователе.
+      </div>
+
+      <div class="modal__actions">
+        <button class="button button--ghost" value="cancel">Отмена</button>
+        <button class="button button--dark" type="button" data-action="print-estimate">Скачать PDF</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="modal" data-addendum-brief-modal>
+    <form method="dialog" class="modal__panel modal__panel--small">
+      <button class="modal__close" value="cancel" aria-label="Закрыть">×</button>
+      <p class="eyebrow">Техническое задание</p>
+      <h2>Собрать из брифа</h2>
+      <p class="modal__lead">Вставьте бриф, сообщение клиента или заметки после созвона. DesiDoc заполнит предмет задания и требования к результату.</p>
+      <label class="field brief-ai-field">
+        <span>Бриф проекта</span>
+        <textarea data-addendum-brief-input rows="8" placeholder="Например: нужно сделать логотип, палитру, шрифты и 5 носителей за 3 недели."></textarea>
+      </label>
+      <p class="client-reply-status" data-addendum-brief-status>Текст можно будет отредактировать вручную в ТЗ.</p>
+      <div class="modal__actions">
+        <button class="button button--ghost" value="cancel">Отмена</button>
+        <button class="brief-ai-button" type="button" data-action="analyze-addendum-brief">✨ Собрать ТЗ</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="modal" data-profile-modal>
+    <form method="dialog" class="modal__panel">
+      <button class="modal__close" value="cancel" aria-label="Закрыть">×</button>
+      <h2>Мои данные</h2>
+      <p class="modal__lead">Заполните один раз — данные автоматически подставятся в сметы и договоры.</p>
+
+      <p class="modal__section-label">Для смет</p>
+      <label class="field">
+        <span>Имя дизайнера</span>
+        <input type="text" data-profile="designerName" placeholder="Например, Наташа Иванова">
+      </label>
+
+      <p class="modal__section-label">Для договоров — исполнитель</p>
+      <label class="field">
+        <span>ФИО или название компании</span>
+        <input type="text" data-profile="contractorName" placeholder="ИП Иванова Наталья Сергеевна">
+      </label>
+      <label class="field">
+        <span>ИНН</span>
+        <input type="text" data-profile="contractorInn" placeholder="771234567890">
+      </label>
+      <label class="field">
+        <span>Реквизиты оплаты</span>
+        <input type="text" data-profile="bank" placeholder="Тинькофф, карта 1234 или р/счёт">
+      </label>
+      <div class="field-row">
+        <label class="field">
+          <span>Город (для договора)</span>
+          <input type="text" data-profile="city" placeholder="Москва">
+        </label>
+        <label class="field">
+          <span>Доп. работа, ₽/час</span>
+          <input type="number" data-profile="hourly" placeholder="2500" min="0" step="100">
+        </label>
+      </div>
+      <label class="field">
+        <span>Почтовый адрес <span class="field-optional">необязательно</span></span>
+        <input type="text" data-profile="contractorAddress" placeholder="г. Москва, ул. Большая, д. 1, кв. 1">
+      </label>
+      <label class="field">
+        <span>Контакты <span class="field-optional">необязательно</span></span>
+        <input type="text" data-profile="contractorContact" placeholder="телефон, email, telegram">
+      </label>
+
+      <label class="modal__consent">
+        <input type="checkbox" data-profile-consent>
+        <span>Я принимаю <a class="link-btn" href="personal-data-consent.html">Согласие на обработку персональных данных</a></span>
+      </label>
+
+      <div class="modal__actions">
+        <button class="button button--ghost" value="cancel">Отмена</button>
+        <button class="button button--dark" type="button" data-action="save-profile">Сохранить</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="modal" data-privacy-modal>
+    <form method="dialog" class="modal__panel modal__panel--privacy">
+      <button class="modal__close" value="cancel" aria-label="Закрыть">×</button>
+      <h2>Политика конфиденциальности</h2>
+      <div class="modal__privacy-body">
+        <p><strong>Последнее обновление:</strong> июнь 2026 г.</p>
+
+        <h3>1. Какие данные мы используем</h3>
+        <p>В разделе «Мои данные» приложение сохраняет сведения, которые вы вводите самостоятельно: имя, ИНН, реквизиты, адрес, контактные данные и подпись. Эти сведения нужны для автозаполнения смет, договоров и дополнительных соглашений.</p>
+
+        <h3>2. Где хранятся данные</h3>
+        <p>Данные документов сохраняются <strong>в localStorage вашего браузера</strong> — на вашем устройстве. DesiDoc не получает содержимое смет, договоров и реквизитов, пока вы сами не отправите данные через внешнюю форму обратной связи.</p>
+
+        <h3>3. Cookie, аналитика и опрос</h3>
+        <p>После принятия cookie сайт подключает Яндекс Метрику для обезличенной аналитики работы интерфейса. После первого скачивания PDF DesiDoc может предложить пройти опрос в Яндекс Форме — переход и заполнение формы добровольные.</p>
+
+        <h3>4. Удаление данных</h3>
+        <p>Вы можете удалить локально сохранённые данные, очистив localStorage и cookie в настройках браузера. Cookie также можно отключить в настройках браузера.</p>
+
+        <h3>5. Применимое законодательство</h3>
+        <p>Сервис разработан с учётом требований Федерального закона № 152-ФЗ «О персональных данных». Подробная редакция доступна в <a href="policy.html">Политике конфиденциальности</a> и <a href="personal-data-consent.html">Согласии на обработку персональных данных</a>.</p>
+
+        <h3>6. Контакты</h3>
+        <p>По вопросам конфиденциальности: <a href="mailto:minina.nataliya@inbox.ru">minina.nataliya@inbox.ru</a></p>
+      </div>
+      <div class="modal__actions">
+        <button class="button button--dark button--wide" value="cancel">Понятно</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="modal" data-soon-modal>
+    <form method="dialog" class="modal__panel modal__panel--small">
+      <button class="modal__close" value="cancel" aria-label="Закрыть">×</button>
+      <p class="eyebrow">Скоро появится</p>
+      <h2 data-soon-title>Сценарий</h2>
+      <p class="modal__lead" data-soon-description>Раздел находится в очереди MVP. Сейчас можно работать со сметой и договором.</p>
+      <button class="button button--dark button--wide" value="cancel">Понятно</button>
+    </form>
+  </dialog>
+
+  <dialog class="modal" data-brief-ai-modal>
+    <form method="dialog" class="modal__panel">
+      <button class="modal__close" value="cancel" aria-label="Закрыть">×</button>
+      <p class="eyebrow">AI-смета</p>
+      <h2>Собрать из брифа</h2>
+
+      <label class="field brief-ai-field">
+        <textarea data-brief-ai-input rows="8" placeholder="Вставьте сюда сообщение клиента, бриф, переписку или заметки после созвона."></textarea>
+      </label>
+
+      <p class="client-reply-status" data-brief-ai-status>AI-оценка примерная: часы и стоимость нужно проверить под свою скорость и договорённости с клиентом.</p>
+
+      <div class="modal__actions">
+        <button class="button button--ghost" value="cancel">Отмена</button>
+        <button class="brief-ai-button" type="button" data-action="analyze-brief">✨ Рассчитать</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="modal" data-feedback-modal>
+    <form method="dialog" class="modal__panel modal__panel--small">
+      <button class="modal__close" value="cancel" aria-label="Закрыть">×</button>
+      <h2>Спасибо, что попробовали DesiDoc 💛</h2>
+      <p class="modal__lead">Буду очень благодарна за честный отзыв.</p>
+      <p class="modal__lead">Это поможет решить, какие функции делать следующими.</p>
+      <div class="modal__actions">
+        <button class="button button--ghost" type="button" data-action="snooze-feedback-survey">Не сейчас</button>
+        <button class="button button--dark" type="button" data-action="start-feedback-survey">Пройти опрос</button>
+      </div>
+    </form>
+  </dialog>
+
+  <section class="print-sheet" data-print-sheet aria-hidden="true"></section>
+
+  <div class="cookie-banner" data-cookie-banner hidden role="region" aria-label="Уведомление о cookies">
+    <p>Мы используем cookie файлы и аналитику для работы сайта. Вы можете отключить cookie в настройках браузера. <a href="policy.html">Подробнее в Политике конфиденциальности.</a></p>
+    <button class="button button--dark cookie-banner__button" type="button" data-action="accept-cookies">Принять</button>
+  </div>
+
+  <script src="assets/vendor/html2canvas.min.js"></script>
+  <script src="assets/vendor/jspdf.umd.min.js"></script>
+  <script src="assets/vendor/html-to-image.js"></script>
+  <script src="js/designkit.js?v=unit-pricing-32"></script>
+</body>
+</html>
