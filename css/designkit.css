@@ -5581,6 +5581,18 @@ body.mobile-contract-sheet-open {
   font-size: 17px;
 }
 
+.view--calculator .rate-input[data-input="designerRate"] {
+  appearance: auto;
+  -webkit-appearance: auto;
+}
+
+.view--calculator .rate-input[data-input="designerRate"]::-webkit-inner-spin-button,
+.view--calculator .rate-input[data-input="designerRate"]::-webkit-outer-spin-button {
+  margin-left: 4px;
+  opacity: 1;
+  -webkit-appearance: auto;
+}
+
 .view--calculator .field {
   gap: var(--field-gap);
 }
