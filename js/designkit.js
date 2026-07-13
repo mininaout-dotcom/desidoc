@@ -986,7 +986,8 @@ async function analyzeBrief(text) {
     const response = await fetch(AI_BRIEF_ENDPOINT, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ brief: source }),
+      // Грейд нужен функции, чтобы масштабировать часы генерации как в шаблонах.
+      body: JSON.stringify({ brief: source, level: getHoursLevel() }),
     });
     const data = await response.json().catch(() => null);
     if (!response.ok) throw new Error(data?.error || "Cloud Function вернула ошибку.");

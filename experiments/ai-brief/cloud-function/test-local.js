@@ -41,11 +41,11 @@ global.fetch = async (url, opts) => {
 
 const { handler } = require("./index.js");
 
-function makeEvent(brief) {
+function makeEvent(brief, level) {
   return {
     httpMethod: "POST",
     headers: { origin: "https://desidoc.ru" },
-    body: JSON.stringify({ brief }),
+    body: JSON.stringify(level ? { brief, level } : { brief }),
   };
 }
 const context = { token: { access_token: "test-token" } };
@@ -82,6 +82,14 @@ function assert(cond, label) {
   assert(names.includes("Подготовка файлов к печати"), "B: подготовка к печати с новым названием");
   const posters = byName("Дизайн 4 постеров");
   assert(posters && posters.unit === "item" && posters.quantity === 4, "B: поштучный этап сохранён (4 шт)");
+
+  // Сценарий B2: тот же пакет для senior → часы −25%, минимум 1 час сохранён.
+  scenario = "package"; calls.length = 0;
+  res = await handler(makeEvent("Оформление витрины магазина и 4 постера A1 для печати. Логотип и QR-код уже есть.", "senior"), context);
+  data = JSON.parse(res.body);
+  const seniorByName = (n) => data.stages.find((s) => s.name === n);
+  assert(seniorByName("Согласование и правки")?.hours === 8, "B2: senior — правки 10 -> 8 (−25%)");
+  assert(seniorByName("Размещение логотипа и QR-кода")?.hours === 1, "B2: senior — минимум 1 час сохранён");
 
   // Сценарий C: классификатор упал → генерация всё равно отвечает.
   scenario = "classifier-fails"; calls.length = 0;

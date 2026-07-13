@@ -174,7 +174,12 @@ module.exports.handler = async (event, context) => {
   if (event.isBase64Encoded) raw = Buffer.from(raw, "base64").toString("utf-8");
 
   let brief = "";
-  try { brief = String(JSON.parse(raw).brief || "").trim(); } catch (e) {}
+  let level = "middle";
+  try {
+    const parsed = JSON.parse(raw);
+    brief = String(parsed.brief || "").trim();
+    if (["junior", "middle", "senior"].includes(parsed.level)) level = parsed.level;
+  } catch (e) {}
 
   if (!brief || brief.length > 4000) {
     return json(400, { error: "Некорректный бриф" }, headers);
@@ -217,7 +222,7 @@ module.exports.handler = async (event, context) => {
   const match = text.match(/\{[\s\S]*\}/);
   let payload;
   try {
-    payload = normalizeAnalysis(JSON.parse(match ? match[0] : "{}"), brief);
+    payload = normalizeAnalysis(JSON.parse(match ? match[0] : "{}"), brief, level);
   } catch (error) {
     return json(502, { error: "AI вернул некорректный формат" }, headers);
   }
@@ -312,7 +317,7 @@ const AI_TOOL_COSTS = {
   },
 };
 
-function normalizeAnalysis(value, sourceText = "") {
+function normalizeAnalysis(value, sourceText = "", level = "middle") {
   if (!value || typeof value !== "object" || !Array.isArray(value.stages) || !value.stages.length) {
     throw new Error("Empty analysis");
   }
@@ -336,7 +341,10 @@ function normalizeAnalysis(value, sourceText = "") {
   });
   if (!stages.length) throw new Error("Empty analysis");
   const adjustedStages = applyPrintMinimumHours(
-    orderStages(dedupeStages(clampStageHours(postProcessStages(stages, projectType, sourceText))), projectType),
+    scaleHoursForLevel(
+      orderStages(dedupeStages(clampStageHours(postProcessStages(stages, projectType, sourceText))), projectType),
+      level
+    ),
     projectType,
     sourceText
   );
@@ -899,6 +907,19 @@ const STAGE_HOUR_LIMITS = {
   "финальное согласование и правки": [4, 10],
   "размещение логотипа и qr-кода": [1, 1],
 };
+
+// Меню и рамки часов рассчитаны на middle. Для других грейдов масштабируем
+// так же, как в готовых шаблонах DesiDoc: junior +25%, senior −25%.
+const LEVEL_HOUR_FACTORS = { junior: 1.25, middle: 1, senior: 0.75 };
+
+function scaleHoursForLevel(stages, level) {
+  const factor = LEVEL_HOUR_FACTORS[level] || 1;
+  if (factor === 1) return stages;
+  return stages.map((stage) => ({
+    ...stage,
+    hours: Math.max(1, Math.round(stage.hours * factor)),
+  }));
+}
 
 function clampStageHours(stages) {
   return stages.map((stage) => {
