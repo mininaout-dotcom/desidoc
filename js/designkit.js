@@ -1599,8 +1599,22 @@ function updateTotalsOnly() {
   });
 }
 
+let lastExpenseRenderCount = 0;
+
 function renderExpenses() {
   const list = document.querySelector("[data-expense-list]");
+  const box = document.querySelector("[data-expense-box]");
+  const title = document.querySelector("[data-expense-box-title]");
+  // Заголовок показывает количество и сумму даже при свёрнутом блоке.
+  if (title) {
+    title.textContent = state.expenses.length
+      ? `Дополнительные расходы · ${state.expenses.length} · ${money(getExpensesTotal())}`
+      : "+ Добавить дополнительные расходы";
+  }
+  // Раскрываем только когда расходов стало больше (добавили вручную или AI),
+  // чтобы не переоткрывать блок, который пользователь свернул сам.
+  if (box && state.expenses.length > lastExpenseRenderCount) box.open = true;
+  lastExpenseRenderCount = state.expenses.length;
   if (!state.expenses.length) {
     list.innerHTML = "";
     return;
