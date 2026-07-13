@@ -42,6 +42,7 @@ const SYSTEM_PROMPT = [
   "- для простых задач не расписывай много этапов: пост SMM, визитка, простая бирка, баннер или один креатив обычно 3-5 этапов;",
   "- если в брифе несколько сущностей, считай это как пакет работ: общая база один раз, затем отдельные носители/форматы;",
   "- не теряй deliverables из брифа: логотип, брендинг, бирки, упаковка, посты, сторис, презентация, лендинг, сайт, печатные материалы, наружная реклама;",
+  "- если логотип, брендбук, фирменные цвета, тексты, QR-код или фото уже есть у клиента, обычно учитывай их внутри дизайна макетов и подготовки файлов; если всё же выносишь размещение логотипа/QR в отдельный этап, ставь максимум 1 час на весь комплект макетов;",
   "- если для нужного проекта или носителя нет точного шаблона, собери понятную структуру из базовых блоков: брифинг, референсы/концепция, дизайн конкретного носителя, подготовка файлов, правки;",
   "- не используй технические термины в названиях этапов, если клиенту можно сказать проще;",
   "- названия этапов должны быть профессиональными, короткими и понятными клиенту;",
@@ -54,11 +55,13 @@ const SYSTEM_PROMPT = [
   "- для средних и сложных проектов после брифинга добавляй «Исследование и стратегия» или «Исследование и анализ»;",
   "- для простых задач вроде визитки, простого баннера, одной бирки или одного поста НЕ добавляй отдельное исследование и стратегию: после брифинга переходи к «Мудборд и референсы» или дизайну макета;",
   "- в каждой смете должен быть этап подготовки файлов: «Подготовка и передача файлов», «Подготовка к передаче» или для печати «Препресс и подготовка файлов к передаче»;",
-  "- в каждой смете должен быть этап «Согласование и правки» или «Финальное согласование и правки».",
+  "- в каждой смете должен быть этап «Согласование и правки»;",
+  "- отдельный этап «Финальная проверка» допустим только для сайтов, лендингов и Tilda, где есть сборка, формы, адаптив, ссылки или код; для печати, брендинга, SMM, постеров и презентаций проверку включай в подготовку файлов, а корректировки — в «Согласование и правки».",
   "",
   "Запрещенные слова и формулировки:",
   "- не используй «правочки», «картинки», «допилки», «свёрстка»;",
   "- правильный термин: «Вёрстка»;",
+  "- не используй названия «Финальная проверка и корректировка», «Добавление логотипа», «Генерация кода»;",
   "- не выделяй «сетку» отдельным этапом и не пиши это слово в названиях этапов;",
   "- не используй PDF/X в названиях этапов; если нужно, пиши в описании проще: «печатный PDF по требованиям типографии».",
   "",
@@ -69,7 +72,7 @@ const SYSTEM_PROMPT = [
   "- для многостраничных брошюр, каталогов и журналов не занижай часы: вёрстка, препресс и согласования обычно занимают десятки часов.",
   "",
   "Для нейро-проектов и задач с AI-графикой:",
-  "- распознавай нейро-задачи по словам: нейросети, AI, ИИ, Midjourney, Stable Diffusion, Runway, Kling, Luma, нейрофото, нейровидео, генерации, промпты, аватар, обложки через AI, AI-креативы;",
+  "- распознавай нейро-задачи по словам: нейросети, AI, ИИ, генеративный ИИ, Midjourney, Stable Diffusion, Flux, Runway, Kling, Luma, нейрофото, нейровидео, генерации, промпты, аватар, обложки через AI, AI-креативы;",
   "- нейросети — это инструмент, а не бесплатная магия: обязательно учитывай идею/сценарий, промптинг, отбор генераций, ручную доводку, ретушь/монтаж и правки;",
   "- если клиент просит нейровидео, добавляй отдельный этап для идеи/сценария или адаптации сценария, даже если сценарий уже принёс клиент;",
   "- если считаешь креативы, кадры, обложки, посты или ролики поштучно, можешь вернуть stage.unit = \"item\" и stage.quantity = количество штук; hours всё равно укажи как общий ориентир трудозатрат;",
@@ -110,6 +113,7 @@ const SYSTEM_PROMPT = [
   "- логотип + брендинг + бирки + 3 поста: Брифинг и сбор данных; Исследование и стратегия; Мудборд и референсы; Логотип и знаковая графика; Цвет и типографика; Ключевые носители; Подготовка и передача файлов; Согласование и правки.",
   "- упаковка + карточки маркетплейса + баннеры: Брифинг и сбор данных; Исследование и стратегия; Визуальная концепция; Дизайн упаковки; Карточки товара и инфографика; Баннеры и рекламные форматы; Препресс и подготовка файлов к передаче; Согласование и правки.",
   "- презентация + лендинг + SMM-анонсы: Брифинг и сбор требований; Исследование и анализ; Структура презентации; Дизайн-концепция; UI-дизайн; SMM-шаблоны; Подготовка к передаче; Финальное согласование и правки.",
+  "- витрина магазина, 4 постера A1, логотип/брендбук/тексты уже есть: Брифинг и сбор данных; Визуальная концепция оформления витрины; AI-визуалы и ручная доводка изображений; Дизайн 4 постеров; Препресс и подготовка файлов к передаче; Согласование и правки.",
   "- нейрофото/AI-креативы для соцсетей: Брифинг и сбор данных; Мудборд и референсы; Идея и промпты для генераций; Генерация и отбор вариантов; Ретушь и адаптация к форматам; Подготовка файлов; Согласование и правки.",
   "- нейровидео 10-30 секунд: Брифинг и сбор данных; Идея и адаптация сценария; Раскадровка или шот-лист; Генерация исходных кадров/видео; Монтаж и постобработка; Подготовка финальных файлов; Согласование и правки.",
   "",
@@ -249,18 +253,22 @@ function normalizeAnalysis(value, sourceText = "") {
     throw new Error("Empty analysis");
   }
   const projectType = PROJECT_TYPES.has(value.project_type) ? value.project_type : "custom";
-  const stages = value.stages.slice(0, 8).map((stage) => {
-    const hours = Math.round(Number(stage?.hours));
+  const stages = value.stages
+    .slice(0, 8)
+    .map((stage) => {
+    let hours = Math.round(Number(stage?.hours));
     if (!stage || !String(stage.name || "").trim() || !Number.isFinite(hours) || hours < 1 || hours > 1000) {
       throw new Error("Invalid stage");
     }
+    if (isProvidedAssetPlacementStage(stage, sourceText)) hours = 1;
     return {
-      name: normalizeStageName(stage.name),
+      name: normalizeStageName(stage.name, projectType, sourceText),
       description: normalizeStageDescription(stage.description),
       hours,
       ...normalizeStageBilling(stage),
     };
   });
+  if (!stages.length) throw new Error("Empty analysis");
   const adjustedStages = applyPrintMinimumHours(stages, projectType, sourceText);
   const costs = ensureAiToolCosts(
     filterIrrelevantAiCosts(normalizeAdditionalCosts(value.additional_costs), sourceText),
@@ -289,15 +297,38 @@ function normalizeStageBilling(stage) {
   };
 }
 
-function normalizeStageName(value) {
+function isProvidedAssetPlacementStage(stage, sourceText) {
+  const title = normalizeAiText(stage?.name);
+  const description = normalizeAiText(stage?.description);
+  const source = normalizeAiText(sourceText);
+  const stageText = `${title} ${description}`;
+  const isAssetPlacement = /(интеграц|добавлен|размещен|вставк|нанесен|подстановк).*(логотип|лого|qr|куар|куэр)|(?:логотип|лого|qr|куар|куэр).*(интеграц|добавлен|размещен|вставк|нанесен|подстановк)/i.test(stageText);
+  const isPartOfLargerLayout = /(постер|плакат|витрин|баннер|макет|наружн|упаковк|презентац|лендинг|сайт|smm|соцсет)/i.test(source);
+  const assetsProvided = /(логотип|лого|qr|куар|куэр|брендбук|фирменн|текст|фото).{0,60}(есть|готов|предоставлен|имеет|уже)|(?:есть|готов|предоставлен|имеет|уже).{0,60}(логотип|лого|qr|куар|куэр|брендбук|фирменн|текст|фото)/i.test(source);
+  return isAssetPlacement && isPartOfLargerLayout && assetsProvided;
+}
+
+function normalizeStageName(value, projectType = "custom", sourceText = "") {
   const name = String(value || "").trim();
   const normalized = name.toLowerCase();
   if (["правочки", "правки", "корректировки"].includes(normalized) || /правоч/i.test(normalized)) return "Согласование и правки";
+  if (/финальн.*проверк|проверк.*коррект|проверка\s+макет|экспорт\s+и\s+провер/i.test(normalized) && !allowsSeparateFinalTesting(projectType, sourceText)) {
+    if (/(печат|печать|препресс|постер|плакат|витрин|буклет|брошюр|каталог)/i.test(normalizeAiText(sourceText))) return "Препресс и подготовка файлов к передаче";
+    return "Согласование и правки";
+  }
+  if (/интеграц.*логотип|добавлен.*логотип|логотип.*qr|qr.*логотип|добавлен.*qr/i.test(normalized)) return "Размещение логотипа и QR-кода";
+  if (/генерац.*код|код/i.test(normalized) && !/qr/i.test(normalized)) return "Дизайн макетов";
   if (/pdf\/?x/i.test(normalized) || /финальн.*файл/i.test(normalized) || /допечат/i.test(normalized) || /препресс/i.test(normalized)) return "Препресс и подготовка файлов к передаче";
   if (/сетк/i.test(normalized)) return "Визуальная концепция и структура макетов";
   if (/^св[её]рстк/i.test(normalized)) return capitalizeStageName(name.replace(/^св[её]рстк/i, "вёрстк"));
   if (/^верстка$/i.test(name) || /^вёрстка$/i.test(name)) return "Вёрстка брошюры";
   return capitalizeStageName(name).slice(0, 120);
+}
+
+function allowsSeparateFinalTesting(projectType, sourceText) {
+  const source = normalizeAiText(sourceText);
+  return projectType === "website"
+    || /(tilda|тильд|сайт|лендинг|форм[аы]|адаптив|публикац|домен|хостинг|html|css|javascript|react|frontend|backend|фронтенд|бэкенд|верстк[а-я]*\s+сайт|код\s+сайт|кодинг)/i.test(source);
 }
 
 function normalizeStageDescription(value) {
@@ -368,7 +399,7 @@ function normalizeAiText(value) {
 
 function hasAiMediaIntent(sourceText) {
   const text = normalizeAiText(sourceText);
-  return /(нейросет|нейро|midjourney|stable\s*diffusion|runway|kling|luma|pika|hailuo|heygen|magnific|krea|recraft|leonardo|ideogram|elevenlabs|minimax|suno|генерац|промпт|\bai\b|\bии\b)/i.test(text);
+  return /(нейросет|нейро|midjourney|stable\s*diffusion|flux|runway|kling|luma|pika|hailuo|heygen|magnific|krea|recraft|leonardo|ideogram|elevenlabs|minimax|suno|генерац|генератив|искусственн.*интеллект|промпт|\bai\b|(^|[^a-zа-я])ии([^a-zа-я]|$))/i.test(text);
 }
 
 function getMaxMentionedQuantity(text, unitPattern) {
@@ -389,7 +420,7 @@ function estimateAiToolCosts(sourceText) {
   const costs = [];
   const hasVideo = /(нейровидео|runway|kling|luma|pika|hailuo|heygen|видео|ролик|анимац|аватар)/i.test(text);
   const hasAudio = /(elevenlabs|minimax|suno|озвуч|голос|voice|диктор|музык|саундтрек|дубляж)/i.test(text);
-  const hasImage = /(нейрофото|midjourney|stable\s*diffusion|magnific|krea|recraft|leonardo|ideogram|изображ|иллюстрац|фото|картин|облож|баннер|пост|креатив|ретуш|апскейл|upscale)/i.test(text);
+  const hasImage = /(нейрофото|midjourney|stable\s*diffusion|flux|magnific|krea|recraft|leonardo|ideogram|изображ|иллюстрац|фото|картин|облож|баннер|пост|постер|плакат|креатив|ретуш|апскейл|upscale|генератив|искусственн.*интеллект)/i.test(text);
 
   if (hasVideo) {
     const seconds = getMaxMentionedQuantity(text, "сек(?:унд[а-я]*)?|s\\b");

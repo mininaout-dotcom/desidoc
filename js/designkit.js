@@ -97,6 +97,7 @@ const DEFAULT_PROJECT_KEY = "landing_design";
 const AI_BRIEF_ENDPOINT = String(window.DESIDOC_AI_BRIEF_ENDPOINT || "").trim();
 const BRIEF_AI_ENTRY_ENABLED = true;
 const AI_BRIEF_MAX_LENGTH = 4000;
+const AI_BRIEF_DEFAULT_STATUS = "Текст обработает AI для предварительной оценки. Не вводите персональные данные третьих лиц. Часы и стоимость проверьте под свою скорость и договорённости с клиентом.";
 const PROFILE_CONSENT_VERSION = "2026-06-16";
 const RU_CONTRACT_MONTHS = [
   "января",
@@ -858,7 +859,7 @@ function buildBriefPricingRisks(projectType, text, q) {
 function estimateLocalAiToolCosts(text) {
   const source = String(text || "");
   const normalized = source.toLowerCase().replace(/ё/g, "е");
-  const hasAiIntent = /(нейросет|нейро|midjourney|stable\s*diffusion|runway|kling|luma|pika|hailuo|heygen|magnific|krea|recraft|leonardo|ideogram|elevenlabs|minimax|suno|генерац|промпт|\bai\b|\bии\b)/i.test(normalized);
+  const hasAiIntent = /(нейросет|нейро|midjourney|stable\s*diffusion|flux|runway|kling|luma|pika|hailuo|heygen|magnific|krea|recraft|leonardo|ideogram|elevenlabs|minimax|suno|генерац|генератив|искусственн.*интеллект|промпт|\bai\b|(^|[^a-zа-я])ии([^a-zа-я]|$))/i.test(normalized);
   if (!hasAiIntent) return [];
 
   const getMaxQuantity = (unitPattern) => {
@@ -879,7 +880,7 @@ function estimateLocalAiToolCosts(text) {
 
   const hasVideo = /(нейровидео|runway|kling|luma|pika|hailuo|heygen|видео|ролик|анимац|аватар)/i.test(normalized);
   const hasAudio = /(elevenlabs|minimax|suno|озвуч|голос|voice|диктор|музык|саундтрек|дубляж)/i.test(normalized);
-  const hasImage = /(нейрофото|midjourney|stable\s*diffusion|magnific|krea|recraft|leonardo|ideogram|изображ|иллюстрац|фото|картин|облож|баннер|пост|креатив|ретуш|апскейл|upscale)/i.test(normalized);
+  const hasImage = /(нейрофото|midjourney|stable\s*diffusion|flux|magnific|krea|recraft|leonardo|ideogram|изображ|иллюстрац|фото|картин|облож|баннер|пост|постер|плакат|креатив|ретуш|апскейл|upscale|генератив|искусственн.*интеллект)/i.test(normalized);
 
   if (hasVideo) {
     const seconds = getMaxQuantity("сек(?:унд[а-я]*)?|s\\b");
@@ -1185,9 +1186,18 @@ function openBriefAiModal() {
   const input = document.querySelector("[data-brief-ai-input]");
   if (!modal || !input) return;
   input.value = state.briefAi.sourceText || "";
-  setBriefAiStatus("AI-оценка примерная: часы и стоимость нужно проверить под свою скорость и договорённости с клиентом.");
+  setBriefAiStatus(AI_BRIEF_DEFAULT_STATUS);
   modal.showModal();
   requestAnimationFrame(() => input.focus());
+}
+
+function resetBriefAiInput() {
+  const input = document.querySelector("[data-brief-ai-input]");
+  if (!input) return;
+  input.value = "";
+  state.briefAi.sourceText = "";
+  setBriefAiStatus(AI_BRIEF_DEFAULT_STATUS);
+  input.focus();
 }
 
 function setBriefAiStatus(message, isError = false) {
@@ -1235,7 +1245,7 @@ function applyBriefAnalysis(analysis, sourceText) {
   state.generated = true;
   state.briefAi.sourceText = sourceText;
   state.briefAi.analysis = analysis;
-  state.estimateMeta.estimateName = normalizeEstimateName(analysis.estimate_title || "", state.projectKey);
+  state.estimateMeta.estimateName = normalizeEstimateName(getAiEstimateName(analysis), state.projectKey);
   persistEstimateMeta();
   renderProjectOptions();
   renderEstimate();
@@ -1245,6 +1255,15 @@ function applyBriefAnalysis(analysis, sourceText) {
     const result = document.querySelector("[data-estimate-result]");
     if (result) setTimeout(() => result.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
   }
+}
+
+function getAiEstimateName(analysis) {
+  const title = String(analysis?.estimate_title || "").trim();
+  const brandName = String(analysis?.brand_name || "").trim();
+  if (!brandName) return title;
+  if (!title) return brandName;
+  if (title.toLowerCase().includes(brandName.toLowerCase())) return title;
+  return `${title} — ${brandName}`;
 }
 
 function normalizeAiStageUnit(unit) {
@@ -5521,6 +5540,10 @@ function bindEvents() {
     }
     if (action === "open-brief-ai") {
       openBriefAiModal();
+      return;
+    }
+    if (action === "reset-brief-ai") {
+      resetBriefAiInput();
       return;
     }
     if (action === "analyze-brief") {

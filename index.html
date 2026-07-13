@@ -183,6 +183,7 @@
 	                      <span aria-hidden="true">✨</span>
 	                      Собрать из брифа
 	                    </button>
+	                    <p>AI соберёт черновик сметы по брифу. Проверьте часы, стоимость и допрасходы перед отправкой клиенту!</p>
 	                  </div>
 	                </section>
 
@@ -307,6 +308,7 @@
 	                    <span aria-hidden="true">✨</span>
 	                    Собрать из брифа
 	                  </button>
+	                  <p>AI соберёт черновик сметы по брифу. Проверьте часы, стоимость и допрасходы перед отправкой клиенту!</p>
 	                </div>
 	              </div>
 
@@ -846,9 +848,10 @@
         <textarea data-brief-ai-input rows="8" placeholder="Вставьте сюда сообщение клиента, бриф, переписку или заметки после созвона."></textarea>
       </label>
 
-      <p class="client-reply-status" data-brief-ai-status>Текст обработает YandexGPT для предварительной оценки. Не вводите персональные данные третьих лиц. Часы и стоимость проверьте под свою скорость и договорённости с клиентом.</p>
+      <p class="client-reply-status" data-brief-ai-status>Текст обработает AI для предварительной оценки. Не вводите персональные данные третьих лиц. Часы и стоимость проверьте под свою скорость и договорённости с клиентом.</p>
 
       <div class="modal__actions">
+        <button class="button button--ghost" type="button" data-action="reset-brief-ai">Сбросить</button>
         <button class="button button--ghost" value="cancel">Отмена</button>
         <button class="brief-ai-button" type="button" data-action="analyze-brief">✨ Рассчитать</button>
       </div>
