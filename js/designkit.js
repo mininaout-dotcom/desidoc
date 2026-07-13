@@ -855,30 +855,75 @@ function buildBriefPricingRisks(projectType, text, q) {
   return risks.slice(0, 6);
 }
 
-function buildBriefAdditionalCosts(projectType, text) {
+function estimateLocalAiToolCosts(text) {
   const source = String(text || "");
-  const costs = [];
-  const add = (label) => {
-    if (!costs.includes(label)) costs.push(label);
+  const normalized = source.toLowerCase().replace(/ё/g, "е");
+  const hasAiIntent = /(нейросет|нейро|midjourney|stable\s*diffusion|runway|kling|luma|pika|hailuo|heygen|magnific|krea|recraft|leonardo|ideogram|elevenlabs|minimax|suno|генерац|промпт|\bai\b|\bии\b)/i.test(normalized);
+  if (!hasAiIntent) return [];
+
+  const getMaxQuantity = (unitPattern) => {
+    const re = new RegExp(`(\\d{1,3})\\s*(?:(?:ai|ии|нейро|нейросетев[а-я]*)[-\\s]*)?(?:${unitPattern})`, "gi");
+    let match;
+    let max = 0;
+    while ((match = re.exec(normalized))) {
+      const value = Number(match[1]);
+      if (Number.isFinite(value) && value > max && value <= 300) max = value;
+    }
+    return max;
   };
 
-  if (/ai|нейросет|midjourney|gpt|генерац/i.test(source)) {
-    add("Добавьте стоимость токенов нейросетей, если используете AI-инструменты в работе.");
-  } else {
-    add("Добавьте стоимость токенов нейросетей, если используете AI-инструменты в работе.");
+  const costs = [];
+  const add = (title, amount) => {
+    if (!costs.some((cost) => cost.title === title)) costs.push({ title, amount });
+  };
+
+  const hasVideo = /(нейровидео|runway|kling|luma|pika|hailuo|heygen|видео|ролик|анимац|аватар)/i.test(normalized);
+  const hasAudio = /(elevenlabs|minimax|suno|озвуч|голос|voice|диктор|музык|саундтрек|дубляж)/i.test(normalized);
+  const hasImage = /(нейрофото|midjourney|stable\s*diffusion|magnific|krea|recraft|leonardo|ideogram|изображ|иллюстрац|фото|картин|облож|баннер|пост|креатив|ретуш|апскейл|upscale)/i.test(normalized);
+
+  if (hasVideo) {
+    const seconds = getMaxQuantity("сек(?:унд[а-я]*)?|s\\b");
+    const clips = getMaxQuantity("ролик[а-я]*|видео|шорт[а-я]*|short[а-я]*");
+    add("Кредиты Kling / Runway / Luma для нейровидео", seconds >= 25 || clips >= 2 ? 30000 : 15000);
   }
 
+  if (hasImage || (!hasVideo && !hasAudio)) {
+    const items = Math.max(
+      getMaxQuantity("пост[а-я]*|креатив[а-я]*|облож[а-я]*|баннер[а-я]*|изображен[а-я]*|иллюстрац[а-я]*|фото|картин[а-я]*|кадр[а-я]*"),
+      /(серия|пакет|подборк|линейк|кампания)/i.test(normalized) ? 4 : 0
+    );
+    let amount = items >= 10 ? 12000 : items >= 4 ? 8000 : 3000;
+    let title = "Подписка/кредиты Midjourney / Krea / Magnific";
+    if (/(magnific|апскейл|upscale|ретуш|улучшени[ея]\s+качеств)/i.test(normalized)) {
+      amount = Math.max(amount, 6000);
+      title = "Подписка/кредиты Midjourney / Magnific для генерации и апскейла";
+    }
+    add(title, amount);
+  }
+
+  if (hasAudio) add("Кредиты ElevenLabs / Minimax для озвучки", 3000);
+
+  return costs.slice(0, 3);
+}
+
+function buildBriefAdditionalCosts(projectType, text) {
+  const source = String(text || "");
+  const costs = [...estimateLocalAiToolCosts(source)];
+  const add = (title) => {
+    if (!costs.some((cost) => cost.title === title)) costs.push({ title, amount: 0 });
+  };
+
   if (["website", "presentation", "smm", "brand_identity", "marketplaces"].includes(projectType)) {
-    add("Добавьте стоимость фотостоков, если планируется использование стоковых изображений.");
+    add("Фотостоки или покупка исходных изображений");
   }
   if (["logo", "brand_identity", "website", "presentation", "packaging", "print"].includes(projectType)) {
-    add("Добавьте стоимость лицензий на шрифты, если используются платные шрифты.");
+    add("Лицензии на платные шрифты");
   }
   if (["packaging", "print", "outdoor"].includes(projectType)) {
-    add("Добавьте расходы на печать или тестовые образцы, если это предусмотрено проектом.");
+    add("Печать тестовых образцов или цветопроба");
   }
   if (["website", "smm", "marketplaces", "presentation", "custom"].includes(projectType)) {
-    add("Добавьте стоимость подрядчиков, если часть работ передаётся на аутсорс.");
+    add("Подрядчики, если часть работ передаётся на аутсорс");
   }
 
   return costs.slice(0, 4);
@@ -1185,15 +1230,8 @@ async function runBriefAnalysis() {
 function applyBriefAnalysis(analysis, sourceText) {
   state.projectKey = "custom";
   state.rate = getActiveRate();
-  state.stages = (analysis.stages || []).map((stage) => ({
-    title: stage.name || stage.title || "Этап работ",
-    description: stage.description || "",
-    note: "",
-    hours: Math.max(Number(stage.hours || 0), 1),
-    defaults: null,
-    manuallyEditedHours: true,
-  }));
-  state.expenses = [];
+  state.stages = (analysis.stages || []).map(mapAiStageToState);
+  state.expenses = mapAiAdditionalCosts(analysis.additional_costs);
   state.generated = true;
   state.briefAi.sourceText = sourceText;
   state.briefAi.analysis = analysis;
@@ -1207,6 +1245,52 @@ function applyBriefAnalysis(analysis, sourceText) {
     const result = document.querySelector("[data-estimate-result]");
     if (result) setTimeout(() => result.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
   }
+}
+
+function normalizeAiStageUnit(unit) {
+  const normalized = String(unit || "hour").trim();
+  return UNIT_TYPES[normalized] ? normalized : "hour";
+}
+
+function toPositiveInteger(value, fallback = 1) {
+  const number = Math.round(Number(value));
+  return Number.isFinite(number) && number > 0 ? number : fallback;
+}
+
+function mapAiStageToState(stage) {
+  const hours = Math.max(toPositiveInteger(stage?.hours, 1), 1);
+  const unit = normalizeAiStageUnit(stage?.unit);
+  const isUnit = unit !== "hour";
+  const quantity = isUnit ? toPositiveInteger(stage?.quantity, 1) : 1;
+  const rawUnitPrice = Number(stage?.unit_price ?? stage?.unitPrice ?? 0);
+  const hasUnitPrice = Number.isFinite(rawUnitPrice) && rawUnitPrice > 0;
+
+  return {
+    title: stage?.name || stage?.title || "Этап работ",
+    description: stage?.description || "",
+    note: "",
+    hours,
+    defaults: null,
+    manuallyEditedHours: true,
+    billingMode: isUnit ? "unit" : "hourly",
+    unit,
+    quantity,
+    unitPrice: isUnit ? (hasUnitPrice ? rawUnitPrice : getSuggestedUnitPrice(hours, quantity)) : state.rate,
+    manuallyEditedUnitPrice: isUnit && hasUnitPrice,
+  };
+}
+
+function mapAiAdditionalCosts(costs) {
+  if (!Array.isArray(costs)) return [];
+  return costs.map((item) => {
+    if (typeof item === "string") {
+      return null;
+    }
+    const title = String(item?.title || item?.name || "").trim();
+    const amount = Math.max(Math.round(Number(item?.amount || 0)), 0);
+    if (!title || amount <= 0) return null;
+    return { title, amount };
+  }).filter(Boolean).slice(0, 8);
 }
 
 function renderInfoList(items) {

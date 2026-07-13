@@ -39,8 +39,10 @@ const SYSTEM_PROMPT = [
   "- отделяй анализ/концепцию, дизайн, производство макетов, подготовку файлов и согласования;",
   "- не объединяй слишком разные работы в один этап;",
   "- не добавляй этапы, которых нет в брифе или которые не нужны для результата;",
+  "- для простых задач не расписывай много этапов: пост SMM, визитка, простая бирка, баннер или один креатив обычно 3-5 этапов;",
   "- если в брифе несколько сущностей, считай это как пакет работ: общая база один раз, затем отдельные носители/форматы;",
   "- не теряй deliverables из брифа: логотип, брендинг, бирки, упаковка, посты, сторис, презентация, лендинг, сайт, печатные материалы, наружная реклама;",
+  "- если для нужного проекта или носителя нет точного шаблона, собери понятную структуру из базовых блоков: брифинг, референсы/концепция, дизайн конкретного носителя, подготовка файлов, правки;",
   "- не используй технические термины в названиях этапов, если клиенту можно сказать проще;",
   "- названия этапов должны быть профессиональными, короткими и понятными клиенту;",
   "- описания должны объяснять пользу этапа, а не повторять название;",
@@ -65,6 +67,15 @@ const SYSTEM_PROMPT = [
   "- финальный этап называй «Препресс и подготовка файлов к передаче»;",
   "- в описании финального этапа укажи проверку макетов, вылетов, цветового режима и экспорт печатного PDF плюс версии для онлайн-просмотра;",
   "- для многостраничных брошюр, каталогов и журналов не занижай часы: вёрстка, препресс и согласования обычно занимают десятки часов.",
+  "",
+  "Для нейро-проектов и задач с AI-графикой:",
+  "- распознавай нейро-задачи по словам: нейросети, AI, ИИ, Midjourney, Stable Diffusion, Runway, Kling, Luma, нейрофото, нейровидео, генерации, промпты, аватар, обложки через AI, AI-креативы;",
+  "- нейросети — это инструмент, а не бесплатная магия: обязательно учитывай идею/сценарий, промптинг, отбор генераций, ручную доводку, ретушь/монтаж и правки;",
+  "- если клиент просит нейровидео, добавляй отдельный этап для идеи/сценария или адаптации сценария, даже если сценарий уже принёс клиент;",
+  "- если считаешь креативы, кадры, обложки, посты или ролики поштучно, можешь вернуть stage.unit = \"item\" и stage.quantity = количество штук; hours всё равно укажи как общий ориентир трудозатрат;",
+  "- расходы на подписки, кредиты, токены и платные генерации НЕ включай в часы дизайнера; добавляй их в additional_costs отдельной строкой с подходящими сервисами: Midjourney / Krea / Magnific для изображений, Kling / Runway / Luma для видео, ElevenLabs / Minimax для озвучки;",
+  "- если стоимость токенов неизвестна, оцени её осторожно: статичная AI-графика 1500-5000 ₽ для небольшой задачи, серия креативов 5000-15000 ₽, нейровидео обычно требует большего запаса от 15000 ₽ и выше;",
+  "- если масштаб генераций неясен, добавь pricing_risks: «Не зафиксировано количество генераций и раундов отбора».",
   "",
   "Эталонные формулировки из согласованных шаблонов DesiDoc. По возможности используй эти названия и тон описаний, адаптируя под бриф:",
   "- Брифинг и сбор данных: Интервью с заказчиком, сбор вводной информации, формулировка задач, ограничений и критериев успеха.",
@@ -99,18 +110,20 @@ const SYSTEM_PROMPT = [
   "- логотип + брендинг + бирки + 3 поста: Брифинг и сбор данных; Исследование и стратегия; Мудборд и референсы; Логотип и знаковая графика; Цвет и типографика; Ключевые носители; Подготовка и передача файлов; Согласование и правки.",
   "- упаковка + карточки маркетплейса + баннеры: Брифинг и сбор данных; Исследование и стратегия; Визуальная концепция; Дизайн упаковки; Карточки товара и инфографика; Баннеры и рекламные форматы; Препресс и подготовка файлов к передаче; Согласование и правки.",
   "- презентация + лендинг + SMM-анонсы: Брифинг и сбор требований; Исследование и анализ; Структура презентации; Дизайн-концепция; UI-дизайн; SMM-шаблоны; Подготовка к передаче; Финальное согласование и правки.",
+  "- нейрофото/AI-креативы для соцсетей: Брифинг и сбор данных; Мудборд и референсы; Идея и промпты для генераций; Генерация и отбор вариантов; Ретушь и адаптация к форматам; Подготовка файлов; Согласование и правки.",
+  "- нейровидео 10-30 секунд: Брифинг и сбор данных; Идея и адаптация сценария; Раскадровка или шот-лист; Генерация исходных кадров/видео; Монтаж и постобработка; Подготовка финальных файлов; Согласование и правки.",
   "",
   "Верни ТОЛЬКО валидный JSON без пояснений, по схеме:",
   '{',
   '  "estimate_title": "короткое название сметы",',
   '  "project_type": "website|logo|brand_identity|packaging|presentation|smm|marketplaces|outdoor|print|custom",',
   '  "brand_name": "имя бренда или пустая строка",',
-  '  "stages": [{ "name": "этап", "description": "что входит в этап", "hours": число }],',
+  '  "stages": [{ "name": "этап", "description": "что входит в этап", "hours": число, "unit": "hour|item|slide|screen|page", "quantity": число }],',
   '  "pricing_risks": ["возможный риск по цене"],',
-  '  "additional_costs": ["возможный доп. расход"]',
+  '  "additional_costs": [{ "title": "возможный доп. расход", "amount": число }]',
   '}',
-  "Сделай 5–8 этапов. Деньги и итоговую сумму НЕ считай — только часы.",
-  "В additional_costs указывай только реальные внешние расходы или оплачиваемые сверх объема работы: фотостоки, шрифты, цветопроба, печать тестового экземпляра, срочная ретушь сверх брифа.",
+  "Для простых задач сделай 3-5 этапов, для средних и сложных 5-8 этапов. Деньги и итоговую сумму работ НЕ считай — только часы и возможные дополнительные расходы.",
+  "В additional_costs указывай только реальные внешние расходы или оплачиваемые сверх объема работы: фотостоки, шрифты, цветопроба, печать тестового экземпляра, нейросетевые токены/кредиты, платные генерации, срочная ретушь сверх брифа.",
 ].join("\n");
 
 // Убираем персональные данные из текста ДО отправки в модель (второй рубеж защиты).
@@ -194,6 +207,42 @@ const PROJECT_TYPES = new Set([
   "website", "logo", "brand_identity", "packaging", "presentation",
   "smm", "marketplaces", "outdoor", "print", "custom",
 ]);
+const STAGE_UNITS = new Set(["hour", "item", "slide", "screen", "page"]);
+
+// Внутренний ориентир по внешним AI-расходам.
+// Основан на опубликованном прайсе подписок/кредитов нейросервисов:
+// Midjourney, Krea, Magnific, Kling, Runway, Luma, ElevenLabs, Minimax.
+// Это не цена работы дизайнера, а резерв на подписки, кредиты и платные генерации.
+const AI_TOOL_COSTS = {
+  imageSmall: {
+    title: "Подписка/кредиты Midjourney / Krea / Magnific",
+    amount: 3000,
+  },
+  imageSeries: {
+    title: "Подписка/кредиты Midjourney / Krea / Magnific",
+    amount: 8000,
+  },
+  imageLarge: {
+    title: "Подписка/кредиты Midjourney / Krea / Magnific",
+    amount: 12000,
+  },
+  imageUpscale: {
+    title: "Подписка/кредиты Midjourney / Magnific для генерации и апскейла",
+    amount: 6000,
+  },
+  videoShort: {
+    title: "Кредиты Kling / Runway / Luma для нейровидео",
+    amount: 15000,
+  },
+  videoMedium: {
+    title: "Кредиты Kling / Runway / Luma для нейровидео",
+    amount: 30000,
+  },
+  audio: {
+    title: "Кредиты ElevenLabs / Minimax для озвучки",
+    amount: 3000,
+  },
+};
 
 function normalizeAnalysis(value, sourceText = "") {
   if (!value || typeof value !== "object" || !Array.isArray(value.stages) || !value.stages.length) {
@@ -209,16 +258,34 @@ function normalizeAnalysis(value, sourceText = "") {
       name: normalizeStageName(stage.name),
       description: normalizeStageDescription(stage.description),
       hours,
+      ...normalizeStageBilling(stage),
     };
   });
   const adjustedStages = applyPrintMinimumHours(stages, projectType, sourceText);
+  const costs = ensureAiToolCosts(
+    filterIrrelevantAiCosts(normalizeAdditionalCosts(value.additional_costs), sourceText),
+    sourceText
+  );
   return {
     estimate_title: String(value.estimate_title || "Смета по брифу").trim().slice(0, 160),
     project_type: projectType,
     brand_name: String(value.brand_name || "").trim().slice(0, 120),
     stages: adjustedStages,
     pricing_risks: asStringList(value.pricing_risks),
-    additional_costs: asStringList(value.additional_costs),
+    additional_costs: costs,
+  };
+}
+
+function normalizeStageBilling(stage) {
+  const unit = STAGE_UNITS.has(stage?.unit) ? stage.unit : "hour";
+  if (unit === "hour") return {};
+  const quantity = Math.round(Number(stage?.quantity || 0));
+  if (!Number.isFinite(quantity) || quantity < 1 || quantity > 1000) return {};
+  const unitPrice = Math.round(Number(stage?.unit_price ?? stage?.unitPrice ?? 0));
+  return {
+    unit,
+    quantity,
+    ...(Number.isFinite(unitPrice) && unitPrice > 0 ? { unit_price: unitPrice } : {}),
   };
 }
 
@@ -280,6 +347,111 @@ function asStringList(value) {
   return Array.isArray(value)
     ? value.map((item) => String(item || "").trim().slice(0, 300)).filter(Boolean).slice(0, 8)
     : [];
+}
+
+function normalizeAdditionalCosts(value) {
+  if (!Array.isArray(value)) return [];
+  return value.map((item) => {
+    if (typeof item === "string") {
+      return { title: item.trim().slice(0, 120), amount: 0 };
+    }
+    const title = String(item?.title || item?.name || "").trim().slice(0, 120);
+    const amount = Math.max(Math.round(Number(item?.amount || 0)), 0);
+    if (!title) return null;
+    return { title, amount };
+  }).filter(Boolean).slice(0, 8);
+}
+
+function normalizeAiText(value) {
+  return String(value || "").toLowerCase().replace(/ё/g, "е");
+}
+
+function hasAiMediaIntent(sourceText) {
+  const text = normalizeAiText(sourceText);
+  return /(нейросет|нейро|midjourney|stable\s*diffusion|runway|kling|luma|pika|hailuo|heygen|magnific|krea|recraft|leonardo|ideogram|elevenlabs|minimax|suno|генерац|промпт|\bai\b|\bии\b)/i.test(text);
+}
+
+function getMaxMentionedQuantity(text, unitPattern) {
+  const re = new RegExp(`(\\d{1,3})\\s*(?:(?:ai|ии|нейро|нейросетев[а-я]*)[-\\s]*)?(?:${unitPattern})`, "gi");
+  let match;
+  let max = 0;
+  while ((match = re.exec(text))) {
+    const value = Number(match[1]);
+    if (Number.isFinite(value) && value > max && value <= 300) max = value;
+  }
+  return max;
+}
+
+function estimateAiToolCosts(sourceText) {
+  const text = normalizeAiText(sourceText);
+  if (!hasAiMediaIntent(text)) return [];
+
+  const costs = [];
+  const hasVideo = /(нейровидео|runway|kling|luma|pika|hailuo|heygen|видео|ролик|анимац|аватар)/i.test(text);
+  const hasAudio = /(elevenlabs|minimax|suno|озвуч|голос|voice|диктор|музык|саундтрек|дубляж)/i.test(text);
+  const hasImage = /(нейрофото|midjourney|stable\s*diffusion|magnific|krea|recraft|leonardo|ideogram|изображ|иллюстрац|фото|картин|облож|баннер|пост|креатив|ретуш|апскейл|upscale)/i.test(text);
+
+  if (hasVideo) {
+    const seconds = getMaxMentionedQuantity(text, "сек(?:унд[а-я]*)?|s\\b");
+    const clips = getMaxMentionedQuantity(text, "ролик[а-я]*|видео|шорт[а-я]*|short[а-я]*");
+    const mediumVideo = seconds >= 25 || clips >= 2 || /(серия|несколько|пакет|кампания)/i.test(text);
+    costs.push(mediumVideo ? AI_TOOL_COSTS.videoMedium : AI_TOOL_COSTS.videoShort);
+  }
+
+  if (hasImage || (!hasVideo && !hasAudio)) {
+    const items = Math.max(
+      getMaxMentionedQuantity(text, "пост[а-я]*|креатив[а-я]*|облож[а-я]*|баннер[а-я]*|изображен[а-я]*|иллюстрац[а-я]*|фото|картин[а-я]*|кадр[а-я]*"),
+      /(серия|пакет|подборк|линейк|кампания)/i.test(text) ? 4 : 0
+    );
+    let imageCost = items >= 10 ? AI_TOOL_COSTS.imageLarge : items >= 4 ? AI_TOOL_COSTS.imageSeries : AI_TOOL_COSTS.imageSmall;
+    if (/(magnific|апскейл|upscale|ретуш|улучшени[ея]\s+качеств)/i.test(text)) {
+      imageCost = Number(imageCost.amount) > AI_TOOL_COSTS.imageUpscale.amount ? imageCost : AI_TOOL_COSTS.imageUpscale;
+    }
+    costs.push(imageCost);
+  }
+
+  if (hasAudio) costs.push(AI_TOOL_COSTS.audio);
+
+  return costs
+    .filter((cost, index, list) => list.findIndex((item) => item.title === cost.title) === index)
+    .slice(0, 3)
+    .map((cost) => ({ ...cost }));
+}
+
+function getAiCostCategory(title) {
+  const text = normalizeAiText(title);
+  if (/(runway|kling|luma|pika|hailuo|heygen|нейровидео|видео|ролик)/i.test(text)) return "video";
+  if (/(elevenlabs|minimax|suno|озвуч|голос|музык|дубляж)/i.test(text)) return "audio";
+  if (/(midjourney|krea|magnific|recraft|leonardo|ideogram|stable|нейрофото|изображ|иллюстрац|апскейл|ретуш)/i.test(text)) return "image";
+  if (/(нейросет|генерац|токен|кредит)/i.test(text)) return "general";
+  return "";
+}
+
+function filterIrrelevantAiCosts(costs, sourceText) {
+  if (hasAiMediaIntent(sourceText)) return costs;
+  return costs.filter((cost) => !getAiCostCategory(cost.title));
+}
+
+function ensureAiToolCosts(costs, sourceText) {
+  const suggestions = estimateAiToolCosts(sourceText);
+  if (!suggestions.length) return costs;
+
+  const result = costs.map((cost) => ({ ...cost }));
+  suggestions.forEach((suggestion) => {
+    const category = getAiCostCategory(suggestion.title);
+    const existing = result.find((cost) => getAiCostCategory(cost.title) === category)
+      || (suggestions.length === 1 ? result.find((cost) => getAiCostCategory(cost.title) === "general") : null);
+
+    if (existing) {
+      if (!Number(existing.amount)) existing.amount = suggestion.amount;
+      if (getAiCostCategory(existing.title) === "general") existing.title = suggestion.title;
+      return;
+    }
+
+    result.push({ ...suggestion });
+  });
+
+  return result.slice(0, 8);
 }
 
 function json(statusCode, obj, headers = {}) {
