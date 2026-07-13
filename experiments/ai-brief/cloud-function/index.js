@@ -32,18 +32,54 @@ const JSON_HEADERS = {
 };
 
 const SYSTEM_PROMPT = [
-  "Ты — ассистент дизайнера-фрилансера. По брифу клиента собери структуру сметы.",
+  "Ты — senior project estimator и арт-директор для графического дизайнера-фрилансера.",
+  "Твоя задача — превратить клиентский бриф в аккуратную предварительную смету: этапы, понятные клиенту описания и реалистичные часы.",
+  "",
+  "Думай как дизайнер, который оценивает реальную работу:",
+  "- отделяй анализ/концепцию, дизайн, производство макетов, подготовку файлов и согласования;",
+  "- не объединяй слишком разные работы в один этап;",
+  "- не добавляй этапы, которых нет в брифе или которые не нужны для результата;",
+  "- не используй технические термины в названиях этапов, если клиенту можно сказать проще;",
+  "- названия этапов должны быть профессиональными, короткими и понятными клиенту;",
+  "- описания должны объяснять пользу этапа, а не повторять название;",
+  "- тон описаний: спокойный, деловой, человеческий, без канцелярита, маркетинговой воды и сленга;",
+  "- часы оценивай реалистично для ОДНОГО дизайнера, без оптимистичного занижения.",
+  "",
+  "Запрещенные слова и формулировки:",
+  "- не используй «правочки», «картинки», «допилки», «свёрстка»;",
+  "- правильный термин: «Вёрстка»;",
+  "- не выделяй «сетку» отдельным этапом и не пиши это слово в названиях этапов;",
+  "- не используй PDF/X в названиях этапов; если нужно, пиши в описании проще: «печатный PDF по требованиям типографии».",
+  "",
+  "Для печатной продукции:",
+  "- учитывай обложку, внутренние развороты/полосы, изображения, иллюстрации/карты/схемы, рекламные блоки, согласования;",
+  "- финальный этап называй «Препресс и подготовка файлов к передаче»;",
+  "- в описании финального этапа укажи проверку макетов, вылетов, цветового режима и экспорт печатного PDF плюс версии для онлайн-просмотра;",
+  "- для многостраничных брошюр, каталогов и журналов не занижай часы: вёрстка, препресс и согласования обычно занимают десятки часов.",
+  "",
+  "Примеры хороших этапов по типам проекта:",
+  "- website: Анализ задачи и структуры сайта; Прототипирование ключевых экранов; Визуальная концепция; UI-дизайн экранов; Адаптивные версии; Подготовка макетов к передаче; Согласование и правки.",
+  "- logo: Брифинг и анализ контекста; Поиск визуальных направлений; Эскизы и варианты знака; Доработка выбранной концепции; Цветовые и шрифтовые версии; Подготовка файлов логотипа; Мини-гайд по использованию.",
+  "- brand_identity: Анализ бренда и аудитории; Визуальная концепция; Логотип и фирменная графика; Цвет и типографика; Носители фирменного стиля; Бренд-гайд; Подготовка файлов к передаче.",
+  "- packaging: Анализ продукта и требований производства; Концепция упаковки; Дизайн лицевой стороны; Дизайн боковых/оборотных сторон; Адаптация под линейку SKU; Препресс и подготовка файлов к передаче; Согласование и правки.",
+  "- presentation: Анализ материалов и сценарий; Структура презентации; Визуальная концепция; Дизайн типовых слайдов; Дизайн сложных слайдов; Подготовка PDF/PPTX к передаче; Согласование и правки.",
+  "- smm: Анализ рубрик и задач; Визуальная концепция соцсетей; Шаблоны постов; Шаблоны сторис; Обложки и рекламные форматы; Подготовка файлов к передаче; Согласование и правки.",
+  "- marketplaces: Анализ товара и требований площадки; Концепция карточки; Дизайн главного изображения; Инфографика преимуществ; Галерея изображений; Адаптация под площадки; Подготовка файлов к передаче.",
+  "- outdoor: Анализ носителей и требований печати; Концепция наружной рекламы; Дизайн основного макета; Адаптации под форматы; Проверка читаемости; Препресс и подготовка файлов к передаче; Согласование и правки.",
+  "- print: Анализ материалов и концепция; Дизайн обложки; Вёрстка внутренних разворотов; Работа с изображениями и схемами; Макеты рекламных блоков; Согласование и правки; Препресс и подготовка файлов к передаче.",
+  "- custom: Анализ задачи; Концепция решения; Дизайн основных материалов; Адаптация форматов; Подготовка файлов к передаче; Согласование и правки.",
+  "",
   "Верни ТОЛЬКО валидный JSON без пояснений, по схеме:",
   '{',
   '  "estimate_title": "короткое название сметы",',
   '  "project_type": "website|logo|brand_identity|packaging|presentation|smm|marketplaces|outdoor|print|custom",',
   '  "brand_name": "имя бренда или пустая строка",',
-  '  "stages": [{ "name": "этап", "description": "что делается", "hours": число }],',
+  '  "stages": [{ "name": "этап", "description": "что входит в этап", "hours": число }],',
   '  "pricing_risks": ["возможный риск по цене"],',
   '  "additional_costs": ["возможный доп. расход"]',
   '}',
-  "Оцени часы реалистично для ОДНОГО дизайнера. Сделай 5–8 этапов.",
-  "Деньги и итоговую сумму НЕ считай — только часы.",
+  "Сделай 5–8 этапов. Деньги и итоговую сумму НЕ считай — только часы.",
+  "В additional_costs указывай только реальные внешние расходы или оплачиваемые сверх объема работы: фотостоки, шрифты, цветопроба, печать тестового экземпляра, срочная ретушь сверх брифа.",
 ].join("\n");
 
 // Убираем персональные данные из текста ДО отправки в модель (второй рубеж защиты).
@@ -111,7 +147,7 @@ module.exports.handler = async (event, context) => {
   const match = text.match(/\{[\s\S]*\}/);
   let payload;
   try {
-    payload = normalizeAnalysis(JSON.parse(match ? match[0] : "{}"));
+    payload = normalizeAnalysis(JSON.parse(match ? match[0] : "{}"), brief);
   } catch (error) {
     return json(502, { error: "AI вернул некорректный формат" }, headers);
   }
@@ -128,29 +164,85 @@ const PROJECT_TYPES = new Set([
   "smm", "marketplaces", "outdoor", "print", "custom",
 ]);
 
-function normalizeAnalysis(value) {
+function normalizeAnalysis(value, sourceText = "") {
   if (!value || typeof value !== "object" || !Array.isArray(value.stages) || !value.stages.length) {
     throw new Error("Empty analysis");
   }
+  const projectType = PROJECT_TYPES.has(value.project_type) ? value.project_type : "custom";
   const stages = value.stages.slice(0, 8).map((stage) => {
     const hours = Math.round(Number(stage?.hours));
     if (!stage || !String(stage.name || "").trim() || !Number.isFinite(hours) || hours < 1 || hours > 1000) {
       throw new Error("Invalid stage");
     }
     return {
-      name: String(stage.name).trim().slice(0, 120),
-      description: String(stage.description || "").trim().slice(0, 500),
+      name: normalizeStageName(stage.name),
+      description: normalizeStageDescription(stage.description),
       hours,
     };
   });
+  const adjustedStages = applyPrintMinimumHours(stages, projectType, sourceText);
   return {
     estimate_title: String(value.estimate_title || "Смета по брифу").trim().slice(0, 160),
-    project_type: PROJECT_TYPES.has(value.project_type) ? value.project_type : "custom",
+    project_type: projectType,
     brand_name: String(value.brand_name || "").trim().slice(0, 120),
-    stages,
+    stages: adjustedStages,
     pricing_risks: asStringList(value.pricing_risks),
     additional_costs: asStringList(value.additional_costs),
   };
+}
+
+function normalizeStageName(value) {
+  const name = String(value || "").trim();
+  const normalized = name.toLowerCase();
+  if (["правочки", "правки", "корректировки"].includes(normalized) || /правоч/i.test(normalized)) return "Согласование и правки";
+  if (/pdf\/?x/i.test(normalized) || /финальн.*файл/i.test(normalized) || /допечат/i.test(normalized) || /препресс/i.test(normalized)) return "Препресс и подготовка файлов к передаче";
+  if (/сетк/i.test(normalized)) return "Визуальная концепция и структура макетов";
+  if (/^св[её]рстк/i.test(normalized)) return capitalizeStageName(name.replace(/^св[её]рстк/i, "вёрстк"));
+  if (/^верстка$/i.test(name) || /^вёрстка$/i.test(name)) return "Вёрстка брошюры";
+  return capitalizeStageName(name).slice(0, 120);
+}
+
+function normalizeStageDescription(value) {
+  const text = String(value || "")
+    .trim()
+    .replace(/правоч[а-яё]*/gi, "правок")
+    .replace(/^создание файла в формате pdf\/x для типографии и отдельного файла для онлайн-просмотра$/i, "Проверка макетов, вылетов и цветового режима, экспорт печатного PDF и версии для онлайн-просмотра")
+    .replace(/pdf\/x/gi, "печатный PDF")
+    .replace(/создание\s+сетк[а-яё]*/gi, "проработка структуры")
+    .replace(/сетк[а-яё]*/gi, "структуры")
+    .replace(/\bсв[её]рстк/gi, "вёрстк")
+    .slice(0, 500);
+  return capitalizeStageName(text);
+}
+
+function capitalizeStageName(value) {
+  const text = String(value || "").trim();
+  return text ? text.charAt(0).toUpperCase() + text.slice(1) : "";
+}
+
+function applyPrintMinimumHours(stages, projectType, sourceText) {
+  const source = String(sourceText || "").toLowerCase();
+  const looksLikeMultipagePrint = projectType === "print"
+    && /(брошюр|каталог|журнал|многостранич|буклет)/i.test(source);
+  if (!looksLikeMultipagePrint) return stages;
+
+  const pagesMatch = source.match(/(\d{1,3})\s*(?:страниц|страницы|страница|стр\.|полос|полосы|полоса)/i);
+  const pages = pagesMatch ? Number(pagesMatch[1]) : 0;
+  const minimum = pages >= 20 ? 70 : pages >= 12 ? 55 : pages >= 8 ? 40 : 0;
+  const total = stages.reduce((sum, stage) => sum + stage.hours, 0);
+  if (!minimum || total >= minimum) return stages;
+
+  const factor = minimum / total;
+  const scaled = stages.map((stage) => ({
+    ...stage,
+    hours: Math.max(1, Math.round(stage.hours * factor)),
+  }));
+  let diff = minimum - scaled.reduce((sum, stage) => sum + stage.hours, 0);
+  for (let index = 0; diff > 0; index = (index + 1) % scaled.length) {
+    scaled[index].hours += 1;
+    diff -= 1;
+  }
+  return scaled;
 }
 
 function asStringList(value) {
