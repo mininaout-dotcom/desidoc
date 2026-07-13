@@ -94,7 +94,9 @@ const UNIT_TYPES = {
 };
 const DEFAULT_DESIGNER_RATE = 1500;
 const DEFAULT_PROJECT_KEY = "landing_design";
-const BRIEF_AI_ENTRY_ENABLED = false;
+const AI_BRIEF_ENDPOINT = String(window.DESIDOC_AI_BRIEF_ENDPOINT || "").trim();
+const BRIEF_AI_ENTRY_ENABLED = true;
+const AI_BRIEF_MAX_LENGTH = 4000;
 const PROFILE_CONSENT_VERSION = "2026-06-16";
 const RU_CONTRACT_MONTHS = [
   "января",
@@ -888,7 +890,7 @@ function buildBriefEstimateTitle(projectType, brandName) {
   return `${meta.titleBase} для ${meta.entity} ${brandName}`;
 }
 
-async function analyzeBrief(text) {
+async function analyzeBriefLocal(text) {
   const source = String(text || "").trim();
   if (!source) {
     throw new Error("Добавьте бриф или сообщение клиента.");
@@ -906,6 +908,39 @@ async function analyzeBrief(text) {
     pricing_risks: buildBriefPricingRisks(projectType, source, quantities),
     additional_costs: buildBriefAdditionalCosts(projectType, source),
   };
+}
+
+async function analyzeBrief(text) {
+  const source = String(text || "").trim();
+  if (!source) {
+    throw new Error("Добавьте бриф или сообщение клиента.");
+  }
+  if (source.length > AI_BRIEF_MAX_LENGTH) {
+    throw new Error(`Сократите бриф до ${AI_BRIEF_MAX_LENGTH} символов.`);
+  }
+  if (!AI_BRIEF_ENDPOINT) {
+    throw new Error("Сначала укажите URL Cloud Function в js/ai-config.js.");
+  }
+
+  try {
+    const response = await fetch(AI_BRIEF_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ brief: source }),
+    });
+    const data = await response.json().catch(() => null);
+    if (!response.ok) throw new Error(data?.error || "Cloud Function вернула ошибку.");
+    if (!data || !Array.isArray(data.stages) || !data.stages.length) {
+      throw new Error("Cloud Function вернула пустой ответ.");
+    }
+    return data;
+  } catch (error) {
+    if (error?.message?.startsWith("Cloud Function") || error?.message === "Cloud Function вернула пустой ответ.") {
+      throw error;
+    }
+    // Сохраняем работоспособность калькулятора при временной недоступности AI.
+    return analyzeBriefLocal(source);
+  }
 }
 
 function refreshStageHours(level) {

@@ -179,7 +179,7 @@
 	                <section class="mobile-calc-sheet__section" data-mobile-sheet-panel="project">
 	                  <div class="project-options mobile-calc-sheet__project-grid" role="radiogroup" aria-label="Тип проекта" data-project-options></div>
 	                  <div class="brief-ai-card brief-ai-card--mobile" data-brief-ai-entry hidden>
-	                    <button class="brief-ai-button" type="button" data-action="show-soon" data-label="Собрать из брифа" data-description="Функция скоро будет доступна. Пока можно выбрать «Другое», посчитать стандартные этапы и отредактировать их вручную.">
+	                    <button class="brief-ai-button" type="button" data-action="open-brief-ai">
 	                      <span aria-hidden="true">✨</span>
 	                      Собрать из брифа
 	                    </button>
@@ -304,7 +304,7 @@
 	                </div>
 	                <div class="project-options" role="radiogroup" aria-label="Тип проекта" data-project-options></div>
 	                <div class="brief-ai-card" data-brief-ai-entry hidden>
-	                  <button class="brief-ai-button" type="button" data-action="show-soon" data-label="Собрать из брифа" data-description="Функция скоро будет доступна. Пока можно выбрать «Другое», посчитать стандартные этапы и отредактировать их вручную.">
+	                  <button class="brief-ai-button" type="button" data-action="open-brief-ai">
 	                    <span aria-hidden="true">✨</span>
 	                    Собрать из брифа
 	                  </button>
@@ -848,7 +848,7 @@
         <textarea data-brief-ai-input rows="8" placeholder="Вставьте сюда сообщение клиента, бриф, переписку или заметки после созвона."></textarea>
       </label>
 
-      <p class="client-reply-status" data-brief-ai-status>AI-оценка примерная: часы и стоимость нужно проверить под свою скорость и договорённости с клиентом.</p>
+      <p class="client-reply-status" data-brief-ai-status>Текст обработает YandexGPT для предварительной оценки. Не вводите персональные данные третьих лиц. Часы и стоимость проверьте под свою скорость и договорённости с клиентом.</p>
 
       <div class="modal__actions">
         <button class="button button--ghost" value="cancel">Отмена</button>
@@ -880,6 +880,7 @@
   <script src="assets/vendor/html2canvas.min.js"></script>
   <script src="assets/vendor/jspdf.umd.min.js"></script>
   <script src="assets/vendor/html-to-image.js"></script>
-  <script src="js/designkit.js?v=100"></script>
+  <script src="js/ai-config.js?v=1"></script>
+  <script src="js/designkit.js?v=101"></script>
 </body>
 </html>
