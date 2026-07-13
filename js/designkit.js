@@ -990,7 +990,8 @@ async function analyzeBrief(text) {
     });
     const data = await response.json().catch(() => null);
     if (!response.ok) throw new Error(data?.error || "Cloud Function вернула ошибку.");
-    if (!data || !Array.isArray(data.stages) || !data.stages.length) {
+    const isTemplateAnalysis = data?.mode === "template" && PROJECTS[data.project_key];
+    if (!data || (!isTemplateAnalysis && (!Array.isArray(data.stages) || !data.stages.length))) {
       throw new Error("Cloud Function вернула пустой ответ.");
     }
     return data;
@@ -1252,10 +1253,20 @@ async function runBriefAnalysis() {
 }
 
 function applyBriefAnalysis(analysis, sourceText) {
-  state.projectKey = "custom";
-  state.rate = getActiveRate();
-  state.stages = (analysis.stages || []).map(mapAiStageToState);
-  state.expenses = mapAiAdditionalCosts(analysis.additional_costs);
+  const template = analysis?.mode === "template" ? PROJECTS[analysis.project_key] : null;
+  if (template) {
+    // Типовой проект: этапы берём из согласованных шаблонов DesiDoc, а не из генерации.
+    state.projectKey = analysis.project_key;
+    state.rate = getActiveRate();
+    state.stages = createStages(template, getHoursLevel());
+    applyTemplateSlideCount(state.stages, Math.round(Number(analysis.slides) || 0));
+    state.expenses = [];
+  } else {
+    state.projectKey = "custom";
+    state.rate = getActiveRate();
+    state.stages = (analysis.stages || []).map(mapAiStageToState);
+    state.expenses = mapAiAdditionalCosts(analysis.additional_costs);
+  }
   state.generated = true;
   state.briefAi.sourceText = sourceText;
   state.briefAi.analysis = analysis;
@@ -1271,6 +1282,20 @@ function applyBriefAnalysis(analysis, sourceText) {
     const result = document.querySelector("[data-estimate-result]");
     if (result) setTimeout(() => result.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
   }
+}
+
+function applyTemplateSlideCount(stages, totalSlides) {
+  if (!totalSlides || totalSlides < 1) return;
+  const slideStages = stages.filter((stage) => stage.unit === "slide");
+  if (!slideStages.length) return;
+  if (slideStages.length === 1) {
+    slideStages[0].quantity = totalSlides;
+    return;
+  }
+  // Простых слайдов в презентации обычно больше, чем сложных: делим ~60/40.
+  const simple = Math.max(1, Math.round(totalSlides * 0.6));
+  slideStages[0].quantity = simple;
+  slideStages[1].quantity = Math.max(1, totalSlides - simple);
 }
 
 function getAiEstimateName(analysis) {
