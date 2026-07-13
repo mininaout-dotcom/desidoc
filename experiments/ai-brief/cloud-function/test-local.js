@@ -30,6 +30,7 @@ global.fetch = async (url, opts) => {
         { name: "Добавление логотипа и QR-кода", description: "Размещение логотипа и QR на макетах.", hours: 8 },
         { name: "Дизайн 4 постеров", description: "Постеры A1.", hours: 10, unit: "item", quantity: 4 },
         { name: "Согласование и правки", description: "Правки.", hours: 20 },
+        { name: "Правки", description: "Финальные правки.", hours: 4 },
       ],
       pricing_risks: [],
       additional_costs: [],
@@ -72,10 +73,13 @@ function assert(cond, label) {
   const byName = (n) => data.stages.find((s) => s.name === n);
   assert(res.statusCode === 200, "B: статус 200");
   assert(calls.join(",") === "classifier,generation", "B: классификатор + генерация");
-  assert(names.some((n) => /исследован|анализ/i.test(n)), "B: анализ добавлен отдельным этапом");
+  assert(!names.some((n) => /исследован|анализ и референс/i.test(n)), "B: стратегия пропущена — материалы уже есть");
+  assert(names[0] === "Брифинг и сбор данных", "B: брифинг первый");
+  assert(names[names.length - 1] === "Согласование и правки", "B: правки последние");
+  assert(names.filter((n) => n === "Согласование и правки").length === 1, "B: дубль правок слит");
   assert(byName("Размещение логотипа и QR-кода")?.hours === 1, "B: QR-этап срезан до 1 часа (было 8)");
   assert(byName("Согласование и правки")?.hours === 10, "B: правки зажаты рамкой (было 20)");
-  assert(names.some((n) => /препресс/i.test(n)), "B: препресс добавлен для печати");
+  assert(names.includes("Подготовка файлов к печати"), "B: подготовка к печати с новым названием");
   const posters = byName("Дизайн 4 постеров");
   assert(posters && posters.unit === "item" && posters.quantity === 4, "B: поштучный этап сохранён (4 шт)");
 
