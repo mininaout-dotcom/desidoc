@@ -699,6 +699,13 @@ function getBriefQuantities(text) {
       /(\d+)\s*(?:пост[а-я]*|сторис|сториз|stories|публикац[а-я]*)/i,
       /(?:пост[а-я]*|сторис|сториз|stories|публикац[а-я]*)[^\d]{0,16}(\d+)/i,
     ]),
+    stickers: getBriefQuantity(text, [
+      /(\d+)\s*(?:стикер[а-я]*|накле[а-я]*)/i,
+      /(?:стикер[а-я]*|накле[а-я]*)[^\d]{0,16}(\d+)/i,
+    ]),
+    hasInstruction: /инструкц/i.test(text),
+    hasInsert: /вкладыш|карточк/i.test(text),
+    hasBox: /коробк|развертк|упаков/i.test(text),
   };
 }
 
@@ -741,14 +748,21 @@ function buildBriefStages(projectType, q) {
 
   if (projectType === "packaging") {
     const sku = q.sku || 1;
-    return [
-      makeBriefStage("Анализ продукта и полки", "Изучение товара, конкурентов, референсов и ограничений формата", 5),
-      makeBriefStage("Концепция упаковки", "Поиск визуального направления и подготовка первых вариантов", 10 + concepts * 3),
-      makeBriefStage("Дизайн основной упаковки", "Разработка макета ключевого SKU с композицией, графикой и текстами", 12),
-      makeBriefStage("Адаптация на SKU", "Перенос дизайн-системы на дополнительные вкусы, объёмы или артикулы", Math.max(4, (sku - 1) * 3)),
-      makeBriefStage("Подготовка к печати", "Проверка размеров, вылетов, цветового профиля и экспорт файлов", 5),
-      makeBriefStage("Согласование и правки", "Внесение правок после проверки макетов", revisionHours),
+    const stages = [
+      makeBriefStage("Брифинг и сбор данных", "Сбор вводных, продукта, материалов, развертки и требований типографии", 3),
+      makeBriefStage("Исследование и стратегия", "Конкурентный анализ, изучение ЦА, аудит текущих материалов, формулировка позиционирования и основных стратегических выводов", 4),
+      makeBriefStage("Мудборд и референсы", "Сбор и отбор референсов, формулировка визуальных принципов, подготовка 1-2 направлений визуальной концепции", 6 + concepts * 2),
+      makeBriefStage(q.hasBox ? "Дизайн коробки" : "Дизайн упаковки", "Дизайн упаковки с учётом развертки, технических ограничений и фирменного стиля", 14),
     ];
+    if (sku > 1) stages.push(makeBriefStage("Адаптация на SKU", "Перенос дизайн-системы на дополнительные вкусы, объёмы или артикулы", Math.max(4, (sku - 1) * 3)));
+    if (q.hasInstruction) stages.push(makeBriefStage("Дизайн инструкции", "Структура инструкции, иконки, схемы и инфографика для понятного пользовательского сценария", 8));
+    if (q.hasInsert) stages.push(makeBriefStage("Дизайн приветственного вкладыша", "Макет карточки с сообщением, QR-кодом, контактами и ссылками на нужные каналы", 4));
+    if (q.stickers) stages.push(makeBriefStage("Дизайн стикерпака", `Разработка набора из ${q.stickers} стикеров в едином стиле проекта с подготовкой к производству`, Math.max(6, q.stickers * 1.5)));
+    stages.push(
+      makeBriefStage("Препресс и подготовка файлов к передаче", "Проверка размеров, вылетов, цветового режима и экспорт файлов по требованиям типографии", 6),
+      makeBriefStage("Согласование и правки", "Коммуникация с клиентом и внесение согласованных корректировок", revisionHours)
+    );
+    return stages;
   }
 
   if (projectType === "website") {
@@ -1250,6 +1264,8 @@ function applyBriefAnalysis(analysis, sourceText) {
   renderProjectOptions();
   renderEstimate();
   routeTo("calculator");
+  trackMetrikaGoal("estimate_calculated");
+  trackMetrikaGoal("ai_brief_created");
 
   if (isMobileCalculatorUI()) {
     const result = document.querySelector("[data-estimate-result]");
@@ -1773,7 +1789,11 @@ function showFeedbackPrompt() {
 }
 
 function notifyPdfDownloadSuccess(goal) {
-  if (goal) trackMetrikaGoal(goal);
+  if (Array.isArray(goal)) {
+    goal.forEach(trackMetrikaGoal);
+  } else if (goal) {
+    trackMetrikaGoal(goal);
+  }
   setTimeout(showFeedbackPrompt, 220);
 }
 
@@ -1781,6 +1801,12 @@ function notifyPdfDownloadFailure(message) {
   const safeMessage = message || "Не удалось безопасно собрать PDF. Попробуйте сократить документ или повторить экспорт позже.";
   console.error(safeMessage);
   window.alert(safeMessage);
+}
+
+function getEstimatePdfDownloadGoals() {
+  return state.briefAi.analysis
+    ? ["estimate_pdf_download", "ai_brief_pdf_download"]
+    : ["estimate_pdf_download"];
 }
 
 function startFeedbackSurvey() {
@@ -2684,7 +2710,7 @@ function printEstimate() {
       filename,
       onDone: () => {
         cleanupSheet();
-        notifyPdfDownloadSuccess("estimate_pdf_download");
+        notifyPdfDownloadSuccess(getEstimatePdfDownloadGoals());
       },
       onError: (err) => {
         cleanupSheet();
@@ -2747,7 +2773,7 @@ function printEstimate() {
       summary: pdfSummary,
       footer: "Оценка действует 14 дней. Итоговые сроки и состав работ фиксируются в договоре или допсоглашении.",
       showVolume: showVolumeInPdf,
-      onDone: () => { cleanupSheet(); notifyPdfDownloadSuccess("estimate_pdf_download"); },
+      onDone: () => { cleanupSheet(); notifyPdfDownloadSuccess(getEstimatePdfDownloadGoals()); },
     });
   }).catch((err) => { console.warn("Векторный PDF не удался, растровый запасной вариант:", err); rasterFallback(); });
 }

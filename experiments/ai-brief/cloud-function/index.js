@@ -43,7 +43,7 @@ const SYSTEM_PROMPT = [
   "- если в брифе несколько сущностей, считай это как пакет работ: общая база один раз, затем отдельные носители/форматы;",
   "- не теряй deliverables из брифа: логотип, брендинг, бирки, упаковка, посты, сторис, презентация, лендинг, сайт, печатные материалы, наружная реклама;",
   "- если логотип, брендбук, фирменные цвета, тексты, QR-код или фото уже есть у клиента, обычно учитывай их внутри дизайна макетов и подготовки файлов; если всё же выносишь размещение логотипа/QR в отдельный этап, ставь максимум 1 час на весь комплект макетов;",
-  "- если для нужного проекта или носителя нет точного шаблона, собери понятную структуру из базовых блоков: брифинг, референсы/концепция, дизайн конкретного носителя, подготовка файлов, правки;",
+  "- если для нужного проекта или носителя нет точного шаблона, собери структуру из уже согласованных названий DesiDoc ниже: брифинг, исследование/референсы, визуальная концепция, дизайн конкретного носителя, подготовка файлов, правки;",
   "- не используй технические термины в названиях этапов, если клиенту можно сказать проще;",
   "- названия этапов должны быть профессиональными, короткими и понятными клиенту;",
   "- описания должны объяснять пользу этапа, а не повторять название;",
@@ -51,12 +51,23 @@ const SYSTEM_PROMPT = [
   "- часы оценивай реалистично для ОДНОГО дизайнера, без оптимистичного занижения.",
   "",
   "Обязательная логика структуры:",
-  "- любой проект начинается с «Брифинг и сбор данных» или, для сайта, «Брифинг и сбор требований»;",
-  "- для средних и сложных проектов после брифинга добавляй «Исследование и стратегия» или «Исследование и анализ»;",
-  "- для простых задач вроде визитки, простого баннера, одной бирки или одного поста НЕ добавляй отдельное исследование и стратегию: после брифинга переходи к «Мудборд и референсы» или дизайну макета;",
+  "- названия этапов должны быть максимально близки к текущим сметам DesiDoc из блока «Эталонные формулировки»;",
+  "- любой проект начинается с «Брифинг и сбор данных» или, для сайта, «Брифинг и сбор требований»; в этот этап нельзя включать разработку концепции;",
+  "- для логотипа, брендинга, фирменного стиля, упаковки и сложной полиграфии после брифинга используй «Исследование и стратегия», затем «Мудборд и референсы» или «Визуальная концепция»;",
+  "- для сайта используй текущую логику: «Исследование и анализ», «Проектирование и структура», «Прототипирование», «Визуальная концепция», дальше UI/сборка;",
+  "- для презентации используй текущую логику: «Брифинг», «Структура презентации», «Дизайн-концепция», дальше слайды;",
   "- в каждой смете должен быть этап подготовки файлов: «Подготовка и передача файлов», «Подготовка к передаче» или для печати «Препресс и подготовка файлов к передаче»;",
   "- в каждой смете должен быть этап «Согласование и правки»;",
   "- отдельный этап «Финальная проверка» допустим только для сайтов, лендингов и Tilda, где есть сборка, формы, адаптив, ссылки или код; для печати, брендинга, SMM, постеров и презентаций проверку включай в подготовку файлов, а корректировки — в «Согласование и правки».",
+  "",
+  "Для логотипа, фирменного стиля и брендбука:",
+  "- если в проекте есть и логотип, и фирменный стиль, считай это как «brand_identity», а не как отдельный logo-проект;",
+  "- не ставь одновременно «гайдбук», «гайдлайн», «мини-гайд» и «брендбук»: это один документационный этап с разной глубиной проработки;",
+  "- если в брифе прямо написано «мини-гайд» или «краткий гайд», используй этап «Мини-гайд по фирменному стилю» и НЕ добавляй «Брендбук»;",
+  "- если это только логотип без фирменного стиля, используй «Краткий логотип-гайд» вместо брендбука;",
+  "- если это фирменный стиль/брендинг и в брифе не указан мини-гайд, используй «Брендбук»;",
+  "- не дели логотип на отдельные этапы «создание концепций» и «доработка концепции», если это можно описать одним этапом «Логотип и знаковая графика»;",
+  "- визуализации логотипа/стиля на вывеске, форме, автомобиле или мокапах добавляй отдельным этапом «Визуализация на носителях» только если они прямо запрошены в брифе; обычно это 3-6 часов для 2-3 мокапов.",
   "",
   "Запрещенные слова и формулировки:",
   "- не используй «правочки», «картинки», «допилки», «свёрстка»;",
@@ -70,6 +81,15 @@ const SYSTEM_PROMPT = [
   "- финальный этап называй «Препресс и подготовка файлов к передаче»;",
   "- в описании финального этапа укажи проверку макетов, вылетов, цветового режима и экспорт печатного PDF плюс версии для онлайн-просмотра;",
   "- для многостраничных брошюр, каталогов и журналов не занижай часы: вёрстка, препресс и согласования обычно занимают десятки часов.",
+  "",
+  "Для упаковки:",
+  "- первый этап называй «Брифинг и сбор данных»: сбор вводных, продукта, материалов, развертки и требований типографии; обычно 3 часа;",
+  "- вторым этапом ставь «Исследование и стратегия»: изучение визуального контекста, конкурентов и полки;",
+  "- третьим этапом ставь «Мудборд и референсы» или «Визуальная концепция»; не включай разработку концепции в брифинг или исследование;",
+  "- не дели коробку на «внешнюю упаковку» и «внутреннюю часть упаковки»: если клиент просит обе части, считай это одним этапом «Дизайн коробки»;",
+  "- инструкцию, вкладыш, стикерпак и другие отдельные материалы можно считать отдельными этапами;",
+  "- не пиши «согласование с клиентом» внутри описаний этапов инструкции, упаковки, вкладыша или стикеров; для этого есть отдельный этап «Согласование и правки»;",
+  "- если логотип, фирменные цвета, фото продукта, 3D-модель, тексты инструкции, размеры и развертка уже есть, не считай их создание заново — учитывай только работу по дизайну и подготовке макетов.",
   "",
   "Для нейро-проектов и задач с AI-графикой:",
   "- распознавай нейро-задачи по словам: нейросети, AI, ИИ, генеративный ИИ, Midjourney, Stable Diffusion, Flux, Runway, Kling, Luma, нейрофото, нейровидео, генерации, промпты, аватар, обложки через AI, AI-креативы;",
@@ -98,6 +118,10 @@ const SYSTEM_PROMPT = [
   "- Дизайн ключевых блоков: Отрисовка визуала ключевых экранов и подготовка стиля для дальнейшей сборки на Tilda.",
   "- Сборка на Tilda и адаптив: Сборка страниц и блоков в Tilda, настройка мобильной и планшетной версий сразу внутри платформы.",
   "- Формы и базовые настройки: Подключение форм, уведомлений, базовых настроек страницы и проверка технических мелочей перед запуском.",
+  "- Дизайн коробки: Дизайн всех сторон упаковки и внутренней части коробки при необходимости, с учётом развертки и технических ограничений.",
+  "- Дизайн инструкции: Структура инструкции, иконки, схемы и инфографика для понятного пользовательского сценария.",
+  "- Дизайн приветственного вкладыша: Макет карточки с сообщением, QR-кодом, контактами и ссылками на нужные каналы.",
+  "- Дизайн стикерпака: Разработка набора стикеров в едином стиле проекта с подготовкой к производству.",
   "- Структура презентации: Сценарий и логика подачи: порядок слайдов, нарратив и переходы.",
   "- Дизайн-концепция: Стиль, цвет, шрифты — утверждение визуального направления на 2-3 слайдах.",
   "- Простые слайды: Типовые слайды: заголовок, текст, списки по готовому мастер-шаблону.",
@@ -105,12 +129,17 @@ const SYSTEM_PROMPT = [
   "- Подготовка и передача файлов: Экспорт логотипов и элементов в нужных форматах, настройка структуры папок и наведение порядка в рабочих файлах для передачи.",
   "- Подготовка к передаче: Сборка итогового пакета: экспорт макетов, спецификации для разработчиков и инструкция по использованию.",
   "- Препресс и подготовка файлов к передаче: Проверка макетов, вылетов, цветового режима и экспорт печатного PDF плюс версии для онлайн-просмотра.",
-  "- Гайдлайн: Структура и наполнение брендбука: разделы, логика подачи, правила использования фирменного стиля с примерами.",
+  "- Краткий логотип-гайд: Документ с правилами использования логотипа: варианты, охранное поле, минимальные размеры, фон и базовые запреты.",
+  "- Мини-гайд по фирменному стилю: Краткие правила использования логотипа, цвета, типографики и базовых элементов фирменного стиля.",
+  "- Брендбук: Структура и наполнение брендбука: разделы, логика подачи, правила использования фирменного стиля с примерами.",
+  "- Визуализация на носителях: Пример применения логотипа и фирменного стиля на ключевых носителях, прямо указанных в брифе.",
   "- Согласование и правки: Коммуникация с заказчиком, правки по визуалу, финальное утверждение.",
   "- Финальное согласование и правки: Работа по замечаниям заказчика, обычно 1-2 раунда правок, адаптация по дополнительным пожеланиям.",
   "",
   "Примеры сборки сложных пакетов:",
   "- логотип + брендинг + бирки + 3 поста: Брифинг и сбор данных; Исследование и стратегия; Мудборд и референсы; Логотип и знаковая графика; Цвет и типографика; Ключевые носители; Подготовка и передача файлов; Согласование и правки.",
+  "- логотип + фирменный стиль + мини-гайд + визуализации: Брифинг и сбор данных; Исследование и стратегия; Мудборд и референсы; Логотип и знаковая графика; Цвет и типографика; Графические приёмы; Визуализация на носителях; Мини-гайд по фирменному стилю; Подготовка и передача файлов; Согласование и правки.",
+  "- упаковка фена + инструкция + вкладыш + 6 стикеров: Брифинг и сбор данных; Исследование и стратегия; Мудборд и референсы; Дизайн коробки; Дизайн инструкции; Дизайн приветственного вкладыша; Дизайн стикерпака; Препресс и подготовка файлов к передаче; Согласование и правки.",
   "- упаковка + карточки маркетплейса + баннеры: Брифинг и сбор данных; Исследование и стратегия; Визуальная концепция; Дизайн упаковки; Карточки товара и инфографика; Баннеры и рекламные форматы; Препресс и подготовка файлов к передаче; Согласование и правки.",
   "- презентация + лендинг + SMM-анонсы: Брифинг и сбор требований; Исследование и анализ; Структура презентации; Дизайн-концепция; UI-дизайн; SMM-шаблоны; Подготовка к передаче; Финальное согласование и правки.",
   "- витрина магазина, 4 постера A1, логотип/брендбук/тексты уже есть: Брифинг и сбор данных; Визуальная концепция оформления витрины; AI-визуалы и ручная доводка изображений; Дизайн 4 постеров; Препресс и подготовка файлов к передаче; Согласование и правки.",
@@ -126,7 +155,7 @@ const SYSTEM_PROMPT = [
   '  "pricing_risks": ["возможный риск по цене"],',
   '  "additional_costs": [{ "title": "возможный доп. расход", "amount": число }]',
   '}',
-  "Для простых задач сделай 3-5 этапов, для средних и сложных 5-8 этапов. Деньги и итоговую сумму работ НЕ считай — только часы и возможные дополнительные расходы.",
+  "Для простых задач сделай 3-5 этапов, для средних 5-8 этапов, для сложных пакетов с несколькими сущностями можно 7-10 этапов. Деньги и итоговую сумму работ НЕ считай — только часы и возможные дополнительные расходы.",
   "В additional_costs указывай только реальные внешние расходы или оплачиваемые сверх объема работы: фотостоки, шрифты, цветопроба, печать тестового экземпляра, нейросетевые токены/кредиты, платные генерации, срочная ретушь сверх брифа.",
 ].join("\n");
 
@@ -252,24 +281,26 @@ function normalizeAnalysis(value, sourceText = "") {
   if (!value || typeof value !== "object" || !Array.isArray(value.stages) || !value.stages.length) {
     throw new Error("Empty analysis");
   }
-  const projectType = PROJECT_TYPES.has(value.project_type) ? value.project_type : "custom";
+  const projectType = normalizeProjectType(value.project_type, sourceText);
   const stages = value.stages
-    .slice(0, 8)
+    .slice(0, 10)
     .map((stage) => {
     let hours = Math.round(Number(stage?.hours));
     if (!stage || !String(stage.name || "").trim() || !Number.isFinite(hours) || hours < 1 || hours > 1000) {
       throw new Error("Invalid stage");
     }
     if (isProvidedAssetPlacementStage(stage, sourceText)) hours = 1;
+    if (isVisualizationStage(stage)) hours = Math.min(hours, 6);
+    const stageName = normalizeStageName(stage.name, projectType, sourceText);
     return {
-      name: normalizeStageName(stage.name, projectType, sourceText),
-      description: normalizeStageDescription(stage.description),
+      name: stageName,
+      description: normalizeStageDescription(stage.description, stageName),
       hours,
       ...normalizeStageBilling(stage),
     };
   });
   if (!stages.length) throw new Error("Empty analysis");
-  const adjustedStages = applyPrintMinimumHours(stages, projectType, sourceText);
+  const adjustedStages = applyPrintMinimumHours(postProcessStages(stages, projectType, sourceText), projectType, sourceText);
   const costs = ensureAiToolCosts(
     filterIrrelevantAiCosts(normalizeAdditionalCosts(value.additional_costs), sourceText),
     sourceText
@@ -284,6 +315,14 @@ function normalizeAnalysis(value, sourceText = "") {
   };
 }
 
+function normalizeProjectType(value, sourceText) {
+  const projectType = PROJECT_TYPES.has(value) ? value : "custom";
+  if (projectType === "packaging" || hasPackagingProjectIntent(sourceText)) return "packaging";
+  if (hasBrandIdentityIntent(sourceText)) return "brand_identity";
+  if (hasWebsiteProjectIntent(sourceText)) return "website";
+  return projectType;
+}
+
 function normalizeStageBilling(stage) {
   const unit = STAGE_UNITS.has(stage?.unit) ? stage.unit : "hour";
   if (unit === "hour") return {};
@@ -294,6 +333,339 @@ function normalizeStageBilling(stage) {
     unit,
     quantity,
     ...(Number.isFinite(unitPrice) && unitPrice > 0 ? { unit_price: unitPrice } : {}),
+  };
+}
+
+function postProcessStages(stages, projectType, sourceText) {
+  const result = [];
+  stages.forEach((stage) => {
+    if (isDocumentationStage(stage)) {
+      const documentationStage = normalizeDocumentationStage(stage, projectType, sourceText);
+      const existingIndex = result.findIndex(isDocumentationStage);
+      if (existingIndex === -1) {
+        result.push(documentationStage);
+      } else {
+        result[existingIndex] = mergeDocumentationStages(result[existingIndex], documentationStage, sourceText);
+      }
+      return;
+    }
+    result.push(stage);
+  });
+
+  const projectStages = projectType === "packaging"
+    ? postProcessPackagingStages(result, sourceText)
+    : result;
+
+  return ensureRequiredWorkflowStages(projectStages, projectType);
+}
+
+function ensureRequiredWorkflowStages(stages, projectType) {
+  const result = [...stages];
+  const hasBriefing = result.some(isBriefingStage);
+  if (!hasBriefing) {
+    if (projectType === "website") {
+      result.unshift({
+        name: "Брифинг и сбор требований",
+        description: "Краткая сессия с заказчиком, уточнение целей, задач, аудитории, количества нужных страниц и обязательных функций.",
+        hours: 2,
+      });
+    } else if (projectType === "packaging") {
+      result.unshift({
+        name: "Брифинг и сбор данных",
+        description: "Сбор вводных, продукта, материалов, развертки и требований типографии.",
+        hours: 3,
+      });
+    } else {
+      result.unshift({
+        name: "Брифинг и сбор данных",
+        description: "Интервью с заказчиком, сбор вводной информации, формулировка задач, ограничений и критериев успеха.",
+        hours: 3,
+      });
+    }
+  }
+
+  if (!result.some(isAnalysisReferenceStage)) {
+    insertStageAfter(result, getAnalysisReferenceStage(projectType), isBriefingStage);
+  }
+
+  if (!result.some(isConceptStage)) {
+    insertStageAfter(result, getConceptStage(projectType), isAnalysisReferenceStage);
+  }
+
+  if (!result.some((stage) => isPreparationStage(stage, projectType))) {
+    insertBeforeAgreement(result, getPreparationStage(projectType));
+  }
+
+  const hasAgreement = result.some(isAgreementStage);
+  if (!hasAgreement) {
+    result.push({
+      name: "Согласование и правки",
+      description: "Коммуникация с заказчиком, правки по визуалу, финальное утверждение.",
+      hours: 6,
+    });
+  }
+
+  return result;
+}
+
+function insertStageAfter(stages, stage, predicate) {
+  const index = stages.findIndex(predicate);
+  stages.splice(index >= 0 ? index + 1 : 0, 0, stage);
+}
+
+function insertBeforeAgreement(stages, stage) {
+  const index = stages.findIndex(isAgreementStage);
+  stages.splice(index >= 0 ? index : stages.length, 0, stage);
+}
+
+function isBriefingStage(stage) {
+  return /(брифинг|сбор\s+(данн|требован|информац|вводн)|интервью)/i.test(normalizeAiText(stage?.name));
+}
+
+function isAnalysisReferenceStage(stage) {
+  const title = normalizeAiText(stage?.name);
+  return /(исследован|анализ|ресерч|аудит|структура\s+презентац)/i.test(title)
+    && !/(концепц|мудборд|разработк[а-я\s]+дизайн|дизайн\s+(коробк|упаковк|макет|слайд|сайт|пост|носител))/i.test(title);
+}
+
+function isConceptStage(stage) {
+  const title = normalizeAiText(stage?.name);
+  return /(концепц|выбор\s+направлен|визуальн[а-я\s]+направлен|дизайн-концепц|мудборд|идея\s+и\s+композиция|поиск\s+визуальн)/i.test(title);
+}
+
+function isPreparationStage(stage, projectType) {
+  const title = normalizeAiText(stage?.name);
+  return /(препресс|подготовк[а-я\s]*(и\s+)?(передач|файл|производств|печати)|передач[а-я\s]*файл|экспорт|исходник|ui-kit|подготовк[а-я\s]+к\s+передач)/i.test(title)
+    && !(projectType === "website" && /формы|настройк|сборк/i.test(title));
+}
+
+function isAgreementStage(stage) {
+  return /(согласован|правк|корректировк)/i.test(normalizeAiText(`${stage?.name || ""} ${stage?.description || ""}`));
+}
+
+function getAnalysisReferenceStage(projectType) {
+  if (projectType === "website") return {
+    name: "Исследование и анализ",
+    description: "Анализ конкурентов и референсов, ресерч целевой аудитории, сбор вдохновляющих примеров, фиксация допущений по структуре и стилю.",
+    hours: 8,
+  };
+  if (projectType === "presentation") return {
+    name: "Структура презентации",
+    description: "Сценарий и логика подачи: порядок слайдов, нарратив и переходы.",
+    hours: 4,
+  };
+  if (["logo", "brand_identity", "packaging"].includes(projectType)) return {
+    name: "Исследование и стратегия",
+    description: "Конкурентный анализ, изучение ЦА, аудит текущих материалов, формулировка позиционирования и основных стратегических выводов.",
+    hours: projectType === "packaging" ? 4 : 8,
+  };
+  return {
+    name: "Анализ и референсы",
+    description: "Изучение контекста проекта и подбор визуальных ориентиров.",
+    hours: 4,
+  };
+}
+
+function getConceptStage(projectType) {
+  if (["logo", "brand_identity", "packaging"].includes(projectType)) return {
+    name: "Мудборд и референсы",
+    description: "Сбор и отбор референсов, формулировка визуальных принципов, подготовка 1-2 направлений визуальной концепции.",
+    hours: projectType === "packaging" ? 6 : 8,
+  };
+  if (projectType === "website") return {
+    name: "Визуальная концепция",
+    description: "Формулировка визуального стиля: moodboard, цветовая палитра, типографика, графические приемы и развитие айдентики под веб.",
+    hours: 8,
+  };
+  if (projectType === "presentation") return {
+    name: "Дизайн-концепция",
+    description: "Стиль, цвет, шрифты — утверждение визуального направления на 2-3 слайдах.",
+    hours: 8,
+  };
+  if (projectType === "print") return {
+    name: "Концепция макета",
+    description: "Композиция, стиль и визуальная логика будущих материалов.",
+    hours: 5,
+  };
+  if (projectType === "outdoor") return {
+    name: "Идея и композиция",
+    description: "Поиск ключевого сообщения и визуального решения.",
+    hours: 6,
+  };
+  return {
+    name: "Концепция",
+    description: "Разработка основного визуального направления.",
+    hours: 6,
+  };
+}
+
+function getPreparationStage(projectType) {
+  if (["packaging", "print", "outdoor"].includes(projectType)) {
+    return {
+      name: "Препресс и подготовка файлов к передаче",
+      description: "Проверка макетов, вылетов, цветового режима и экспорт печатного PDF плюс версии для онлайн-просмотра.",
+      hours: 4,
+    };
+  }
+  if (projectType === "website") {
+    return {
+      name: "Подготовка к передаче",
+      description: "Сборка итогового пакета: экспорт макетов, спецификации для разработчиков и инструкция по использованию.",
+      hours: 2,
+    };
+  }
+  return {
+    name: "Подготовка и передача файлов",
+    description: "Экспорт итоговых материалов в нужных форматах, структура папок и подготовка рабочих файлов к передаче.",
+    hours: 3,
+  };
+}
+
+function postProcessPackagingStages(stages, sourceText) {
+  const result = [];
+  stages.forEach((stage) => {
+    const normalizedName = normalizeAiText(stage.name);
+    if (isPackagingBriefingStage(stage)) {
+      result.push({
+        ...stage,
+        name: "Брифинг и сбор данных",
+        description: "Сбор вводных, продукта, материалов, развертки и требований типографии.",
+        hours: Math.min(stage.hours, 3),
+      });
+      return;
+    }
+    if (isPackagingAnalysisStage(stage)) {
+      result.push({
+        ...stage,
+        name: "Исследование и стратегия",
+        description: "Конкурентный анализ, изучение ЦА, аудит текущих материалов, формулировка позиционирования и основных стратегических выводов.",
+        hours: Math.min(Math.max(stage.hours, 3), 5),
+      });
+      return;
+    }
+    if (normalizedName === "дизайн коробки" || isPackagingBoxStage(stage, sourceText)) {
+      const existingIndex = result.findIndex((item) => normalizeAiText(item.name) === "дизайн коробки");
+      const boxStage = {
+        ...stage,
+        name: "Дизайн коробки",
+        description: "Дизайн всех сторон упаковки и внутренней части коробки при необходимости, с учётом развертки и технических ограничений.",
+      };
+      if (existingIndex === -1) {
+        result.push(boxStage);
+      } else {
+        result[existingIndex] = {
+          ...result[existingIndex],
+          hours: Math.min(result[existingIndex].hours + boxStage.hours, 24),
+        };
+      }
+      return;
+    }
+    result.push(stage);
+  });
+
+  return result;
+}
+
+function isPackagingBriefingStage(stage) {
+  const text = normalizeAiText(`${stage?.name || ""} ${stage?.description || ""}`);
+  const title = normalizeAiText(stage?.name);
+  return /(брифинг|сбор\s+(вводн|данн|информац|требован))/i.test(text)
+    && !/(анализ|исследован|концепц|дизайн\s+коробк|дизайн\s+упаковк|инструкц|вкладыш|стикер|накле)/i.test(title);
+}
+
+function isPackagingAnalysisStage(stage) {
+  const text = normalizeAiText(`${stage?.name || ""} ${stage?.description || ""}`);
+  const title = normalizeAiText(stage?.name);
+  return /(анализ|исследован|изучен|референс|конкурент|полк[аи]|рынк|визуальн[а-я\s]+контекст)/i.test(text)
+    && !/(концепц|дизайн\s+коробк|дизайн\s+упаковк|инструкц|вкладыш|стикер|накле)/i.test(title);
+}
+
+function isPackagingBoxStage(stage, sourceText) {
+  const stageText = normalizeAiText(`${stage?.name || ""} ${stage?.description || ""}`);
+  const title = normalizeAiText(stage?.name);
+  if (/концепц/.test(title)) return false;
+  const source = normalizeAiText(sourceText);
+  const hasBoxContext = /(коробк|развертк|упаковк[а-я\s]*(фен|товар|продукт|внешн|внутрен|сторон|гран))/i.test(`${source} ${stageText}`);
+  return hasBoxContext && /(дизайн|макет|оформлен|разработк).*(коробк|упаковк|сторон|гран|внешн|внутрен)|(?:коробк|упаковк|сторон|гран|внешн|внутрен).*(дизайн|макет|оформлен|разработк)/i.test(stageText);
+}
+
+function hasBrandIdentityIntent(sourceText) {
+  const source = normalizeAiText(sourceText);
+  return /(фирменн[а-я\s-]*(стил|график|знак|шрифт|цвет|палитр|паттерн|носител)|брендинг|брендбук|гайдбук|гайдлайн|айдентик|identity|brand\s*book)/i.test(source);
+}
+
+function hasMiniGuideRequest(sourceText) {
+  const source = normalizeAiText(sourceText);
+  return /(мини\s*[-–—]?\s*гайд|кратк[а-я\s-]*(гайд|руководств)|mini\s*guide)/i.test(source);
+}
+
+function hasWebsiteProjectIntent(sourceText) {
+  const source = normalizeAiText(sourceText);
+  return /((разработ|созда|собра|сверст|сверст|дизайн|макет|прототип|запуск)[а-я\s-]{0,40}(сайт|лендинг|tilda|тильд)|(сайт|лендинг|tilda|тильд)[а-я\s-]{0,40}(разработ|созда|собра|сверст|сверст|дизайн|макет|прототип|запуск|адаптив|формы|форму))/i.test(source);
+}
+
+function hasPackagingProjectIntent(sourceText) {
+  const source = normalizeAiText(sourceText);
+  return /((разработ|созда|дизайн|макет|оформлен|подготов).{0,60}(упаковк|коробк|этикет|пачк|развертк)|(упаковк|коробк|этикет|пачк|развертк).{0,60}(разработ|созда|дизайн|макет|оформлен|подготов|типограф|печать))/i.test(source);
+}
+
+function isVisualizationStage(stage) {
+  const text = normalizeAiText(`${stage?.name || ""} ${stage?.description || ""}`);
+  return /(визуализац|мокап|mockup|пример[а-я\s]+применен|применен[а-я\s]+на\s+(вывес|форм|автомоб|носител)|вывеск|форм[аы]\s+сотрудник|автомобил)/i.test(text);
+}
+
+function isDocumentationStage(stage) {
+  const text = normalizeAiText(`${stage?.name || ""} ${stage?.description || ""}`);
+  return /(брендбук|brand\s*book|гайдбук|гайдлайн|мини\s*[-–—]?\s*гайд|логотип\s*[-–—]?\s*гайд|правил[а-я\s]*(использован|применен)[а-я\s]*(логотип|фирменн|стил)|документ[а-я\s]*(правил|использован)[а-я\s]*(логотип|фирменн|стил))/i.test(text);
+}
+
+function getDocumentationStageName(projectType, sourceText) {
+  const brandIdentity = projectType === "brand_identity" || hasBrandIdentityIntent(sourceText);
+  if (hasMiniGuideRequest(sourceText)) return brandIdentity ? "Мини-гайд по фирменному стилю" : "Краткий логотип-гайд";
+  if (projectType === "logo" && !brandIdentity) return "Краткий логотип-гайд";
+  if (brandIdentity) return "Брендбук";
+  return "Гайдлайн";
+}
+
+function getDocumentationStageDescription(name) {
+  if (name === "Мини-гайд по фирменному стилю") {
+    return "Краткие правила использования логотипа, цвета, типографики и базовых элементов фирменного стиля.";
+  }
+  if (name === "Краткий логотип-гайд") {
+    return "Документ с правилами использования логотипа: варианты, охранное поле, минимальные размеры, фон и базовые запреты.";
+  }
+  if (name === "Брендбук") {
+    return "Структура и наполнение брендбука: разделы, логика подачи, правила использования фирменного стиля с примерами.";
+  }
+  return "Правила использования визуальной системы и базовые примеры применения.";
+}
+
+function normalizeDocumentationHours(hours, name) {
+  const value = Math.max(1, Math.round(Number(hours) || 0));
+  if (name === "Брендбук") return Math.min(Math.max(value, 10), 18);
+  if (name === "Мини-гайд по фирменному стилю") return Math.min(Math.max(value, 4), 8);
+  if (name === "Краткий логотип-гайд") return Math.min(Math.max(value, 4), 8);
+  return Math.min(Math.max(value, 4), 10);
+}
+
+function normalizeDocumentationStage(stage, projectType, sourceText) {
+  const name = getDocumentationStageName(projectType, sourceText);
+  return {
+    ...stage,
+    name,
+    description: getDocumentationStageDescription(name),
+    hours: normalizeDocumentationHours(stage.hours, name),
+  };
+}
+
+function mergeDocumentationStages(current, next, sourceText) {
+  const name = hasMiniGuideRequest(sourceText) ? next.name : current.name;
+  return {
+    ...current,
+    ...next,
+    name,
+    description: getDocumentationStageDescription(name),
+    hours: normalizeDocumentationHours(Math.max(current.hours || 0, next.hours || 0), name),
   };
 }
 
@@ -312,27 +684,65 @@ function normalizeStageName(value, projectType = "custom", sourceText = "") {
   const name = String(value || "").trim();
   const normalized = name.toLowerCase();
   if (["правочки", "правки", "корректировки"].includes(normalized) || /правоч/i.test(normalized)) return "Согласование и правки";
+  if (["logo", "brand_identity"].includes(projectType)) {
+    if (/(исследован|анализ|ресерч|аудит)/i.test(normalized)) return "Исследование и стратегия";
+    if (/мудборд|референс|визуальн[а-я\s]+направлен/i.test(normalized)) return "Мудборд и референсы";
+    if (/(создан|разработк|отрисовк|доработк|выбор).*(концепц|логотип|знак)|(?:концепц|логотип|знак).*(создан|разработк|отрисовк|доработк|выбор)/i.test(normalized)) return "Логотип и знаковая графика";
+    if (/(цвет|палитр).*(шрифт|типограф)|типограф.*(цвет|палитр|шрифт)/i.test(normalized)) return "Цвет и типографика";
+    if (/(фирменн.*(систем|знак|паттерн|график)|паттерн|графическ.*при[её]м)/i.test(normalized)) return "Графические приёмы";
+    if (/(носител|мокап|визитк|сертификат|соцсет|упаковк|форма|вывеск)/i.test(normalized) && !isDocumentationStage({ name, description: "" })) return "Ключевые носители";
+  }
+  if (projectType === "packaging") {
+    if (/(анализ|исследован|изучен|сбор).*(концепц)|концепц.*(анализ|исследован|изучен|сбор)/i.test(normalized)) return "Исследование и стратегия";
+    if (/(брифинг|сбор\s+(вводн|данн|информац|требован))/i.test(normalized)) return "Брифинг и сбор данных";
+    if (/(анализ|исследован|изучен|конкурент|полк[аи]|рынк|визуальн[а-я\s]+контекст)/i.test(normalized)) return "Исследование и стратегия";
+    if (/референс|мудборд|концепц/i.test(normalized)) return "Мудборд и референсы";
+    if (/(внешн|внутрен|коробк|сторон|гран).*(упаковк|коробк)|(?:упаковк|коробк).*(внешн|внутрен|сторон|гран)/i.test(normalized)) return "Дизайн коробки";
+    if (/дизайн\s+упаковк|разработк[а-я\s]+упаковк|макет[а-я\s]+упаковк/i.test(normalized)) return isBoxPackaging(sourceText) ? "Дизайн коробки" : "Дизайн упаковки";
+    if (/инструкц/i.test(normalized)) return "Дизайн инструкции";
+    if (/вкладыш|карточк/i.test(normalized)) return "Дизайн приветственного вкладыша";
+    if (/стикер|накле/i.test(normalized)) return "Дизайн стикерпака";
+  }
   if (/финальн.*проверк|проверк.*коррект|проверка\s+макет|экспорт\s+и\s+провер/i.test(normalized) && !allowsSeparateFinalTesting(projectType, sourceText)) {
     if (/(печат|печать|препресс|постер|плакат|витрин|буклет|брошюр|каталог)/i.test(normalizeAiText(sourceText))) return "Препресс и подготовка файлов к передаче";
     return "Согласование и правки";
   }
+  if (isDocumentationStage({ name, description: "" })) return getDocumentationStageName(projectType, sourceText);
+  if (/(визуализац|мокап|mockup|пример[а-я\s]+применен|применен[а-я\s]+на\s+(вывес|форм|автомоб|носител)|вывеск|форм[аы]\s+сотрудник|автомобил)/i.test(normalized)) return "Визуализация на носителях";
   if (/интеграц.*логотип|добавлен.*логотип|логотип.*qr|qr.*логотип|добавлен.*qr/i.test(normalized)) return "Размещение логотипа и QR-кода";
   if (/генерац.*код|код/i.test(normalized) && !/qr/i.test(normalized)) return "Дизайн макетов";
-  if (/pdf\/?x/i.test(normalized) || /финальн.*файл/i.test(normalized) || /допечат/i.test(normalized) || /препресс/i.test(normalized)) return "Препресс и подготовка файлов к передаче";
+  if (/pdf\/?x/i.test(normalized) || /допечат/i.test(normalized) || /препресс/i.test(normalized)) return "Препресс и подготовка файлов к передаче";
+  if (/(подготовк|экспорт|передач).*(файл|исходник)|финальн.*файл/i.test(normalized)) {
+    return isPrintLike(projectType, sourceText) ? "Препресс и подготовка файлов к передаче" : "Подготовка и передача файлов";
+  }
+  if (/(цвет|палитр).*(шрифт|типограф)|типограф.*(цвет|палитр|шрифт)/i.test(normalized)) return "Цвет и типографика";
+  if (/(фирменн.*(знак|паттерн|график)|паттерн|графическ.*при[её]м)/i.test(normalized)) return "Графические приёмы";
   if (/сетк/i.test(normalized)) return "Визуальная концепция и структура макетов";
   if (/^св[её]рстк/i.test(normalized)) return capitalizeStageName(name.replace(/^св[её]рстк/i, "вёрстк"));
   if (/^верстка$/i.test(name) || /^вёрстка$/i.test(name)) return "Вёрстка брошюры";
   return capitalizeStageName(name).slice(0, 120);
 }
 
+function isPrintLike(projectType, sourceText) {
+  if (["brand_identity", "logo", "website", "presentation", "smm"].includes(projectType)) return false;
+  const source = normalizeAiText(sourceText);
+  return ["print", "outdoor", "packaging"].includes(projectType)
+    || /(печат|печать|препресс|типограф|буклет|брошюр|каталог|листовк|постер|плакат|наружн|витрин)/i.test(source);
+}
+
+function isBoxPackaging(sourceText) {
+  return /(коробк|развертк|внешн[а-я\s]+упаков|внутренн[а-я\s]+упаков|сторон[ыа]\s+упаков|грани\s+упаков)/i.test(normalizeAiText(sourceText));
+}
+
 function allowsSeparateFinalTesting(projectType, sourceText) {
   const source = normalizeAiText(sourceText);
   return projectType === "website"
-    || /(tilda|тильд|сайт|лендинг|форм[аы]|адаптив|публикац|домен|хостинг|html|css|javascript|react|frontend|backend|фронтенд|бэкенд|верстк[а-я]*\s+сайт|код\s+сайт|кодинг)/i.test(source);
+    || (hasWebsiteProjectIntent(sourceText) && /(tilda|тильд|сайт|лендинг|форм[аы]|адаптив|публикац|домен|хостинг|html|css|javascript|react|frontend|backend|фронтенд|бэкенд|верстк[а-я]*\s+сайт|код\s+сайт|кодинг)/i.test(source));
 }
 
-function normalizeStageDescription(value) {
-  const text = String(value || "")
+function normalizeStageDescription(value, stageName = "") {
+  const stage = normalizeAiText(stageName);
+  let text = String(value || "")
     .trim()
     .replace(/правоч[а-яё]*/gi, "правок")
     .replace(/^создание файла в формате pdf\/x для типографии и отдельного файла для онлайн-просмотра$/i, "Проверка макетов, вылетов и цветового режима, экспорт печатного PDF и версии для онлайн-просмотра")
@@ -341,6 +751,14 @@ function normalizeStageDescription(value) {
     .replace(/сетк[а-яё]*/gi, "структуры")
     .replace(/\bсв[её]рстк/gi, "вёрстк")
     .slice(0, 500);
+  if (!/согласован/.test(stage)) {
+    text = text
+      .replace(/,?\s*согласовани[ея]\s+с\s+клиентом\.?/gi, "")
+      .replace(/,?\s*согласовани[ея]\s+с\s+заказчиком\.?/gi, "")
+      .replace(/\s{2,}/g, " ")
+      .replace(/\s+,/g, ",")
+      .trim();
+  }
   return capitalizeStageName(text);
 }
 
