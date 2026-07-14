@@ -3013,6 +3013,10 @@ h2 {
 
 .modal {
   width: min(560px, calc(100vw - 32px));
+  /* На мобильных контент модалки бывает выше экрана — ограничиваем и скроллим панель.
+     dvh учитывает панель браузера в мобильном Safari, vh — фолбэк. */
+  max-height: calc(100vh - 32px);
+  max-height: calc(100dvh - 32px);
   border: 0;
   padding: 0;
   background: transparent;
@@ -3034,23 +3038,15 @@ h2 {
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   background: var(--surface-strong);
-  overflow: hidden;
-  box-shadow: 0 24px 64px rgba(31, 22, 16, 0.16), 0 2px 8px rgba(31, 22, 16, 0.06);
-}
-
-[data-profile-modal] {
   max-height: calc(100vh - 32px);
-  overflow: hidden;
-}
-
-[data-profile-modal] .modal__panel {
-  max-height: calc(100vh - 32px);
+  max-height: calc(100dvh - 32px);
   overflow-y: auto;
   scrollbar-width: none;
   -ms-overflow-style: none;
+  box-shadow: 0 24px 64px rgba(31, 22, 16, 0.16), 0 2px 8px rgba(31, 22, 16, 0.06);
 }
 
-[data-profile-modal] .modal__panel::-webkit-scrollbar {
+.modal__panel::-webkit-scrollbar {
   display: none;
   width: 0;
   height: 0;
