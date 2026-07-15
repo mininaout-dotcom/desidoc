@@ -2,6 +2,7 @@
 // Запуск: node test-local.js
 process.env.FOLDER_ID = "b1gtest";
 process.env.ALLOWED_ORIGINS = "https://desidoc.ru";
+process.env.RATE_LIMIT_PER_MIN = "100"; // не мешаем основным сценариям
 
 const calls = [];
 let scenario = "";
@@ -90,6 +91,19 @@ function assert(cond, label) {
   const seniorByName = (n) => data.stages.find((s) => s.name === n);
   assert(seniorByName("Согласование и правки")?.hours === 8, "B2: senior — правки 10 -> 8 (−25%)");
   assert(seniorByName("Размещение логотипа и QR-кода")?.hours === 1, "B2: senior — минимум 1 час сохранён");
+
+  // Сценарий D: rate limit — шестой запрос с одного IP получает 429.
+  scenario = "pure-tilda";
+  process.env.RATE_LIMIT_PER_MIN = "5";
+  let limited = null;
+  for (let i = 0; i < 7; i++) {
+    const ev = makeEvent("Лендинг на Тильде");
+    ev.headers["X-Forwarded-For"] = "203.0.113.7";
+    const r = await handler(ev, context);
+    if (r.statusCode === 429) { limited = i + 1; break; }
+  }
+  assert(limited === 6, "D: 429 ровно после лимита (6-й запрос)");
+  process.env.RATE_LIMIT_PER_MIN = "100";
 
   // Сценарий C: классификатор упал → генерация всё равно отвечает.
   scenario = "classifier-fails"; calls.length = 0;

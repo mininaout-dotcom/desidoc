@@ -31,6 +31,30 @@ const JSON_HEADERS = {
   "Content-Type": "application/json; charset=utf-8",
 };
 
+// Простой rate limit: тёплые инстансы функции живут между вызовами, поэтому
+// память реально ограничивает всплески. Защищает бюджет YandexGPT от спама.
+// RATE_LIMIT_PER_MIN — на один IP, RATE_LIMIT_GLOBAL_PER_MIN — на инстанс.
+const rateBuckets = new Map();
+
+function isRateLimited(ip) {
+  const perIp = Number(process.env.RATE_LIMIT_PER_MIN || 6);
+  const global = Number(process.env.RATE_LIMIT_GLOBAL_PER_MIN || 60);
+  const now = Date.now();
+  const hit = (key, limit) => {
+    const bucket = rateBuckets.get(key);
+    if (!bucket || now > bucket.resetAt) {
+      rateBuckets.set(key, { count: 1, resetAt: now + 60000 });
+      return false;
+    }
+    bucket.count += 1;
+    return bucket.count > limit;
+  };
+  if (rateBuckets.size > 5000) rateBuckets.clear();
+  const globalLimited = hit("__global__", global);
+  const ipLimited = hit("ip:" + ip, perIp);
+  return globalLimited || ipLimited;
+}
+
 // ── Маршрут 1: классификатор ──────────────────────────────────────────────
 // Если бриф — «чистый» типовой проект, этапы берём из готовых шаблонов DesiDoc
 // на сайте, а модель только классифицирует. Для стандартных заказов это
@@ -166,6 +190,13 @@ module.exports.handler = async (event, context) => {
   if (!originAllowed) return json(403, { error: "Origin не разрешён" }, headers);
   if (method === "OPTIONS") return { statusCode: 204, headers, body: "" };
   if (method !== "POST") return { statusCode: 405, headers, body: "Method Not Allowed" };
+
+  const clientIp = String(event.headers?.["X-Forwarded-For"] || event.headers?.["x-forwarded-for"] || "unknown")
+    .split(",")[0]
+    .trim();
+  if (isRateLimited(clientIp)) {
+    return json(429, { error: "Слишком много запросов. Попробуйте через минуту." }, headers);
+  }
 
   if (!FOLDER_ID) return json(500, { error: "Не задан FOLDER_ID" }, headers);
 
