@@ -30,6 +30,7 @@ global.fetch = async (url, opts) => {
         { name: "Разработка концепции витрины", description: "Концепция оформления.", hours: 30 },
         { name: "Добавление логотипа и QR-кода", description: "Размещение логотипа и QR на макетах.", hours: 8 },
         { name: "Дизайн 4 постеров", description: "Постеры A1.", hours: 10, unit: "item", quantity: 4 },
+        { name: "Дизайн вывески", description: "Вывеска над входом.", hours: 6, unit: "item", quantity: 1 },
         { name: "Согласование и правки", description: "Правки.", hours: 20 },
         { name: "Правки", description: "Финальные правки.", hours: 4 },
       ],
@@ -83,6 +84,8 @@ function assert(cond, label) {
   assert(names.includes("Подготовка файлов к печати"), "B: подготовка к печати с новым названием");
   const posters = byName("Дизайн 4 постеров");
   assert(posters && posters.unit === "item" && posters.quantity === 4, "B: поштучный этап сохранён (4 шт)");
+  const signage = byName("Визуализация на носителях"); // «Дизайн вывески» канонизируется
+  assert(signage && !signage.unit && signage.hours === 6, "B: единичный носитель вернулся в часы (1 шт -> hours)");
 
   // Сценарий B2: тот же пакет для senior → часы −25%, минимум 1 час сохранён.
   scenario = "package"; calls.length = 0;
