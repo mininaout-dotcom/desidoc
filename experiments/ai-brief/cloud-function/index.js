@@ -408,12 +408,9 @@ function normalizeStageBilling(stage) {
   // Поштучный расчёт оправдан только от 2 единиц: одно меню или одна коробка
   // понятнее и честнее в часах, а не как «1 шт. x цена».
   if (!Number.isFinite(quantity) || quantity < 2 || quantity > 1000) return {};
-  const unitPrice = Math.round(Number(stage?.unit_price ?? stage?.unitPrice ?? 0));
-  return {
-    unit,
-    quantity,
-    ...(Number.isFinite(unitPrice) && unitPrice > 0 ? { unit_price: unitPrice } : {}),
-  };
+  // Цену за штуку модель не задаёт никогда: клиент выводит её из часов и
+  // ставки (часы x ставка / количество) — честная математика вместо выдумки.
+  return { unit, quantity };
 }
 
 function postProcessStages(stages, projectType, sourceText) {
