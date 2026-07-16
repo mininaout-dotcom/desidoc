@@ -469,6 +469,13 @@ function getPdfStageVolume(stage, showHours) {
   return showHours ? `${Number(stage.hours || 0)} ч` : "—";
 }
 
+function getStageHoursPerUnit(stage) {
+  const quantity = Math.max(Number(stage?.quantity || 0), 1);
+  const stored = Number(stage?.hoursPerUnit || 0);
+  if (stored > 0) return stored;
+  return Math.max(Number(stage?.hours || 0), 1) / quantity;
+}
+
 function getSuggestedUnitPrice(hours, quantity) {
   const safeQuantity = Math.max(Number(quantity || 0), 1);
   const rawPrice = (Number(hours || 0) * Number(state.rate || 0)) / safeQuantity;
@@ -545,6 +552,8 @@ function createStages(project, level) {
       quantity,
       unitPrice: unit === "hour" ? state.rate : (hasFixedPrice ? fixedPrice : getSuggestedUnitPrice(hours, quantity)),
       manuallyEditedUnitPrice: hasFixedPrice,
+      hoursPerUnit: unit === "hour" ? null : hours / Math.max(quantity, 1),
+      baseQuantity: unit === "hour" ? null : quantity,
     };
   });
 }
@@ -1289,14 +1298,18 @@ function applyTemplateSlideCount(stages, totalSlides) {
   if (!totalSlides || totalSlides < 1) return;
   const slideStages = stages.filter((stage) => stage.unit === "slide");
   if (!slideStages.length) return;
+  const applyQuantity = (stage, quantity) => {
+    stage.quantity = quantity;
+    stage.hours = Math.max(1, Math.round(getStageHoursPerUnit(stage) * quantity));
+  };
   if (slideStages.length === 1) {
-    slideStages[0].quantity = totalSlides;
+    applyQuantity(slideStages[0], totalSlides);
     return;
   }
   // Простых слайдов в презентации обычно больше, чем сложных: делим ~60/40.
   const simple = Math.max(1, Math.round(totalSlides * 0.6));
-  slideStages[0].quantity = simple;
-  slideStages[1].quantity = Math.max(1, totalSlides - simple);
+  applyQuantity(slideStages[0], simple);
+  applyQuantity(slideStages[1], Math.max(1, totalSlides - simple));
 }
 
 function getAiEstimateName(analysis) {
@@ -1325,19 +1338,25 @@ function mapAiStageToState(stage) {
   const quantity = isUnit ? toPositiveInteger(stage?.quantity, 1) : 1;
   const rawUnitPrice = Number(stage?.unit_price ?? stage?.unitPrice ?? 0);
   const hasUnitPrice = Number.isFinite(rawUnitPrice) && rawUnitPrice > 0;
+  // Штучный этап исходит из часов: сколько часов нужно на одну штуку.
+  const hoursPerUnit = isUnit ? Math.max(Math.round((hours / quantity) * 4) / 4, 0.25) : null;
+
+  const normalizedHours = isUnit ? Math.max(1, Math.round(hoursPerUnit * quantity)) : hours;
 
   return {
     title: stage?.name || stage?.title || "Этап работ",
     description: stage?.description || "",
     note: "",
-    hours,
+    hours: normalizedHours,
     defaults: null,
     manuallyEditedHours: true,
     billingMode: isUnit ? "unit" : "hourly",
     unit,
     quantity,
-    unitPrice: isUnit ? (hasUnitPrice ? rawUnitPrice : getSuggestedUnitPrice(hours, quantity)) : state.rate,
+    unitPrice: isUnit ? (hasUnitPrice ? rawUnitPrice : getSuggestedUnitPrice(normalizedHours, quantity)) : state.rate,
     manuallyEditedUnitPrice: isUnit && hasUnitPrice,
+    hoursPerUnit,
+    baseQuantity: isUnit ? quantity : null,
   };
 }
 
@@ -6011,7 +6030,11 @@ function bindEvents() {
         state.stages[index].hours = Number(input.value || 0);
         state.stages[index].manuallyEditedHours = true;
       } else if (field === "quantity") {
-        state.stages[index].quantity = Math.max(Number(input.value || 0), 0);
+        const stage = state.stages[index];
+        stage.quantity = Math.max(Number(input.value || 0), 0);
+        if (isUnitStage(stage)) {
+          stage.hours = Math.max(1, Math.round(getStageHoursPerUnit(stage) * Math.max(stage.quantity, 1)));
+        }
       } else if (field === "unitPrice") {
         state.stages[index].unitPrice = Math.max(Number(input.value || 0), 0);
         state.stages[index].manuallyEditedUnitPrice = true;
@@ -6038,9 +6061,12 @@ function bindEvents() {
       stage.billingMode = nextUnit === "hour" ? "hourly" : "unit";
       if (nextUnit !== "hour") {
         stage.quantity = Math.max(Number(stage.quantity || stage.hours || 1), 1);
+        stage.hoursPerUnit = Math.max(Number(stage.hours || 1), 1) / stage.quantity;
         if (!stage.manuallyEditedUnitPrice) {
           stage.unitPrice = Math.max(Math.round((previousCost / stage.quantity) / 100) * 100, 100);
         }
+      } else {
+        stage.hoursPerUnit = null;
       }
       renderEstimate();
       return;
