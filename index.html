@@ -19,7 +19,7 @@
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="DesiDoc — сервис для подготовки проектных документов">
   <meta name="twitter:description" content="Создавайте сметы, договоры и проектные документы без лишней рутины.">
-  <link rel="stylesheet" href="css/designkit.css?v=172">
+  <link rel="stylesheet" href="css/designkit.css?v=173">
 </head>
 <body data-view="home">
   <div class="app" data-view="home">
@@ -458,6 +458,31 @@
                 </div>
 
                 <!-- Stage list -->
+                <div class="estimate-group-toolbar">
+                  <label class="field">Дата сметы <input type="date" data-estimate-date aria-label="Дата сметы"></label>
+                  <div class="estimate-group-toolbar__actions">
+                    <button class="button button--ghost" type="button" data-action="toggle-estimate-groups" aria-pressed="false" aria-expanded="false" aria-controls="estimate-group-choice">Разделить на блоки</button>
+                    <button class="button button--ghost" type="button" data-action="add-estimate-group" hidden>+ Добавить блок</button>
+                  </div>
+                </div>
+                <div class="estimate-group-choice" id="estimate-group-choice" data-estimate-group-choice hidden role="group" aria-labelledby="estimate-group-choice-title">
+                  <div class="estimate-group-choice__header">
+                    <strong id="estimate-group-choice-title">Как разделить смету?</strong>
+                    <button class="icon-button" type="button" data-action="close-estimate-group-choice" aria-label="Закрыть выбор разбиения">×</button>
+                  </div>
+                  <div class="estimate-group-choice__options">
+                    <button class="button button--ghost estimate-group-choice__option" type="button" data-action="auto-estimate-groups">
+                      <strong>Разделить автоматически</strong>
+                      <span>AI распределит текущие этапы по смыслу</span>
+                    </button>
+                    <button class="button button--ghost estimate-group-choice__option" type="button" data-action="manual-estimate-groups">
+                      <strong>Добавить пустой блок ниже</strong>
+                      <span>Текущие этапы останутся на месте</span>
+                    </button>
+                  </div>
+                  <button class="button button--ghost" type="button" data-action="restore-estimate-groups" hidden>Вернуть созданные блоки</button>
+                </div>
+                <p class="estimate-group-status" data-estimate-group-status role="status" hidden></p>
                 <div class="stage-list" data-stage-list></div>
 
                 <!-- AI disclaimer — под этапами, только для AI-смет -->
@@ -493,6 +518,7 @@
 
                 <!-- Actions row — bottom -->
                 <div class="estimate-actions cv-result-actions">
+                  <button class="button button--dark" type="button" data-action="save-estimate">Сохранить смету</button>
                   <button class="button button--soft" type="button" data-action="reset-estimate">Сбросить</button>
                   <button class="button button--ghost" type="button" data-action="open-export-settings">Параметры PDF</button>
                   <button class="button button--dark" type="button" data-action="open-export">
@@ -502,6 +528,21 @@
                 </div>
 
               </div>
+              <section class="saved-estimates" aria-labelledby="saved-estimates-title">
+                <div class="saved-estimates__header">
+                  <h2 id="saved-estimates-title">Сохранённые сметы</h2>
+                  <button class="button button--ghost saved-estimates__toggle" type="button" data-action="toggle-saved-estimates" aria-expanded="true" aria-controls="saved-estimates-content" hidden>Свернуть</button>
+                </div>
+                <div id="saved-estimates-content" data-saved-estimates-content>
+                <p class="saved-estimates__hint" data-saved-estimates-hint hidden>Выберите две или больше смет для общего PDF.</p>
+                <div data-saved-estimates></div>
+                <div class="saved-estimates__footer" data-saved-estimates-footer hidden>
+                  <button class="button button--ghost" type="button" data-action="merge-estimates-pdf">Объединить в PDF</button>
+                  <span data-estimate-selection-count hidden></span>
+                </div>
+                </div>
+                <p class="estimate-status" data-estimate-status role="status" aria-live="polite"></p>
+              </section>
             </section>
 
           </div>
@@ -882,6 +923,6 @@
   <script src="assets/vendor/jspdf.umd.min.js"></script>
   <script src="assets/vendor/html-to-image.js"></script>
   <script src="js/ai-config.js?v=1"></script>
-  <script src="js/designkit.js?v=105"></script>
+  <script src="js/designkit.js?v=107"></script>
 </body>
 </html>

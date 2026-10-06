@@ -9,6 +9,15 @@ let scenario = "";
 
 global.fetch = async (url, opts) => {
   const body = JSON.parse(opts.body);
+  if (body.messages[0].text.includes("stage_indexes")) {
+    calls.push("grouping");
+    if (scenario === "grouping-unavailable") throw new Error("network down");
+    const groups = scenario === "grouping-duplicates"
+      ? [{ name: "Один блок", stage_indexes: [0, 0, 1, 2] }]
+      : scenario === "grouping-missing" ? [{ name: "Один блок", stage_indexes: [0] }]
+      : [{ name: "Подготовка", stage_indexes: [0] }, { name: "Дизайн", stage_indexes: [1, 2] }];
+    return { ok: true, json: async () => ({ result: { alternatives: [{ message: { text: JSON.stringify({ groups }) } }] } }) };
+  }
   const isClassifier = body.messages[0].text.includes("определяешь тип");
   calls.push(isClassifier ? "classifier" : "generation");
 
@@ -114,6 +123,24 @@ function assert(cond, label) {
   res = await handler(makeEvent("Оформление витрины магазина и постеры"), context);
   data = JSON.parse(res.body);
   assert(res.statusCode === 200 && Array.isArray(data.stages) && data.stages.length > 0, "C: сбой классификатора не роняет ответ");
+
+  const groupingEvent = {
+    httpMethod: "POST", headers: { origin: "https://desidoc.ru" },
+    body: JSON.stringify({ action: "group-estimate", stages: [{ title: "Брифинг" }, { title: "Концепция" }, { title: "Макеты" }] }),
+  };
+  scenario = "grouping"; calls.length = 0;
+  res = await handler(groupingEvent, context);
+  data = JSON.parse(res.body);
+  assert(res.statusCode === 200 && data.groups.length === 2, "G: AI возвращает именованные блоки");
+  assert(calls.join(",") === "grouping", "G: один запрос только на разбиение, без пересчёта сметы");
+  for (const invalid of ["grouping-duplicates", "grouping-missing", "grouping-unavailable"]) {
+    scenario = invalid;
+    res = await handler(groupingEvent, context);
+    assert(res.statusCode === 502, "G: отклонён некорректный/недоступный ответ: " + invalid);
+  }
+  calls.length = 0;
+  res = await handler({ ...groupingEvent, body: JSON.stringify({ action: "group-estimate", stages: [] }) }, context);
+  assert(res.statusCode === 400 && calls.length === 0, "G: пустой список не отправляется в модель");
 
   console.log(process.exitCode ? "\nЕСТЬ ОШИБКИ" : "\nВСЕ ТЕСТЫ ПРОШЛИ");
 })();

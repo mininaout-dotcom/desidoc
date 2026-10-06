@@ -151,6 +151,11 @@ const state = {
   customTaxRate: Number(localStorage.getItem("designkit.customTaxRate") || 6),
   generated: false,
   stages: [],
+  groups: [],
+  groupsEnabled: false,
+  groupsConfigured: false,
+  estimateId: null,
+  estimateDate: new Date().toLocaleDateString("en-CA"),
   expenses: [],
   mods: new Set(),
   exportShowHours: localStorage.getItem("designkit.exportShowHours") !== "false",
@@ -168,6 +173,10 @@ const state = {
   },
 };
 
+const ESTIMATES_STORAGE_KEY = "designkit.estimates";
+const selectedEstimateIds = new Set();
+let groupingRequest = null;
+let draggedGroupId = null;
 let draggedStageIndex = null;
 let contractSaveTimer = null;
 let contractScrollSpyCleanup = null;
@@ -482,55 +491,55 @@ function getSuggestedUnitPrice(hours, quantity) {
   return Math.max(Math.round(rawPrice / 100) * 100, 100);
 }
 
-function getBaseStageCost(stage) {
+function getBaseStageCost(stage, source = state) {
   if (isUnitStage(stage)) {
     return Number(stage.quantity || 0) * Number(stage.unitPrice || 0);
   }
-  return Number(stage.hours || 0) * state.rate;
+  return Number(stage.hours || 0) * source.rate;
 }
 
-function getStageCost(stage) {
-  return getBaseStageCost(stage);
+function getStageCost(stage, source = state) {
+  return getBaseStageCost(stage, source);
 }
 
-function getBaseStagesTotal() {
-  return state.stages.reduce((sum, stage) => sum + getBaseStageCost(stage), 0);
+function getBaseStagesTotal(source = state) {
+  return source.stages.reduce((sum, stage) => sum + getBaseStageCost(stage, source), 0);
 }
 
-function getUrgencyAmount() {
-  return state.mods.has("urgent") ? getBaseStagesTotal() * MODIFIERS.urgent : 0;
+function getUrgencyAmount(source = state) {
+  return source.mods.has("urgent") ? getBaseStagesTotal(source) * MODIFIERS.urgent : 0;
 }
 
-function getStagesTotal() {
-  return getBaseStagesTotal() + getUrgencyAmount();
+function getStagesTotal(source = state) {
+  return getBaseStagesTotal(source) + getUrgencyAmount(source);
 }
 
-function getExpensesTotal() {
-  return state.expenses.reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
+function getExpensesTotal(source = state) {
+  return source.expenses.reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
 }
 
-function getSubtotal() {
-  return getStagesTotal() + getExpensesTotal();
+function getSubtotal(source = state) {
+  return getStagesTotal(source) + getExpensesTotal(source);
 }
 
-function getTaxRate() {
-  if (state.taxMode === "selfEmployed") {
-    return state.clientType === "business" ? 6 : 4;
+function getTaxRate(source = state) {
+  if (source.taxMode === "selfEmployed") {
+    return source.clientType === "business" ? 6 : 4;
   }
-  if (state.taxMode === "ipUsn") return 6;
-  return Math.max(Number(state.customTaxRate || 0), 0);
+  if (source.taxMode === "ipUsn") return 6;
+  return Math.max(Number(source.customTaxRate || 0), 0);
 }
 
-function getTaxAmount() {
-  return getSubtotal() * (getTaxRate() / 100);
+function getTaxAmount(source = state) {
+  return getSubtotal(source) * (getTaxRate(source) / 100);
 }
 
-function getTotal() {
-  return getSubtotal() + getTaxAmount();
+function getTotal(source = state) {
+  return getSubtotal(source) + getTaxAmount(source);
 }
 
-function getTotalHours() {
-  return state.stages.reduce((sum, stage) => sum + Number(stage.hours || 0), 0);
+function getTotalHours(source = state) {
+  return source.stages.reduce((sum, stage) => sum + Number(stage.hours || 0), 0);
 }
 
 function createStages(project, level) {
@@ -1263,6 +1272,7 @@ async function runBriefAnalysis() {
 }
 
 function applyBriefAnalysis(analysis, sourceText) {
+  resetEstimateIdentity();
   const template = analysis?.mode === "template" ? PROJECTS[analysis.project_key] : null;
   if (template) {
     // Типовой проект: этапы берём из согласованных шаблонов DesiDoc, а не из генерации.
@@ -1470,6 +1480,7 @@ function generateEstimate(force = false, { preserveBrief = false } = {}) {
   state.rate = getActiveRate();
   if (!preserveBrief) state.briefAi.analysis = null;
   if (force || !state.generated) {
+    resetEstimateIdentity();
     state.stages = createStages(project, getHoursLevel());
     state.expenses = [];
   }
@@ -1485,6 +1496,7 @@ function generateEstimate(force = false, { preserveBrief = false } = {}) {
 }
 
 function resetEstimate() {
+  resetEstimateIdentity();
   state.generated = false;
   state.stages = [];
   state.expenses = [];
@@ -1498,7 +1510,10 @@ function resetEstimate() {
 }
 
 function renderEstimate() {
+  ensureEstimateGroups(state);
   renderRate();
+  const dateInput = document.querySelector("[data-estimate-date]");
+  if (dateInput) dateInput.value = state.estimateDate;
   app.dataset.estimate = state.generated ? "ready" : "empty";
 
   document.querySelector("[data-estimate-empty]").classList.toggle("is-hidden", state.generated);
@@ -1516,15 +1531,45 @@ function renderEstimate() {
   updateTotalsOnly();
 
   const list = document.querySelector("[data-stage-list]");
-  if (!state.stages.length) {
-    list.innerHTML = `
-      <div class="stage-list-empty">
-        <strong>Добавьте этапы проекта вручную</strong>
-        <p>Вы удалили все этапы. Добавьте хотя бы один этап, чтобы смета и PDF собрались корректно.</p>
+  renderGroupingControls();
+  list.innerHTML = !state.groupsEnabled
+    ? state.stages.map(renderEstimateStage).join("") || '<div class="stage-list-empty">Добавьте первый этап проекта.</div>'
+    : state.groups.map((group, groupIndex) => `
+    <section class="estimate-group" data-estimate-group="${escapeHtml(group.id)}">
+      <div class="estimate-group__header">
+        <button class="drag-handle" type="button" draggable="true" data-drag-group="${escapeHtml(group.id)}" aria-label="Перетащить блок">⋮⋮</button>
+        <input class="stage-title-input" value="${escapeHtml(group.name)}" maxlength="160" data-group-name="${escapeHtml(group.id)}" aria-label="Название блока ${groupIndex + 1}">
+        <div class="estimate-group__tools">
+          <button class="icon-button" type="button" data-action="move-estimate-group" data-group-id="${escapeHtml(group.id)}" data-delta="-1" ${groupIndex === 0 ? "disabled" : ""} aria-label="Блок выше">↑</button>
+          <button class="icon-button" type="button" data-action="move-estimate-group" data-group-id="${escapeHtml(group.id)}" data-delta="1" ${groupIndex === state.groups.length - 1 ? "disabled" : ""} aria-label="Блок ниже">↓</button>
+          <button class="icon-button" type="button" data-action="remove-estimate-group" data-group-id="${escapeHtml(group.id)}" ${state.groups.length === 1 ? "disabled" : ""} aria-label="Удалить блок">×</button>
+        </div>
       </div>
-    `;
-  } else {
-    list.innerHTML = state.stages.map((stage, index) => {
+      ${state.stages.map((stage, index) => {
+    if (stage.groupId !== group.id) return "";
+    return renderEstimateStage(stage, index);
+    }).join("")}
+      <div class="estimate-group__footer">
+        <div class="estimate-group__actions">
+          <button class="button button--ghost" type="button" data-action="add-stage" data-group-id="${escapeHtml(group.id)}">+ Этап в блок</button>
+          <button class="button button--ghost" type="button" data-action="duplicate-estimate-group" data-group-id="${escapeHtml(group.id)}" aria-label="Дублировать блок ${escapeHtml(group.name)}">Дублировать блок</button>
+        </div>
+        <span>Работы в блоке <strong data-group-subtotal="${escapeHtml(group.id)}">${money(getGroupSubtotal(group.id))}</strong></span>
+      </div>
+    </section>`).join("");
+
+  requestAnimationFrame(() => {
+    list.querySelectorAll(".stage-description-input").forEach(el => {
+      el.style.height = "auto";
+      el.style.height = el.scrollHeight + "px";
+    });
+  });
+
+  renderExpenses();
+  renderBriefAiInsights();
+}
+
+function renderEstimateStage(stage, index) {
     const unit = isUnitStage(stage) ? stage.unit : "hour";
     const quantity = isUnitStage(stage) ? Number(stage.quantity || 0) : Number(stage.hours || 0);
     const unitOptions = Object.entries(UNIT_TYPES).map(([value, meta]) => `
@@ -1549,6 +1594,13 @@ function renderEstimate() {
           <textarea class="stage-description-input" data-stage-field="description" data-index="${index}" aria-label="Описание этапа ${index + 1}">${escapeHtml(stage.description)}</textarea>
           ${stage.note ? `<p class="stage-note">${escapeHtml(stage.note)}</p>` : ""}
           ${unitPriceControl}
+          ${state.groupsEnabled ? `<label class="stage-group-picker">Блок
+            <select data-stage-group="${index}" aria-label="Блок этапа ${index + 1}">${state.groups.map(item => `<option value="${escapeHtml(item.id)}" ${item.id === stage.groupId ? "selected" : ""}>${escapeHtml(item.name)}</option>`).join("")}</select>
+          </label>
+          <div class="stage-move-tools">
+            <button type="button" class="button button--ghost" data-action="move-estimate-stage" data-index="${index}" data-delta="-1" ${index === 0 ? "disabled" : ""}>↑ Выше</button>
+            <button type="button" class="button button--ghost" data-action="move-estimate-stage" data-index="${index}" data-delta="1" ${index === state.stages.length - 1 ? "disabled" : ""}>↓ Ниже</button>
+          </div>` : ""}
         </div>
         <div class="stage-card__side">
           <div class="stage-tools">
@@ -1574,21 +1626,12 @@ function renderEstimate() {
         <button class="icon-button icon-button--remove" type="button" data-action="remove-stage" data-index="${index}" aria-label="Удалить этап">×</button>
       </article>
     `;
-    }).join("");
-  }
-
-  requestAnimationFrame(() => {
-    list.querySelectorAll(".stage-description-input").forEach(el => {
-      el.style.height = "auto";
-      el.style.height = el.scrollHeight + "px";
-    });
-  });
-
-  renderExpenses();
-  renderBriefAiInsights();
 }
 
 function updateTotalsOnly() {
+  document.querySelectorAll("[data-group-subtotal]").forEach(node => {
+    node.textContent = money(getGroupSubtotal(node.dataset.groupSubtotal));
+  });
   const total = money(getTotal());
   document.querySelector("[data-estimate-total]").textContent = total;
   document.querySelector("[data-sticky-total]").textContent = total;
@@ -1646,8 +1689,9 @@ function renderExpenses() {
   `).join("");
 }
 
-function addStage() {
+function addStage(groupId = state.groups.at(-1)?.id) {
   state.stages.push({
+    groupId,
     title: "Новый этап",
     hours: 4,
     description: "Коротко опишите результат этапа.",
@@ -1664,6 +1708,7 @@ function addStage() {
 function moveStage(index, direction) {
   const nextIndex = index + direction;
   if (nextIndex < 0 || nextIndex >= state.stages.length) return;
+  if (state.groupsEnabled) state.stages[index].groupId = state.stages[nextIndex].groupId;
   const copy = [...state.stages];
   [copy[index], copy[nextIndex]] = [copy[nextIndex], copy[index]];
   state.stages = copy;
@@ -1672,6 +1717,7 @@ function moveStage(index, direction) {
 
 function moveStageTo(fromIndex, toIndex) {
   if (fromIndex === toIndex || fromIndex < 0 || toIndex < 0 || fromIndex >= state.stages.length || toIndex >= state.stages.length) return;
+  if (state.groupsEnabled) state.stages[fromIndex].groupId = state.stages[toIndex].groupId;
   const copy = [...state.stages];
   const [stage] = copy.splice(fromIndex, 1);
   copy.splice(toIndex, 0, stage);
@@ -1679,27 +1725,368 @@ function moveStageTo(fromIndex, toIndex) {
   renderEstimate();
 }
 
-function saveEstimate() {
-  const saves = JSON.parse(localStorage.getItem("designkit.estimates") || "[]");
-  saves.unshift({
-    id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
-    createdAt: new Date().toISOString(),
-    estimateName: getEstimateName(),
-    project: getProject().label,
-    rateMode: state.rateMode,
-    marketGrade: state.marketGrade,
-    rate: state.rate,
-    modifiers: [...state.mods],
-    taxMode: state.taxMode,
-    clientType: state.clientType,
-    taxRate: getTaxRate(),
-    taxAmount: getTaxAmount(),
-    stages: state.stages,
-    expenses: state.expenses,
-    total: getTotal(),
+function renderGroupingControls() {
+  const toggle = document.querySelector('[data-action="toggle-estimate-groups"]');
+  toggle.textContent = groupingRequest ? "Разделяю на блоки…" : state.groupsEnabled ? "Убрать блоки" : "Разделить на блоки";
+  toggle.disabled = Boolean(groupingRequest);
+  toggle.setAttribute("aria-pressed", String(state.groupsEnabled));
+  document.querySelector('[data-action="auto-estimate-groups"]').disabled = !state.stages.length;
+  document.querySelector('[data-action="restore-estimate-groups"]').hidden = !state.groupsConfigured;
+  document.querySelector('[data-action="add-estimate-group"]').hidden = !state.groupsEnabled;
+}
+
+function setEstimateGroupingChoice(open, focus = false) {
+  const panel = document.querySelector("[data-estimate-group-choice]");
+  panel.hidden = !open;
+  document.querySelector('[data-action="toggle-estimate-groups"]').setAttribute("aria-expanded", String(open));
+  if (focus) {
+    const target = open ? panel.querySelector(".estimate-group-choice__option:not(:disabled)") : document.querySelector('[data-action="toggle-estimate-groups"]');
+    target?.focus({ preventScroll: true });
+  }
+}
+
+function groupingStatus(message = "") {
+  const node = document.querySelector("[data-estimate-group-status]");
+  node.textContent = message;
+  node.hidden = !message;
+}
+
+function cancelEstimateGrouping() {
+  groupingRequest?.controller.abort();
+  groupingRequest = null;
+  setEstimateGroupingChoice(false);
+  groupingStatus();
+}
+
+function validateEstimateGroupPlan(groups, count) {
+  if (!Array.isArray(groups) || !groups.length || groups.length > Math.min(6, count)) return null;
+  const seen = new Set();
+  const plan = [];
+  for (const group of groups) {
+    if (typeof group?.name !== "string" || !group.name.trim() || !Array.isArray(group.stage_indexes) || !group.stage_indexes.length) return null;
+    for (const index of group.stage_indexes) {
+      if (!Number.isInteger(index) || index < 0 || index >= count || seen.has(index)) return null;
+      seen.add(index);
+    }
+    plan.push({ name: group.name.trim().slice(0, 160), stage_indexes: [...group.stage_indexes].sort((a, b) => a - b) });
+  }
+  return seen.size === count ? plan : null;
+}
+
+function suggestLocalEstimateGroups(stages) {
+  const groups = [
+    { name: "Исследование и концепция", stage_indexes: [] },
+    { name: "Дизайн и реализация", stage_indexes: [] },
+    { name: "Согласование и передача", stage_indexes: [] },
+  ];
+  stages.forEach((stage, index) => {
+    const title = stage.title.toLowerCase();
+    const group = /передач|экспорт|подготовк.*(файл|печат)|правк|согласован|тестирован|гайд|брендбук/.test(title) ? 2
+      : /бриф|исследован|анализ|стратег|референс|мудборд|концепц|прототип|проектирован|структур/.test(title) ? 0 : 1;
+    groups[group].stage_indexes.push(index);
   });
-  localStorage.setItem("designkit.estimates", JSON.stringify(saves.slice(0, 12)));
-  flashButton('[data-action="save-estimate"]', "Сохранено");
+  return groups.filter(group => group.stage_indexes.length);
+}
+
+function toggleEstimateGroups() {
+  if (groupingRequest) return;
+  groupingStatus();
+  if (state.groupsEnabled) {
+    setEstimateGroupingChoice(false);
+    state.groupsEnabled = false;
+    renderEstimate();
+    return;
+  }
+  setEstimateGroupingChoice(document.querySelector("[data-estimate-group-choice]").hidden, true);
+}
+
+async function automaticallyGroupEstimate() {
+  if (groupingRequest || !state.stages.length) return;
+  setEstimateGroupingChoice(false);
+  groupingStatus();
+  const stages = state.stages.map(stage => ({ title: stage.title, description: stage.description }));
+  const fingerprint = JSON.stringify(stages);
+  const request = { controller: new AbortController() };
+  groupingRequest = request;
+  renderGroupingControls();
+  const timeout = setTimeout(() => request.controller.abort(), 20000);
+  let plan;
+  let usedFallback = false;
+  try {
+    if (!AI_BRIEF_ENDPOINT) throw new Error("No AI endpoint");
+    const response = await fetch(AI_BRIEF_ENDPOINT, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "group-estimate", stages: stages.map(stage => ({ title: stage.title.slice(0, 200), description: stage.description.slice(0, 400) })) }),
+      signal: request.controller.signal,
+    });
+    const data = await response.json();
+    plan = response.ok && validateEstimateGroupPlan(data.groups, stages.length);
+    if (!plan) throw new Error("Invalid grouping response");
+  } catch (error) {
+    plan = suggestLocalEstimateGroups(stages);
+    usedFallback = true;
+  } finally {
+    clearTimeout(timeout);
+  }
+  // An open/reset/generation cancels the old request. Edits made while AI was
+  // responding must not be silently assigned using outdated stage indexes.
+  if (groupingRequest !== request) return;
+  groupingRequest = null;
+  if (JSON.stringify(state.stages.map(stage => ({ title: stage.title, description: stage.description }))) !== fingerprint) {
+    renderGroupingControls();
+    groupingStatus("Этапы изменились во время разбиения. Нажмите «Разделить на блоки» ещё раз.");
+    return;
+  }
+  state.groups = plan.map(group => {
+    const id = estimateUid();
+    group.stage_indexes.forEach(index => { state.stages[index].groupId = id; });
+    return { id, name: group.name };
+  });
+  state.groupsEnabled = true;
+  state.groupsConfigured = true;
+  renderEstimate();
+  if (usedFallback) groupingStatus("AI-разбиение сейчас недоступно. Этапы распределены по стандартным блокам — их можно изменить.");
+}
+
+function estimateUid() {
+  return globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+function resetEstimateIdentity() {
+  cancelEstimateGrouping();
+  state.groupsEnabled = false;
+  state.groupsConfigured = false;
+  state.groups = [];
+  state.estimateId = null;
+  state.estimateDate = new Date().toLocaleDateString("en-CA");
+}
+
+function ensureEstimateGroups(source) {
+  if (!source.groups?.length) source.groups = [{ id: estimateUid(), name: "Основные работы" }];
+  source.stages.forEach(stage => {
+    if (!source.groups.some(group => group.id === stage.groupId)) stage.groupId = source.groups[0].id;
+  });
+  // Keep the flat array in display order so indexes and drag-and-drop remain consistent.
+  if (source.groupsEnabled) source.stages = source.groups.flatMap(group => source.stages.filter(stage => stage.groupId === group.id));
+}
+
+function getGroupSubtotal(id, source = state) {
+  return source.stages.filter(stage => stage.groupId === id).reduce((sum, stage) => sum + getStageCost(stage, source), 0);
+}
+
+function estimateStatus(message) {
+  document.querySelector("[data-estimate-status]").textContent = message;
+}
+
+function readSavedEstimates() {
+  try {
+    const entries = JSON.parse(localStorage.getItem(ESTIMATES_STORAGE_KEY) || "[]");
+    if (!Array.isArray(entries) || entries.some(entry => !entry || typeof entry.id !== "string" || !Array.isArray(entry.stages))) throw new Error("Invalid estimates");
+    return entries;
+  } catch (error) {
+    estimateStatus("Не удалось прочитать сохранённые сметы. Данные не перезаписаны. Проверьте доступ к хранилищу браузера.");
+    return null;
+  }
+}
+
+function writeSavedEstimates(entries) {
+  const sorted = [...entries].sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
+  if (sorted.length > 12) {
+    const removed = sorted.slice(12);
+    if (!window.confirm(`Можно хранить до 12 смет. Удалить самые старые: ${removed.map(item => `«${item.estimateName || item.project || "Смета"}»`).join(", ")}?`)) return false;
+  }
+  try {
+    // One atomic write: if storage is full, the previous list stays intact.
+    localStorage.setItem(ESTIMATES_STORAGE_KEY, JSON.stringify(sorted.slice(0, 12)));
+    renderSavedEstimates();
+    return true;
+  } catch (error) {
+    estimateStatus("Не удалось сохранить: хранилище браузера недоступно или заполнено. Предыдущие сметы сохранены.");
+    return false;
+  }
+}
+
+function captureEstimate() {
+  ensureEstimateGroups(state);
+  return JSON.parse(JSON.stringify({
+    version: 2,
+    estimateName: getEstimateName(), estimateDate: state.estimateDate,
+    projectKey: state.projectKey, project: getProject().label,
+    rateMode: state.rateMode, marketGrade: state.marketGrade, rate: state.rate,
+    designerRate: state.designerRate, monthlyIncome: state.monthlyIncome,
+    workDays: state.workDays, billableHours: state.billableHours,
+    currency: getEstimateCurrency(), customTaxRate: state.customTaxRate,
+    modifiers: [...state.mods], taxMode: state.taxMode, clientType: state.clientType,
+    taxRate: getTaxRate(), taxAmount: getTaxAmount(), total: getTotal(),
+    groupsEnabled: state.groupsEnabled, groupsConfigured: state.groupsConfigured, groups: state.groups, stages: state.stages, expenses: state.expenses,
+    exportShowHours: state.exportShowHours, exportHideBranding: state.exportHideBranding,
+    author: { name: state.profile.contractorName || state.profile.designerName || "Дизайнер", contact: state.profile.contractorContact || "" },
+    briefAi: { sourceText: state.briefAi.sourceText, analysis: state.briefAi.analysis },
+  }));
+}
+
+function normalizeSavedEstimate(entry) {
+  const copy = JSON.parse(JSON.stringify(entry));
+  const numeric = (value, fallback = 0) => Number.isFinite(Number(value)) ? Math.max(0, Number(value)) : fallback;
+  copy.projectKey = PROJECTS[copy.projectKey] ? copy.projectKey : Object.keys(PROJECTS).find(key => PROJECTS[key].label === copy.project) || "custom";
+  copy.estimateName = String(copy.estimateName || copy.project || "Смета");
+  copy.rate = numeric(copy.rate);
+  copy.rateMode = ["custom", "income", "market"].includes(copy.rateMode) ? copy.rateMode : "custom";
+  copy.marketGrade = MARKET_RATES[copy.marketGrade] ? copy.marketGrade : "middle";
+  copy.designerRate = numeric(copy.designerRate, copy.rate);
+  // Old snapshots lack the inputs needed to reproduce income / market rates.
+  if (copy.monthlyIncome == null || (copy.rateMode === "market" && MARKET_RATES[copy.marketGrade] !== copy.rate)) {
+    copy.rateMode = "custom";
+    copy.designerRate = copy.rate;
+  }
+  copy.monthlyIncome = numeric(copy.monthlyIncome, 240000);
+  copy.workDays = numeric(copy.workDays, 5);
+  copy.billableHours = numeric(copy.billableHours, 6);
+  copy.currency = CURRENCIES[copy.currency] ? copy.currency : DEFAULT_CURRENCY;
+  copy.customTaxRate = numeric(copy.customTaxRate, numeric(copy.taxRate, 6));
+  copy.taxMode = ["selfEmployed", "ipUsn", "custom"].includes(copy.taxMode) ? copy.taxMode : "custom";
+  copy.clientType = copy.clientType === "business" ? "business" : "individual";
+  copy.mods = new Set(Array.isArray(copy.modifiers) ? copy.modifiers.filter(key => key in MODIFIERS) : []);
+  copy.groupsEnabled = copy.groupsEnabled ?? Boolean(copy.groups?.length > 1);
+  copy.groupsConfigured = copy.groupsConfigured ?? copy.groupsEnabled;
+  copy.groups = Array.isArray(copy.groups) ? copy.groups.filter(group => group && typeof group.id === "string").map(group => ({ id: group.id, name: String(group.name || "Блок") })) : [];
+  copy.stages = copy.stages.filter(stage => stage && typeof stage === "object").map(stage => ({ ...stage, title: String(stage.title || "Этап"), description: String(stage.description || ""), hours: numeric(stage.hours), quantity: numeric(stage.quantity), unitPrice: numeric(stage.unitPrice) }));
+  copy.expenses = (Array.isArray(copy.expenses) ? copy.expenses : []).filter(Boolean).map(item => ({ ...item, title: String(item.title || "Расход"), amount: numeric(item.amount) }));
+  const date = copy.estimateDate || String(copy.createdAt || "").slice(0, 10);
+  copy.estimateDate = /^\d{4}-\d{2}-\d{2}$/.test(date) && !Number.isNaN(Date.parse(date)) ? date : new Date().toLocaleDateString("en-CA");
+  copy.exportShowHours = copy.exportShowHours !== false;
+  copy.exportHideBranding = copy.exportHideBranding === true;
+  ensureEstimateGroups(copy);
+  return copy;
+}
+
+function restoreEstimateSnapshot(entry, id = null) {
+  cancelEstimateGrouping();
+  const snapshot = normalizeSavedEstimate(entry);
+  ["projectKey", "rateMode", "marketGrade", "rate", "designerRate", "monthlyIncome", "workDays", "billableHours", "currency", "taxMode", "clientType", "customTaxRate", "groupsEnabled", "groupsConfigured", "groups", "stages", "expenses", "mods", "estimateDate", "exportShowHours", "exportHideBranding"].forEach(key => { state[key] = snapshot[key]; });
+  state.estimateId = id;
+  state.estimateMeta = { estimateName: snapshot.estimateName };
+  state.briefAi = { sourceText: snapshot.briefAi?.sourceText || "", analysis: snapshot.briefAi?.analysis || null, isLoading: false };
+  state.generated = true;
+  document.querySelector("[data-expense-box]").open = state.expenses.length > 0;
+  document.querySelectorAll('[data-input="expenseTitle"], [data-input="expenseAmount"]').forEach(input => { input.value = ""; });
+  renderProjectOptions();
+  renderEstimate();
+  renderExportOptions();
+  routeTo("calculator");
+}
+
+function saveEstimate() {
+  if (!state.generated || !state.stages.length) {
+    estimateStatus("Добавьте хотя бы один этап перед сохранением.");
+    return;
+  }
+  const saves = readSavedEstimates();
+  if (!saves) return;
+  const existing = saves.find(item => item.id === state.estimateId);
+  const snapshot = { ...captureEstimate(), id: existing?.id || estimateUid(), createdAt: existing?.createdAt || new Date().toISOString(), updatedAt: new Date().toISOString() };
+  if (writeSavedEstimates([snapshot, ...saves.filter(item => item.id !== snapshot.id)])) {
+    state.estimateId = snapshot.id;
+    estimateStatus(`Смета «${snapshot.estimateName}» сохранена.`);
+    flashButton('[data-action="save-estimate"]', "Сохранено");
+  }
+}
+
+function renderSavedEstimates() {
+  const saves = readSavedEstimates();
+  if (!saves) return;
+  for (const id of selectedEstimateIds) if (!saves.some(item => item.id === id)) selectedEstimateIds.delete(id);
+  let collapsed = false;
+  try { collapsed = localStorage.getItem("designkit.savedEstimatesCollapsed") === "true"; } catch {}
+  const toggle = document.querySelector('[data-action="toggle-saved-estimates"]');
+  toggle.hidden = !saves.length;
+  toggle.setAttribute("aria-expanded", String(!collapsed || !saves.length));
+  toggle.textContent = collapsed ? "Развернуть" : "Свернуть";
+  document.querySelector("[data-saved-estimates-content]").hidden = Boolean(saves.length && collapsed);
+  document.querySelector("[data-saved-estimates-footer]").hidden = !saves.length;
+  document.querySelector("[data-saved-estimates-hint]").hidden = saves.length < 2;
+  const selection = document.querySelector("[data-estimate-selection-count]");
+  selection.hidden = !selectedEstimateIds.size;
+  selection.textContent = `Выбрано: ${selectedEstimateIds.size}`;
+  document.querySelector("[data-saved-estimates]").innerHTML = saves.length ? saves.map(entry => {
+    const item = normalizeSavedEstimate(entry);
+    const actions = [["open", "Открыть"], ["rename", "Переименовать"], ["duplicate", "Дублировать"], ["delete", "Удалить"]];
+    return `<article class="saved-estimate">
+      <label class="saved-estimate__select"><input type="checkbox" data-select-estimate="${escapeHtml(item.id)}" ${selectedEstimateIds.has(item.id) ? "checked" : ""} aria-label="Выбрать смету ${escapeHtml(item.estimateName)}"></label>
+      <div class="saved-estimate__body">
+        <button class="saved-estimate__name" type="button" data-action="open-saved-estimate" data-estimate-id="${escapeHtml(item.id)}">${escapeHtml(item.estimateName)}</button>
+        <p>${escapeHtml(new Date(item.estimateDate + "T12:00:00").toLocaleDateString("ru-RU"))} · ${money(Number.isFinite(item.total) ? item.total : getTotal(item), item.currency)}</p>
+        <div class="saved-estimate__actions">
+          ${actions.map(([action, label]) => `<button class="button button--ghost" type="button" data-action="${action}-saved-estimate" data-estimate-id="${escapeHtml(item.id)}">${label}</button>`).join("")}
+        </div>
+      </div>
+    </article>`;
+  }).join("") : '<p class="saved-estimates__hint">Пока нет сохранённых смет.</p>';
+}
+
+function handleSavedEstimate(action, id) {
+  const saves = readSavedEstimates();
+  const entry = saves?.find(item => item.id === id);
+  if (!entry) return;
+  if (action === "open-saved-estimate") {
+    if (state.generated && !window.confirm("Открыть сохранённую смету? Несохранённые изменения текущей сметы будут заменены.")) return;
+    restoreEstimateSnapshot(entry, id);
+    estimateStatus(`Открыта смета «${normalizeSavedEstimate(entry).estimateName}».`);
+  } else if (action === "rename-saved-estimate") {
+    const name = window.prompt("Название сметы", entry.estimateName || entry.project || "Смета");
+    if (!name?.trim()) return;
+    const renamed = { ...entry, estimateName: name.trim().slice(0, 200), updatedAt: new Date().toISOString() };
+    if (writeSavedEstimates(saves.map(item => item.id === id ? renamed : item))) {
+      if (state.estimateId === id) { state.estimateMeta.estimateName = renamed.estimateName; syncEstimateMetaInputs(); }
+      estimateStatus("Название сметы изменено.");
+    }
+  } else if (action === "duplicate-saved-estimate") {
+    const duplicate = { ...entry, id: estimateUid(), estimateName: `${entry.estimateName || entry.project || "Смета"} — копия`, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+    if (writeSavedEstimates([duplicate, ...saves])) estimateStatus("Копия сметы сохранена.");
+  } else if (action === "delete-saved-estimate") {
+    if (!window.confirm(`Удалить смету «${entry.estimateName || entry.project || "Смета"}»? Это действие нельзя отменить.`)) return;
+    if (writeSavedEstimates(saves.filter(item => item.id !== id))) {
+      if (state.estimateId === id) state.estimateId = null;
+      estimateStatus("Смета удалена.");
+    }
+  }
+}
+
+function handleEstimateGroup(action, id, delta) {
+  let focusGroupId = null;
+  if (action === "add-estimate-group") {
+    state.groupsConfigured = true;
+    focusGroupId = estimateUid();
+    state.groups.push({ id: focusGroupId, name: `Блок ${state.groups.length + 1}` });
+  } else {
+    const index = state.groups.findIndex(group => group.id === id);
+    if (index < 0) return;
+    if (action === "duplicate-estimate-group") {
+      focusGroupId = estimateUid();
+      const sourceGroup = state.groups[index];
+      state.groups.splice(index + 1, 0, { id: focusGroupId, name: `${sourceGroup.name.slice(0, 152)} — копия` });
+      const stages = state.stages.filter(stage => stage.groupId === id);
+      state.stages.push(...stages.map(stage => ({ ...JSON.parse(JSON.stringify(stage)), groupId: focusGroupId })));
+      state.groupsConfigured = true;
+    } else if (action === "remove-estimate-group") {
+      if (state.groups.length === 1) return;
+      const target = state.groups[index === 0 ? 1 : index - 1];
+      if (!window.confirm(`Удалить блок «${state.groups[index].name}»? Его этапы будут перенесены в «${target.name}».`)) return;
+      state.stages.filter(stage => stage.groupId === id).forEach(stage => { stage.groupId = target.id; });
+      state.groups.splice(index, 1);
+    } else if (action === "move-estimate-group") {
+      const next = index + delta;
+      if (next < 0 || next >= state.groups.length) return;
+      const [group] = state.groups.splice(index, 1);
+      state.groups.splice(next, 0, group);
+    }
+  }
+  renderEstimate();
+  if (focusGroupId) {
+    const input = Array.from(document.querySelectorAll("[data-group-name]")).find(node => node.dataset.groupName === focusGroupId);
+    input?.focus({ preventScroll: true });
+    input?.scrollIntoView({ block: "center", behavior: "auto" });
+  }
 }
 
 function openProfileModal() {
@@ -2168,9 +2555,10 @@ function renderPdfFromBlocks(blocks, { jsPDF, fonts, filename, onDone }) {
 
 // Векторная (текстовая) смета в том же «швейцарском» дизайне, что и растровая.
 // Координаты заданы в px макета (ширина листа 794px) и масштабируются в pt листа A4.
-function renderEstimatePdf({ jsPDF, fonts, filename, title, number, projectName, total, kicker, meta, rows, summary, footer, chip, showVolume = true, onDone }) {
-  const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
-  registerPdfFonts(doc, fonts);
+function renderEstimatePdf({ jsPDF, fonts, filename, title, number, projectName, total, kicker, meta, rows, summary, footer, chip, showVolume = true, onDone, document: existingDocument, save = true }) {
+  const doc = existingDocument || new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
+  if (existingDocument) doc.addPage();
+  else registerPdfFonts(doc, fonts);
   const rules = PDF_LAYOUT_RULES.estimate;
   const pageWpt = doc.internal.pageSize.getWidth();
   const SHEET_W = 794, SHEET_H = 1123;
@@ -2263,11 +2651,48 @@ function renderEstimatePdf({ jsPDF, fonts, filename, title, number, projectName,
   drawTableHead();
 
   rows.forEach((row) => {
+    if (row.kind) {
+      const lines = wrap(row.name, contentR - padX - 180, row.kind === "group" ? 16 : 12, "bold");
+      const height = 24 + lines.length * 18;
+      if (ensure(height + (row.kind === "group" ? 65 : 0))) drawTableHead();
+      font(row.kind === "group" ? 16 : 12, "bold"); color(BLACK); space(0);
+      lines.forEach((line, i) => T(line, padX, y + 24 + i * 18));
+      if (row.cost) T(row.cost, costRX, y + 24, "right");
+      y += height;
+      rule(padX, contentR, y, row.kind === "group" ? 1.5 : 1);
+      return;
+    }
     const nameLines = wrap(row.name, descW, 14, "bold");
     const descLines = row.desc ? wrap(row.desc, Math.min(descW, 380), 10.5, "normal") : [];
     const descriptionHeight = nameLines.length * 14.7 + (descLines.length ? 4 + descLines.length * 13.4 : 0);
     const volumeHeight = showVolume ? 14.7 : 0;
     const rowH = 9 + Math.max(descriptionHeight, volumeHeight) + 10;
+    // A single long description may exceed a full page. Split its lines rather
+    // than moving an oversized row to a fresh page and clipping the remainder.
+    if (rowH > pageBottom - pageTop - 30) {
+      if (ensure(70)) drawTableHead();
+      let firstLine = true;
+      const drawRowLine = (line, isName) => {
+        const height = isName ? 14.7 : 13.4;
+        if (ensure(height + 20)) drawTableHead();
+        if (firstLine) {
+          y += 9;
+          font(11, "normal"); color(BLACK); T(row.idx, numX, y + 9);
+          if (showVolume) { font(12, "bold"); T(row.volume || "—", volumeX, y + 10); }
+          font(14, "bold"); T(row.cost, costRX, y + 11, "right");
+          firstLine = false;
+        }
+        font(isName ? 14 : 10.5, isName ? "bold" : "normal"); color(isName ? BLACK : GRAY); space(0);
+        T(line, descX, y + (isName ? 11 : 8));
+        y += height;
+      };
+      nameLines.forEach(line => drawRowLine(line, true));
+      y += 4;
+      descLines.forEach(line => drawRowLine(line, false));
+      y += 10;
+      rule(padX, contentR, y, 1);
+      return;
+    }
     if (ensure(rowH + 2)) drawTableHead();
     const top = y + 9; // td padding-top
     font(11, "normal"); color(BLACK); T(row.idx, numX, top + 9);
@@ -2326,8 +2751,9 @@ function renderEstimatePdf({ jsPDF, fonts, filename, title, number, projectName,
     color(BLACK); T(label, chipX + 9, chipY + 15); space(0);
   }
 
-  doc.save(filename);
+  if (save) doc.save(filename);
   if (onDone) onDone();
+  return doc;
 }
 
 // Векторный договор/допсоглашение: два столбца — слева пункт (номер + название),
@@ -2619,6 +3045,75 @@ function renderContractPdf(root, { jsPDF, fonts, filename, docType = "contract",
   if (onDone) onDone();
 }
 
+function buildEstimatePdfData(source) {
+  const amount = value => money(value, source.currency);
+  const issuedAt = new Date(source.estimateDate + "T12:00:00");
+  const validUntil = new Date(issuedAt);
+  validUntil.setDate(validUntil.getDate() + 14);
+  const rows = [];
+  let index = 0;
+  const addStageRow = stage => rows.push({
+    idx: String(++index).padStart(2, "0"), name: stage.title,
+    desc: stage.description + (isUnitStage(stage) && source.exportShowHours ? `\nЦена: ${amount(stage.unitPrice)} / ${UNIT_TYPES[stage.unit]?.priceLabel || "ед."}` : ""),
+    volume: getPdfStageVolume(stage, source.exportShowHours), cost: amount(getStageCost(stage, source)),
+  });
+  if (source.groupsEnabled) {
+    source.groups.forEach(group => {
+      rows.push({ kind: "group", name: group.name });
+      source.stages.filter(stage => stage.groupId === group.id).forEach(addStageRow);
+      rows.push({ kind: "subtotal", name: "Итого по блоку", cost: amount(getGroupSubtotal(group.id, source)) });
+    });
+  } else source.stages.forEach(addStageRow);
+  source.expenses.forEach((expense, i) => rows.push({ idx: `E${i + 1}`, name: expense.title, desc: "Дополнительный расход", volume: "—", cost: amount(expense.amount) }));
+  const summary = [{ label: "Работы", value: amount(getBaseStagesTotal(source)) }];
+  if (source.mods.has("urgent")) summary.push({ label: "Срочность +30%", value: amount(getUrgencyAmount(source)) });
+  if (source.expenses.length) summary.push({ label: "Расходы", value: amount(getExpensesTotal(source)) });
+  summary.push({ label: `Налог ${formatNumber.format(getTaxRate(source))}%`, value: amount(getTaxAmount(source)) });
+  summary.push({ label: "Всего", value: amount(getTotal(source)), total: true });
+  return {
+    title: "СМЕТА", number: "#" + source.estimateDate.replace(/-/g, "").slice(2),
+    kicker: source.exportHideBranding ? "Предварительная оценка" : "Предварительная оценка / создано в DesiDoc",
+    projectName: source.estimateName, total: amount(getTotal(source)),
+    chip: source.mods.has("urgent") ? "Срочность +30%" : "",
+    meta: [
+      { label: "Исполнитель", value: source.author?.name || "Дизайнер", note: source.author?.contact || "" },
+      { label: "Дата", value: issuedAt.toLocaleDateString("ru-RU"), note: "Актуальна до " + validUntil.toLocaleDateString("ru-RU") },
+      source.exportShowHours ? { label: "Ставка", value: amount(source.rate) + " / час", note: getTotalHours(source) + " ч работы" } : { label: "Формат", value: "Стоимость по этапам" },
+    ],
+    rows, summary, showVolume: source.exportShowHours,
+    footer: "Оценка действует 14 дней. Итоговые сроки и состав работ фиксируются в договоре или допсоглашении.",
+  };
+}
+
+async function mergeEstimatesPdf() {
+  if (selectedEstimateIds.size < 2) {
+    estimateStatus(selectedEstimateIds.size ? "Выбрана одна смета. Для объединения выберите ещё хотя бы одну." : "Выберите минимум две сохранённые сметы для объединения в PDF.");
+    return;
+  }
+  const saves = readSavedEstimates();
+  if (!saves) return;
+  const snapshots = saves.filter(item => selectedEstimateIds.has(item.id)).map(normalizeSavedEstimate);
+  if (snapshots.length < 2) { renderSavedEstimates(); estimateStatus("Список изменился. Выберите минимум две сметы."); return; }
+  const button = document.querySelector('[data-action="merge-estimates-pdf"]');
+  button.disabled = true;
+  estimateStatus("Собираем общий PDF…");
+  try {
+    if (!window.jspdf?.jsPDF) throw new Error("jsPDF unavailable");
+    const fonts = await loadPdfFonts();
+    let doc;
+    snapshots.forEach(snapshot => {
+      doc = renderEstimatePdf({ jsPDF: window.jspdf.jsPDF, fonts, ...buildEstimatePdfData(snapshot), document: doc, save: false });
+    });
+    doc.save(generatePdfFileName({ documentType: "estimate", projectName: "Объединённые сметы", date: new Date() }));
+    estimateStatus(`PDF из ${snapshots.length} смет готов.`);
+  } catch (error) {
+    console.warn("Combined estimate PDF failed:", error);
+    estimateStatus("Не удалось собрать PDF. Проверьте подключение для загрузки jsPDF и шрифтов и попробуйте ещё раз. Сохранённые сметы не изменены.");
+  } finally {
+    button.disabled = false;
+  }
+}
+
 function printEstimate() {
   if (!state.stages.length) {
     if (state.projectKey === "custom") {
@@ -2641,10 +3136,12 @@ function printEstimate() {
   renderGreeting();
   if (state.generated) syncEstimateMetaInputs();
 
-  const validUntil = new Date();
+  const pdfSource = normalizeSavedEstimate(captureEstimate());
+  const pdfData = buildEstimatePdfData(pdfSource);
+  const validUntil = new Date(state.estimateDate + "T12:00:00");
   validUntil.setDate(validUntil.getDate() + 14);
   const validUntilText = validUntil.toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric" });
-  const issuedAt = new Date();
+  const issuedAt = new Date(state.estimateDate + "T12:00:00");
   const todayShort = issuedAt.toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric" });
   const estimateNumber = issuedAt.toISOString().slice(0, 10).replace(/-/g, "").slice(2);
   const estimateKicker = state.exportHideBranding
@@ -2656,29 +3153,10 @@ function printEstimate() {
     .filter(isUnitStage)
     .map((stage) => `${stage.title}: ${money(stage.unitPrice || 0)} / ${UNIT_TYPES[stage.unit]?.priceLabel || "ед."}`);
 
-  const rows = state.stages.map((stage, index) => {
-    const volume = getPdfStageVolume(stage, showHoursInPdf);
-    return `
-      <tr>
-        <td class="pdf-index">${String(index + 1).padStart(2, "0")}</td>
-        <td><div class="pdf-stage-name">${escapeHtml(stage.title)}</div><div class="pdf-stage-desc">${escapeHtml(stage.description)}</div></td>
-        ${showVolumeInPdf ? `<td class="pdf-hours">${escapeHtml(volume)}</td>` : ""}
-        <td class="pdf-cost">${money(getStageCost(stage))}</td>
-      </tr>
-    `;
-  }).join("");
+  const rows = pdfData.rows.map(row => row.kind
+    ? `<tr class="pdf-group-row"><td colspan="${showVolumeInPdf ? 3 : 2}"><strong>${escapeHtml(row.name)}</strong></td><td class="pdf-cost">${escapeHtml(row.cost || "")}</td></tr>`
+    : `<tr><td class="pdf-index">${escapeHtml(row.idx)}</td><td><div class="pdf-stage-name">${escapeHtml(row.name)}</div><div class="pdf-stage-desc">${escapeHtml(row.desc)}</div></td>${showVolumeInPdf ? `<td class="pdf-hours">${escapeHtml(row.volume)}</td>` : ""}<td class="pdf-cost">${escapeHtml(row.cost)}</td></tr>`).join("");
 
-  const expenses = state.expenses.map((expense, index) => `
-    <tr>
-      <td class="pdf-index">E${index + 1}</td>
-      <td><div class="pdf-stage-name">${escapeHtml(expense.title)}</div><div class="pdf-stage-desc">Дополнительный расход</div></td>
-      ${showVolumeInPdf ? `<td class="pdf-hours">—</td>` : ""}
-      <td class="pdf-cost">${money(expense.amount)}</td>
-    </tr>
-  `).join("");
-  const urgencyRow = state.mods.has("urgent")
-    ? `<tr><td class="pdf-index">U</td><td><div class="pdf-stage-name">Срочность +30%</div><div class="pdf-stage-desc">Финальная опция перед экспортом PDF</div></td>${showVolumeInPdf ? `<td class="pdf-hours">—</td>` : ""}<td class="pdf-cost">${money(getUrgencyAmount())}</td></tr>`
-    : "";
   const pdfRateMeta = showHoursInPdf
     ? `<div class="pdf-meta-item"><div class="pdf-meta-label">Ставка</div><div class="pdf-meta-value">${money(state.rate)} / час</div>${(pdfUnitRateNotes.length ? pdfUnitRateNotes : [`${getTotalHours()} ч работы`]).map((note) => `<div class="pdf-meta-note">${escapeHtml(note)}</div>`).join("")}</div>`
     : `<div class="pdf-meta-item"><div class="pdf-meta-label">Формат</div><div class="pdf-meta-value">Стоимость по этапам</div></div>`;
@@ -2723,8 +3201,6 @@ function printEstimate() {
         <thead><tr><th>№</th><th>Описание</th>${showVolumeInPdf ? `<th class="pdf-th-hours">Объём</th>` : ""}<th>Сумма</th></tr></thead>
         <tbody>
           ${rows}
-          ${expenses}
-          ${urgencyRow}
         </tbody>
       </table>
 
@@ -2793,45 +3269,9 @@ function printEstimate() {
     cleanupSheet();
   };
 
-  // Структурированные данные для векторного (текстового) PDF
-  const pdfRows = state.stages.map((stage, index) => ({
-    idx: String(index + 1).padStart(2, "0"),
-    name: stage.title,
-    desc: stage.description,
-    volume: getPdfStageVolume(stage, showHoursInPdf),
-    cost: money(getStageCost(stage)),
-  }));
-  state.expenses.forEach((expense, index) => pdfRows.push({
-    idx: "E" + (index + 1), name: expense.title, desc: "Дополнительный расход", volume: "—", cost: money(expense.amount),
-  }));
-  if (state.mods.has("urgent")) pdfRows.push({ idx: "U", name: "Срочность +30%", desc: "Финальная опция перед экспортом PDF", volume: "—", cost: money(getUrgencyAmount()) });
-
-  const pdfSummary = [{ label: "Работы", value: money(getBaseStagesTotal()) }];
-  if (state.mods.has("urgent")) pdfSummary.push({ label: "Срочность", value: money(getUrgencyAmount()) });
-  if (state.expenses.length) pdfSummary.push({ label: "Расходы", value: money(getExpensesTotal()) });
-  pdfSummary.push({ label: "Налог " + formatNumber.format(getTaxRate()) + "%", value: money(getTaxAmount()) });
-  pdfSummary.push({ label: "Всего", value: money(getTotal()), total: true });
-
   loadPdfFonts().then((fonts) => {
     renderEstimatePdf({
-      jsPDF, fonts, filename,
-      title: "СМЕТА",
-      number: "#" + estimateNumber,
-      kicker: estimateKicker,
-      projectName: estimateName,
-      total: money(getTotal()),
-      chip: state.mods.has("urgent") ? "Срочность +30%" : "",
-      meta: [
-        { label: "Исполнитель", value: profileName, note: profileContact || "" },
-        { label: "Дата", value: todayShort, note: "Актуальна до " + validUntilText },
-        showHoursInPdf
-          ? { label: "Ставка", value: money(state.rate) + " / час", notes: pdfUnitRateNotes.length ? pdfUnitRateNotes : [getTotalHours() + " ч работы"] }
-          : { label: "Формат", value: "Стоимость по этапам", note: "" },
-      ],
-      rows: pdfRows,
-      summary: pdfSummary,
-      footer: "Оценка действует 14 дней. Итоговые сроки и состав работ фиксируются в договоре или допсоглашении.",
-      showVolume: showVolumeInPdf,
+      jsPDF, fonts, filename, ...pdfData,
       onDone: () => { cleanupSheet(); notifyPdfDownloadSuccess(getEstimatePdfDownloadGoals()); },
     });
   }).catch((err) => { console.warn("Векторный PDF не удался, растровый запасной вариант:", err); rasterFallback(); });
@@ -5502,7 +5942,7 @@ function printContract(onDone) {
 }
 
 function clearDragClasses() {
-  document.querySelectorAll(".stage-card").forEach((card) => {
+  document.querySelectorAll(".stage-card, .estimate-group").forEach((card) => {
     card.classList.remove("is-dragging", "is-drop-target");
   });
 }
@@ -5592,6 +6032,15 @@ function bindEvents() {
     if (!actionTarget) return;
 
     const action = actionTarget.dataset.action;
+    if (action === "toggle-saved-estimates") {
+      const content = document.querySelector("[data-saved-estimates-content]");
+      const collapsed = !content.hidden;
+      content.hidden = collapsed;
+      actionTarget.setAttribute("aria-expanded", String(!collapsed));
+      actionTarget.textContent = collapsed ? "Развернуть" : "Свернуть";
+      try { localStorage.setItem("designkit.savedEstimatesCollapsed", String(collapsed)); } catch {}
+      return;
+    }
     if (action === "toggle-theme") setTheme(state.theme === "dark" ? "light" : "dark");
     if (action === "scroll-contract-top") {
       document.querySelector("[data-contract-canvas]")?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -5693,7 +6142,32 @@ function bindEvents() {
       resetEstimate();
       return;
     }
-    if (action === "add-stage") addStage();
+    if (action === "toggle-estimate-groups") { toggleEstimateGroups(); return; }
+    if (action === "close-estimate-group-choice") { setEstimateGroupingChoice(false, true); return; }
+    if (action === "auto-estimate-groups") { automaticallyGroupEstimate(); return; }
+    if (action === "manual-estimate-groups") {
+      setEstimateGroupingChoice(false);
+      state.groupsEnabled = true;
+      handleEstimateGroup("add-estimate-group");
+      return;
+    }
+    if (action === "restore-estimate-groups") {
+      setEstimateGroupingChoice(false);
+      state.groupsEnabled = true;
+      renderEstimate();
+      return;
+    }
+    if (["add-estimate-group", "duplicate-estimate-group", "remove-estimate-group", "move-estimate-group"].includes(action)) {
+      handleEstimateGroup(action, actionTarget.dataset.groupId, Number(actionTarget.dataset.delta));
+      return;
+    }
+    if (["open-saved-estimate", "rename-saved-estimate", "duplicate-saved-estimate", "delete-saved-estimate"].includes(action)) {
+      handleSavedEstimate(action, actionTarget.dataset.estimateId);
+      return;
+    }
+    if (action === "merge-estimates-pdf") { mergeEstimatesPdf(); return; }
+    if (action === "move-estimate-stage") { moveStage(Number(actionTarget.dataset.index), Number(actionTarget.dataset.delta)); return; }
+    if (action === "add-stage") addStage(actionTarget.dataset.groupId || state.groups.at(-1)?.id);
     if (action === "remove-stage") {
       state.stages.splice(Number(actionTarget.dataset.index), 1);
       renderEstimate();
@@ -6007,6 +6481,16 @@ function bindEvents() {
       if (state.generated) updateTotalsOnly();
     }
 
+    if (input.matches("[data-group-name]")) {
+      const group = state.groups.find(item => item.id === input.dataset.groupName);
+      if (group) {
+        group.name = input.value.trim() || "Блок";
+        document.querySelectorAll("[data-stage-group] option").forEach(option => {
+          if (option.value === group.id) option.textContent = group.name;
+        });
+      }
+      return;
+    }
     if (input.matches("[data-estimate-meta]")) {
       const key = input.dataset.estimateMeta;
       if (key === "estimateName") {
@@ -6051,6 +6535,28 @@ function bindEvents() {
 
   document.addEventListener("change", (event) => {
     const input = event.target;
+    if (input.matches("[data-estimate-date]")) {
+      if (input.value) state.estimateDate = input.value;
+      else input.value = state.estimateDate;
+      return;
+    }
+    if (input.matches("[data-select-estimate]")) {
+      input.checked ? selectedEstimateIds.add(input.dataset.selectEstimate) : selectedEstimateIds.delete(input.dataset.selectEstimate);
+      const selection = document.querySelector("[data-estimate-selection-count]");
+      selection.hidden = !selectedEstimateIds.size;
+      selection.textContent = `Выбрано: ${selectedEstimateIds.size}`;
+      return;
+    }
+    if (input.matches("[data-group-name]")) {
+      const group = state.groups.find(item => item.id === input.dataset.groupName);
+      if (group) input.value = group.name;
+      return;
+    }
+    if (input.matches("[data-stage-group]")) {
+      const stage = state.stages[Number(input.dataset.stageGroup)];
+      if (stage && state.groups.some(group => group.id === input.value)) { stage.groupId = input.value; renderEstimate(); }
+      return;
+    }
     if (input.matches('[data-stage-field="unit"]')) {
       const index = Number(input.dataset.index);
       const stage = state.stages[index];
@@ -6155,41 +6661,58 @@ function bindEvents() {
   });
 
   document.addEventListener("dragstart", (event) => {
+    const groupHandle = event.target.closest("[data-drag-group]");
     const handle = event.target.closest("[data-drag-stage]");
-    if (!handle) return;
-    draggedStageIndex = Number(handle.dataset.dragStage);
-    const card = handle.closest(".stage-card");
-    if (card) card.classList.add("is-dragging");
+    if (!handle && !groupHandle) return;
+    draggedGroupId = groupHandle?.dataset.dragGroup || null;
+    draggedStageIndex = handle ? Number(handle.dataset.dragStage) : null;
+    event.target.closest(".stage-card, .estimate-group")?.classList.add("is-dragging");
     if (event.dataTransfer) {
       event.dataTransfer.effectAllowed = "move";
-      event.dataTransfer.setData("text/plain", String(draggedStageIndex));
+      event.dataTransfer.setData("text/plain", draggedGroupId || String(draggedStageIndex));
     }
   });
 
   document.addEventListener("dragover", (event) => {
-    const card = event.target.closest(".stage-card");
-    if (!card || draggedStageIndex === null) return;
+    const target = event.target.closest(draggedGroupId ? ".estimate-group" : ".stage-card, .estimate-group");
+    if (!target || (draggedStageIndex === null && !draggedGroupId)) return;
     event.preventDefault();
-    document.querySelectorAll(".stage-card.is-drop-target").forEach((item) => item.classList.remove("is-drop-target"));
-    card.classList.add("is-drop-target");
+    document.querySelectorAll(".is-drop-target").forEach(item => item.classList.remove("is-drop-target"));
+    target.classList.add("is-drop-target");
   });
 
   document.addEventListener("drop", (event) => {
+    const group = event.target.closest("[data-estimate-group]");
     const card = event.target.closest(".stage-card");
-    if (!card || draggedStageIndex === null) return;
+    if ((!group && !card) || (draggedStageIndex === null && !draggedGroupId)) return;
     event.preventDefault();
-    const targetIndex = Number(card.dataset.stageIndex);
-    moveStageTo(draggedStageIndex, targetIndex);
+    if (draggedGroupId && group) {
+      const from = state.groups.findIndex(item => item.id === draggedGroupId);
+      const to = state.groups.findIndex(item => item.id === group.dataset.estimateGroup);
+      handleEstimateGroup("move-estimate-group", draggedGroupId, to - from);
+    } else {
+      if (card) moveStageTo(draggedStageIndex, Number(card.dataset.stageIndex));
+      else if (group) {
+        state.stages[draggedStageIndex].groupId = group.dataset.estimateGroup;
+        renderEstimate();
+      }
+    }
     draggedStageIndex = null;
+    draggedGroupId = null;
     clearDragClasses();
   });
 
   document.addEventListener("dragend", () => {
     draggedStageIndex = null;
+    draggedGroupId = null;
     clearDragClasses();
   });
 
   document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !document.querySelector("[data-estimate-group-choice]").hidden) {
+      setEstimateGroupingChoice(false, true);
+      return;
+    }
     const routeCard = event.target.closest(".deedoc-card[data-route]");
     if (!routeCard || !["Enter", " "].includes(event.key)) return;
     event.preventDefault();
@@ -6238,6 +6761,7 @@ function init() {
   setTheme(state.theme);
   renderProjectOptions();
   renderRate();
+  renderSavedEstimates();
   renderGreeting();
   syncExportInputs();
   renderContractWorkspace();
